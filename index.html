@@ -160,17 +160,18 @@ var Nodes = {
 		var starttime = this.now;
 
 		// assumes keys are sorted:
-		for (var index in this.triggers) {
+		//for (var index in this.triggers) {
 		// if they're not?
 		// ECMASCRIPT 5 TO THE RESCUE
 
-		/*var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+		var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+
 		for (var index_key in sorted_keys) {
 			var index = sorted_keys[index_key]
-*/
+
 			index = parseInt(index)
 
-			if (starttime+buffer <= index) {
+			if ((starttime+buffer) <= index) {
 				// let's do a buffer's worth of tasks
 				// or skip a buffer's worth of time instead
 				// or both!
@@ -192,10 +193,15 @@ var Nodes = {
 		// great! now, let's see if we can find any 'view' changes
 		// we need to reflect onto the network at the current time
 
-		for (var index in this.viewchanges) {
+		var sorted_keys = Object.keys(this.viewchanges).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+
+		for (var index_key in sorted_keys) {
+			var index = sorted_keys[index_key]
 			index = parseInt(index)
 
-			if (index >= (this.now-buffer)) {
+
+			//if (index >= (this.now-buffer)) {
+			if ((starttime+buffer) <= index) {
 				break;
 			}
 
@@ -218,7 +224,7 @@ var Nodes = {
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
 					case "newBlock":
-						$("#newblock").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />' + JSON.stringify(change.rev) + '<hr>');
+						$("#newblock").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
 						var revchart = function(r) {
 							var res = "";
 							// sort r
@@ -521,8 +527,16 @@ $(document).ready(function() {
 		interval = 100000;
 	})
 
+	running_exec = false;
+
 	setInterval(function() {
-		Nodes.exec(interval)
+		if (!running_exec) {
+			running_exec = true;
+			Nodes.exec(interval)
+			running_exec = false;
+		} else {
+			alert("RACE CONDITION")
+		}
 	}, 10);
 });
 </script>
