@@ -121,7 +121,7 @@ function Node(id, parent, p) {
 			this.peers.set(from, msg); // set the new status of the remote node
 
 			if (msg.height > this._getStatus().height) {
-				this.chain.h = msg.height;
+				this.chain.newstate(msg);
 				this._broadcastStatus();
 			}
 		} else {

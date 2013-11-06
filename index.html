@@ -218,12 +218,30 @@ var Nodes = {
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
 					case "newBlock":
-						$("#newblock").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
+						$("#newblock").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />' + JSON.stringify(change.rev) + '<hr>');
+						var revchart = function(r) {
+							var res = "";
+							// sort r
+							var n = [];
+							for (var id in r) {
+								n.push({id:id,rev:r[id]})
+							}
+							n.sort(function(a,b) {
+								if (a.rev == b.rev) return 0;
+
+								return a.rev > b.rev ? -1 : 1;
+							})
+							for (var i=0;i<n.length;i++) {
+								res += n[i].id + " : " + n[i].rev + "<br />";
+							}
+							return res;
+						}
+
 						if (this.besth < change.h) {
 							this.besth = change.h;
-							$("#revenue").html(JSON.stringify(change.rev));
+							$("#revenue").html(revchart(change.rev));
 						} else if (this.besth == change.h) {
-							$("#revenue").append("<br/><br />" + JSON.stringify(change.rev));
+							$("#revenue").append("<hr>" + revchart(change.rev));
 						}
 					break;
 				}
@@ -242,7 +260,7 @@ var Nodes = {
 	},
 
 	newBlock: function(node, h, rev) {
-		this.viewchange("newBlock", {node:node,h:h,rev:rev})
+		this.viewchange("newBlock", {node:node,h:h,rev:jQuery.extend(true, {}, rev)})
 	},
 
 	setColor: function(id, color) {

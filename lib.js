@@ -93,7 +93,7 @@ function Blockchain(node) {
 	this.newstate = function(msg) {
 		this.h = msg.height;
 		this.color = msg.color;
-		this.revenue = msg.revenue;
+		this.revenue = jQuery.extend(true, {}, msg.revenue); // is cloning really this retarded in js?
 	}
 
 	this.mined = function() {
