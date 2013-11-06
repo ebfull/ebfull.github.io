@@ -77,10 +77,27 @@ function PeerMgr(node) {
 	}
 };
 
-function Blockchain() {
+function Blockchain(node) {
 	this.h = 1;
+	this.color = "black";
 
 	this.height = function() {
 		return this.h;
+	}
+
+	this.chainstate = function() {
+		return {height:this.h,color:this.color};
+	}
+
+	this.newstate = function(msg) {
+		this.h = msg.height;
+		this.color = msg.color;
+	}
+
+	this.mined = function() {
+		this.h+=1;
+		this.color = node.color;
+
+		$("#revenue").prepend('<span style="color:' + this.color + '">node ' + node.id + ' (' + ((node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + this.h + ')<BR />');
 	}
 };

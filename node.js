@@ -1,15 +1,34 @@
-function Node(id, parent) {
+function get_random_color(ranges) {
+            if (!ranges) {
+                ranges = [
+                    [150,256],
+                    [0, 190],
+                    [0, 30]
+                ];
+            }
+            var g = function() {
+                //select random range and remove
+                var range = ranges.splice(Math.floor(Math.random()*ranges.length), 1)[0];
+                //pick a random number from within the range
+                return Math.floor(Math.random() * (range[1] - range[0])) + range[0];
+            }
+            return "rgb(" + g() + "," + g() + "," + g() +")";
+        };
+
+function Node(id, parent, p) {
 	this.id = id;
 	this.parent = parent;
 	this.nodeArchive = [0];
 	this.lock = false;
 	this.npass = 0;
+	this.mprob = p; // probability of mining a block
 
 	this.maxpeers = 20;
+	this.color = get_random_color();
 
 	// modules
 	this.peers = new PeerMgr(this);
-	this.chain = new Blockchain();
+	this.chain = new Blockchain(this);
 
 	this.tick = function(from, msg) {
 		if (this.peers.amt < this.maxpeers) {
@@ -34,8 +53,8 @@ function Node(id, parent) {
 	}
 
 	this.mine = function(from, msg) {
-		if (Math.random() > 0.995) {
-			this.chain.h++;
+		if (Math.random() < this.mprob) {
+			this.chain.mined();
 
 			// tell our other nodes what our new status is
 			this._broadcastStatus();
@@ -46,7 +65,7 @@ function Node(id, parent) {
 		returns the current status of the local node
 	*/
 	this._getStatus = function() {
-		return {height:this.chain.height()};
+		return this.chain.chainstate();
 	}
 
 	/*
@@ -54,8 +73,7 @@ function Node(id, parent) {
 	*/
 	this._broadcastStatus = function() {
 		// let's update our color to reflect the new status
-		var colors = ["red", "blue", "green", "purple", "orange"];
-		this.parent.setColor(this.id, colors[this._getStatus().height % colors.length]);
+		this.parent.setColor(this.id, this._getStatus().color);
 
 		this.peers.all(function(node, p){
 			//console.log(node.id + ' trying getpeer to ' + p);
@@ -124,7 +142,7 @@ function Node(id, parent) {
 		this.peers.set(from, msg); // set the new status of the remote node
 
 		if (msg.height > this._getStatus().height) {
-			this.chain.h = msg.height;
+			this.chain.newstate(msg);
 			this._broadcastStatus();
 		}
 	}

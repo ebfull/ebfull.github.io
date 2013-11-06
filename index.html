@@ -53,6 +53,7 @@ line[y2=NaN] {
 	display:none !important;
 }
 
+
 .node {
   fill: #000;
 }
@@ -63,10 +64,20 @@ line[y2=NaN] {
 </style>
 </head>
 <body>
+plz use chrome
+<table>
+<tr>
+<td>
 <div class="network">
 </div>
+</td>
+<td><b>network events</b>
+<div id="revenue" style="height:200px;overflow:hidden"></iframe>
+</td>
+</tr>
+</table>
+Now (simulation): <b><span id="now" style="text-align:center"></span></b>
 <script>
-
 var Nodes = {
 	network:null,
 	nodes:{},
@@ -76,6 +87,10 @@ var Nodes = {
 	con:0,
 	queue:[],
 	active:false,
+	now:0,
+	viewchanges:[], // view changes are events that are imposed on the network object
+
+	triggers:[], // triggers are events that execute at certain times
 
 	init:function() {
 		this.network.init();
@@ -89,8 +104,6 @@ var Nodes = {
 	message is obj
 	*/
 	run:function(fromid, toid, delay, name, obj) {
-		//console.log('RUN (' + fromid + ' => ' + toid + ') ' + name + ': ' + JSON.stringify(obj));
-
 		if (this.runlock)
 			return;
 
@@ -100,7 +113,7 @@ var Nodes = {
 		var latency = delay;
 
 		if (fromid != -1)
-			latency += Math.floor(Math.random() * 500) + 100;
+			latency += Math.floor(Math.random() * 5000) + 100;
 
 		// later we can make this more consistent
 		// later we can make this buffered
@@ -117,33 +130,95 @@ var Nodes = {
 
 		var parent = this;
 
-		var perform = function(){
-			var e = function() {
-				//console.log('EXECUTING ' + name + ' (' + fromid + ' => ' + toid + ')');
-				if (parent.nodes.hasOwnProperty(toid))
-					parent.nodes[toid].actor[name](fromid, obj);
+		var e = function() {
+			//console.log("RUNNING " + name + " ON " + toid + " FROM " + fromid + ": " + JSON.stringify(obj))
+
+			if (parent.nodes.hasOwnProperty(toid))
+				parent.nodes[toid].actor[name](fromid, obj);
+		}
+
+		if (typeof(this.triggers[this.now+parseInt(latency)]) == "undefined")
+			this.triggers[this.now+parseInt(latency)] = [];
+
+		this.triggers[this.now+parseInt(latency)].push(e);
+	},
+
+	// buffer describes the tolerance of this.now from the start to finish of exec
+	// if we want to 'run' 10 seconds of tasks before we concern ourselves with view changes
+	// we can do that
+	// viewchanges that are shown will also be, then, 10 seconds behind the simulation at most
+
+	exec:function(buffer) {
+		// executes a trigger
+		var starttime = this.now;
+
+		// assumes keys are sorted:
+		for (var index in this.triggers) {
+		// if they're not?
+		// ECMASCRIPT 5 TO THE RESCUE
+
+		/*var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+		for (var index_key in sorted_keys) {
+			var index = sorted_keys[index_key]
+*/
+			index = parseInt(index)
+
+			if (starttime+buffer <= index) {
+				// let's do a buffer's worth of tasks
+				// or skip a buffer's worth of time instead
+				// or both!
+				this.now+=buffer;
+				$("#now").html(this.now / 1000 + " seconds")
+				break;
 			}
 
-			// is another task running?
-			if (parent.active) {
-				console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! QUEUED SOMETHING');
-				parent.queue.push(e)
-			} else {
-				parent.active = true;
-				// is something in the queue?
-				// should be executed before us
-				while (func = parent.queue.pop()) {
-					console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! escaped race condition')
-					func();
+			this.now = index;
+			$("#now").html(this.now / 1000 + " seconds")
+			var val = this.triggers[index].pop()
+			if (this.triggers[index].length == 0) {
+				delete this.triggers[index];
+			}
+
+			val();
+		}
+
+		// great! now, let's see if we can find any 'view' changes
+		// we need to reflect onto the network at the current time
+
+		for (var index in this.viewchanges) {
+			index = parseInt(index)
+
+			if (index >= (this.now-buffer)) {
+				break;
+			}
+
+			var val = this.viewchanges[index]
+
+			while(true) {
+				var change = val.pop()
+				if (typeof(change) == 'undefined') {
+					break;
 				}
 
-				e();
+				switch(change.type) {
+					case "disconnect":
+						this.network.disconnect(this.get(change.a).networkid, this.get(change.b).networkid);
+					break;
+					case "connect":
+						this.network.connect(this.get(change.a).networkid, this.get(change.b).networkid);
+					break;
+					case "setColor":
+						$(".n" + this.get(change.id).networkid).css('fill', change.color);
+					break;
+				}
 
-				parent.active = false;
+				this.network.rehash();
 			}
-		};
 
-		window.setTimeout(perform, latency);
+			delete this.viewchanges[index]
+		}
+
+		this.network.rehash();
 	},
 
 	get:function(id) {
@@ -151,30 +226,40 @@ var Nodes = {
 	},
 
 	setColor: function(id, color) {
-		$(".n" + this.get(id).networkid).css('fill', color);
+		this.viewchange("setColor", {color:color,id:id})
+	},
+
+	viewchange:function(type, args) {
+		args.type = type;
+
+		if (typeof(this.viewchanges[this.now]) == 'undefined')
+			this.viewchanges[this.now] = [];
+
+		this.viewchanges[this.now].push(args);
 	},
 
 	connect: function(a, b) {
 		// only write to graph if both nodes agree to connection
 		if (this.get(a).actor.peers.exists(b) && this.get(b).actor.peers.exists(a))
-			this.network.connect(this.get(a).networkid, this.get(b).networkid);
+			this.viewchange('connect', {a:a,b:b})
 		else {
 			//console.log('deferring graph write');
 		}
 	},
 
 	disconnect: function(a, b) {
-		this.network.disconnect(this.get(a).networkid, this.get(b).networkid);
+		this.viewchange('disconnect', {a:a,b:b})
 	},
 
-	add:function() {
+	// p is probability of mining a block, 0 = 0%, 1 = 100%
+	add:function(p) {
 		var n = this.network.addNode();
 		var parent = this;
 
 		this.nodes[this.nindex] =
 			{
 				networkid:n,
-				actor:new Node(this.nindex, parent),
+				actor:new Node(this.nindex, parent, p),
 			};
 		this.run(-1, this.nindex, 100, 'tick', {});
 		this.nindex++;
@@ -286,7 +371,7 @@ Nodes.network = {
 		this.links.push(this.edges[a + '-' + b]);
 
 		this.updated = true;
-		////////////this.rehash();
+		//////this.rehash();
 	},
 
 	disconnect: function(a, b) {
@@ -303,7 +388,7 @@ Nodes.network = {
 		this.links.splice(i, 1); // remove the link
 
 		this.updated = true;
-		//////////////////this.rehash();
+		//////this.rehash();
 	},
 
 	removeNode: function(index) {
@@ -353,11 +438,22 @@ Nodes.network = {
 };
 
 $(document).ready(function() {
+	var interval = 10;
+	var howmany = 100; // amount of nodes to start with
 	Nodes.init();
 
+	// create a random probability distribution
+	probs = []
+
+	cp = 0.2;
+	for (var i=0;i<=howmany;i++) {
+		probs.push(cp)
+		cp = cp * 0.8;
+	}
+
 	$("#create").click(function() {
-		for (var i=0;i<50;i++) {
-			Nodes.add();
+		for (var i=0;i<howmany;i++) {
+			Nodes.add(probs.pop());
 		}
 	});
 
@@ -367,13 +463,31 @@ $(document).ready(function() {
 		Nodes.runlock = true;
 	});
 
+	$("#normal").click(function() {
+		interval = 10;
+	})
+
+	$("#fast").click(function() {
+		interval = 100;
+	})
+
+	$("#faster").click(function() {
+		interval = 1000;
+	})
+
+	$("#fastest").click(function() {
+		interval = 10000;
+	})
+
 	setInterval(function() {
-		Nodes.network.rehash();
+		Nodes.exec(interval)
 	}, 10);
 });
 </script>
 
-<p><a id="create" href="#">add nodes</a> <a id="stop" href="#">stop everything</a> </p>
-<p><a href="/accurate.html">more accurate simulator</a></p>
+<p><a id="create" href="#">add a node</a> <a id="stop" href="#">stop everything</a> </p>
+
+<p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> </p>
+
 
 </body>
