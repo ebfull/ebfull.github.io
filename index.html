@@ -72,11 +72,11 @@ plz use chrome
 </div>
 </td>
 <td><b>new blocks</b>
-<div id="newblock" style="height:200px;overflow:hidden"></iframe>
+<div id="newblock" style="height:450px;overflow:hidden"></iframe>
 </td>
-<td>&nbsp;&nbsp;</td>
+<td bgcolor="gray">&nbsp;&nbsp;</td>
 <td><b>revenue</b>
-<div id="revenue" style="height:200px;overflow:hidden"></iframe>
+<div id="revenue" style="height:450px;overflow:hidden"></iframe>
 </td>
 </tr>
 </table>
@@ -166,10 +166,14 @@ var Nodes = {
 
 		var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
 
+		var lastindex = 0;
+
 		for (var index_key in sorted_keys) {
 			var index = sorted_keys[index_key]
 
 			index = parseInt(index)
+			if (index < lastindex)
+				alert("WTF")
 
 			if ((starttime+buffer) <= index) {
 				// let's do a buffer's worth of tasks
@@ -188,6 +192,8 @@ var Nodes = {
 			}
 
 			val();
+
+			lastindex = index;
 		}
 
 		// great! now, let's see if we can find any 'view' changes
@@ -245,9 +251,9 @@ var Nodes = {
 
 						if (this.besth < change.h) {
 							this.besth = change.h;
-							$("#revenue").html(revchart(change.rev));
+							$("#revenue").html("<table><tr><td>" + revchart(change.rev) + "</td></tr></table>");
 						} else if (this.besth == change.h) {
-							$("#revenue").append("<hr>" + revchart(change.rev));
+							$("#revenue table tr").append("<td bgcolor='black'>&nbsp;</td><td>" + revchart(change.rev) + "</td>");
 						}
 					break;
 				}
