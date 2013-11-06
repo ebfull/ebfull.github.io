@@ -99,7 +99,7 @@ function Blockchain(node) {
 	this.mined = function() {
 		this.h+=1;
 
-		this.color = node.color;
+		this.color = node.parent.rcolor();
 		if (typeof this.revenue[node.id] == "undefined") {
 			this.revenue[node.id] = 0
 		}

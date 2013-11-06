@@ -1,20 +1,3 @@
-function get_random_color(ranges) {
-            if (!ranges) {
-                ranges = [
-                    [50, 250],
-                    [50, 250],
-                    [50, 250]
-                ];
-            }
-            var g = function() {
-                //select random range and remove
-                var range = ranges.splice(Math.floor(Math.random()*ranges.length), 1)[0];
-                //pick a random number from within the range
-                return Math.floor(Math.random() * (range[1] - range[0])) + range[0];
-            }
-            return "rgb(" + g() + "," + g() + "," + g() +")";
-};
-
 function Node(id, parent, p) {
 	this.id = id;
 	this.parent = parent;
@@ -24,7 +7,6 @@ function Node(id, parent, p) {
 	this.mprob = p; // probability of mining a block
 
 	this.maxpeers = 20;
-	this.color = get_random_color();
 
 	// modules
 	this.peers = new PeerMgr(this);
@@ -56,7 +38,7 @@ function Node(id, parent, p) {
 		if (Math.random() < this.mprob) {
 			this.chain.mined();
 
-			this.parent.newBlock(this, this.chain.h, this.chain.revenue);
+			this.parent.newBlock(this, this.chain.h, this.chain.revenue, this.chain.color);
 
 			// tell our other nodes what our new status is
 			this._broadcastStatus();

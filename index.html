@@ -97,7 +97,13 @@ var Nodes = {
 	triggers:[], // triggers are events that execute at certain times
 
 	besth:1,
-	currev:{},
+	icolor:0,
+	colors:["red","green","blue","purple","orange"],
+
+	rcolor: function() {
+		this.icolor++;
+		return this.colors[this.icolor%this.colors.length]
+	},
 
 	init:function() {
 		this.network.init();
@@ -230,7 +236,7 @@ var Nodes = {
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
 					case "newBlock":
-						$("#newblock").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
+						$("#newblock").prepend('<span style="color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
 						var revchart = function(r) {
 							var res = "";
 							// sort r
@@ -271,8 +277,8 @@ var Nodes = {
 		return this.nodes[id];
 	},
 
-	newBlock: function(node, h, rev) {
-		this.viewchange("newBlock", {node:node,h:h,rev:jQuery.extend(true, {}, rev)})
+	newBlock: function(node, h, rev, color) {
+		this.viewchange("newBlock", {color:color,node:node,h:h,rev:jQuery.extend(true, {}, rev)})
 	},
 
 	setColor: function(id, color) {
