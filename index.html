@@ -547,7 +547,7 @@ $(document).ready(function() {
 	})
 
 	$("#attack").click(function() {
-		Nodes.nodes[0].actor.attackmode = true;
+		Nodes.nodes[0].actor.attackmode = !Nodes.nodes[0].actor.attackmode;
 	})
 
 	running_exec = false;
@@ -568,6 +568,6 @@ $(document).ready(function() {
 
 <p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
 
-<p><a id="sybil" href="#">SYBIL ATTACK GO</a> | <a id="attack" href="#">ATTACK GO</a></p>
+<p><a id="sybil" href="#">SYBIL ATTACK GO</a> | <a id="attack" href="#">ATTACK TOGGLE</a></p>
 
 </body>
