@@ -71,7 +71,10 @@ plz use chrome
 <div class="network">
 </div>
 </td>
-<td><b>network events</b>
+<td><b>new blocks</b>
+<div id="newblock" style="height:200px;overflow:hidden"></iframe>
+</td>
+<td><b>revenue</b>
 <div id="revenue" style="height:200px;overflow:hidden"></iframe>
 </td>
 </tr>
@@ -91,6 +94,9 @@ var Nodes = {
 	viewchanges:[], // view changes are events that are imposed on the network object
 
 	triggers:[], // triggers are events that execute at certain times
+
+	besth:1,
+	currev:{},
 
 	init:function() {
 		this.network.init();
@@ -211,7 +217,13 @@ var Nodes = {
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
 					case "newBlock":
-						$("#revenue").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
+						$("#newblock").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
+					break;
+					case "newRevenue":
+						if (this.besth < change.h) {
+							this.besth = change.h;
+							$("#revenue").html(JSON.stringify(change.rev));
+						}
 					break;
 				}
 
@@ -234,6 +246,10 @@ var Nodes = {
 
 	setColor: function(id, color) {
 		this.viewchange("setColor", {color:color,id:id})
+	},
+
+	newRevenue: function(h, rev) {
+		this.viewchange("newRevenue", {h:h,rev:rev});
 	},
 
 	viewchange:function(type, args) {
@@ -496,7 +512,7 @@ $(document).ready(function() {
 });
 </script>
 
-<p><a id="create" href="#">add a node</a> <a id="stop" href="#">stop everything</a> </p>
+<p><a id="create" href="#">add nodes (non mining)</a> | <a id="stop" href="#">stop everything</a> </p>
 
 <p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
 

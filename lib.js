@@ -80,22 +80,31 @@ function PeerMgr(node) {
 function Blockchain(node) {
 	this.h = 1;
 	this.color = "black";
+	this.revenue = {};
 
 	this.height = function() {
 		return this.h;
 	}
 
 	this.chainstate = function() {
-		return {height:this.h,color:this.color};
+		return {height:this.h,color:this.color,revenue:this.revenue};
 	}
 
 	this.newstate = function(msg) {
 		this.h = msg.height;
 		this.color = msg.color;
+		this.revenue = msg.revenue;
 	}
 
 	this.mined = function() {
 		this.h+=1;
+
 		this.color = node.color;
+		if (typeof this.revenue[node.id] == "undefined") {
+			this.revenue[node.id] = 0
+		}
+		this.revenue[node.id]+=1;
+
+		node.parent.newRevenue(this.h, this.revenue);
 	}
 };
