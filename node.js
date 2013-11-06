@@ -6,7 +6,9 @@ function Node(id, parent, p) {
 	this.npass = 0;
 	this.mprob = p; // probability of mining a block
 
-	this.maxpeers = 20;
+	this.attackmode = false;
+
+	this.maxpeers = 8;
 
 	// modules
 	this.peers = new PeerMgr(this);
@@ -140,8 +142,8 @@ function Node(id, parent, p) {
 			this.parent.run(this.id, from, 0, 'accept', this._getStatus());
 			this.accept(from, msg);
 		} else if (this.peers.amt >= this.maxpeers) {
-			// disconnect a random peer
-			var r = this.peers.random();
+			// disconnect the last peer
+			var r = this.peers.last();
 			this.getpeer(r, {});
 			this.parent.run(this.id, r, 0, 'disconnect', true);
 			this.disconnect(r, false);

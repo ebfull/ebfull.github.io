@@ -2,7 +2,7 @@ function PeerMgr(node) {
 	this.peers = {};
 	this.amt = 0;
 	this.statusCallback = null;
-
+	this.stack = [];
 
 	this.exists = function(p) {
 		if (this.peers.hasOwnProperty(p))
@@ -12,7 +12,7 @@ function PeerMgr(node) {
 	}
 
 	this.add = function(p) {
-		if (this.amt>=8)
+		if (this.amt>=node.maxpeers)
 			return false; // already enough peers
 
 		p = parseInt(p);
@@ -25,6 +25,7 @@ function PeerMgr(node) {
 
 		this.amt += 1;
 		this.peers[p] = {};
+		this.stack.push(p)
 		node.parent.connect(node.id, p);
 
 		return true;
@@ -53,6 +54,10 @@ function PeerMgr(node) {
 	    return parseInt(result);
 	}
 
+	this.last = function() {
+		return this.stack[this.stack.length-1]
+	}
+
 	this.remove = function(p) {
 		p = parseInt(p);
 
@@ -65,6 +70,8 @@ function PeerMgr(node) {
 		this.amt -= 1;
 		delete this.peers[p];
 		node.parent.disconnect(node.id, p);
+
+		delete this.stack[this.stack.indexOf(p)]
 
 		return true;
 	}
@@ -91,9 +98,20 @@ function Blockchain(node) {
 	}
 
 	this.newstate = function(msg) {
-		this.h = msg.height;
-		this.color = msg.color;
-		this.revenue = jQuery.extend(true, {}, msg.revenue); // is cloning really this retarded in js?
+		if (node.attackmode == true) {
+			// we're in attack mode, instead of accepting this state, let's call mined and then run
+			// broadcast status
+
+			this.mined();
+			node.parent.newBlock(node, this.h, this.revenue, this.color);
+			node._broadcastStatus();
+
+			//node.attackmode = false; // shut off attackmode so we can see the effects
+		} else {
+			this.h = msg.height;
+			this.color = msg.color;
+			this.revenue = jQuery.extend(true, {}, msg.revenue); // is cloning really this retarded in js?
+		}
 	}
 
 	this.mined = function() {

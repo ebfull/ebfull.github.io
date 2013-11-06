@@ -425,7 +425,7 @@ Nodes.network = {
 		if (a==b)
 			return false; // can't connect to ourself silly!
 
-		console.log('CONNECTING EDGES ' + a + ' AND ' + b);
+		//console.log('CONNECTING EDGES ' + a + ' AND ' + b);
 		this.edges[a + '-' + b] = {source:this.nodes[this.getKeyForID(a)],target:this.nodes[this.getKeyForID(b)]};
 		this.links.push(this.edges[a + '-' + b]);
 
@@ -542,6 +542,14 @@ $(document).ready(function() {
 		interval = 100000;
 	})
 
+	$("#sybil").click(function() {
+		Nodes.nodes[0].actor.maxpeers = 50;
+	})
+
+	$("#attack").click(function() {
+		Nodes.nodes[0].actor.attackmode = true;
+	})
+
 	running_exec = false;
 
 	setInterval(function() {
@@ -560,5 +568,6 @@ $(document).ready(function() {
 
 <p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
 
+<p><a id="sybil" href="#">SYBIL ATTACK GO</a> | <a id="attack" href="#">ATTACK GO</a></p>
 
 </body>
