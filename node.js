@@ -1,9 +1,9 @@
 function get_random_color(ranges) {
             if (!ranges) {
                 ranges = [
-                    [50,190],
-                    [50, 190],
-                    [50, 190]
+                    [50, 250],
+                    [50, 250],
+                    [50, 250]
                 ];
             }
             var g = function() {
@@ -13,7 +13,7 @@ function get_random_color(ranges) {
                 return Math.floor(Math.random() * (range[1] - range[0])) + range[0];
             }
             return "rgb(" + g() + "," + g() + "," + g() +")";
-        };
+};
 
 function Node(id, parent, p) {
 	this.id = id;
@@ -56,7 +56,7 @@ function Node(id, parent, p) {
 		if (Math.random() < this.mprob) {
 			this.chain.mined();
 
-			this.parent.newBlock(this, this.chain.h);
+			this.parent.newBlock(this, this.chain.h, this.chain.revenue);
 
 			// tell our other nodes what our new status is
 			this._broadcastStatus();

@@ -74,6 +74,7 @@ plz use chrome
 <td><b>new blocks</b>
 <div id="newblock" style="height:200px;overflow:hidden"></iframe>
 </td>
+<td>&nbsp;&nbsp;</td>
 <td><b>revenue</b>
 <div id="revenue" style="height:200px;overflow:hidden"></iframe>
 </td>
@@ -218,11 +219,11 @@ var Nodes = {
 					break;
 					case "newBlock":
 						$("#newblock").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
-					break;
-					case "newRevenue":
 						if (this.besth < change.h) {
 							this.besth = change.h;
 							$("#revenue").html(JSON.stringify(change.rev));
+						} else if (this.besth == change.h) {
+							$("#revenue").append("<br/><br />" + JSON.stringify(change.rev));
 						}
 					break;
 				}
@@ -240,16 +241,12 @@ var Nodes = {
 		return this.nodes[id];
 	},
 
-	newBlock: function(node, h) {
-		this.viewchange("newBlock", {node:node,h:h})
+	newBlock: function(node, h, rev) {
+		this.viewchange("newBlock", {node:node,h:h,rev:rev})
 	},
 
 	setColor: function(id, color) {
 		this.viewchange("setColor", {color:color,id:id})
-	},
-
-	newRevenue: function(h, rev) {
-		this.viewchange("newRevenue", {h:h,rev:rev});
 	},
 
 	viewchange:function(type, args) {

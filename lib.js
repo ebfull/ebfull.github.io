@@ -104,7 +104,5 @@ function Blockchain(node) {
 			this.revenue[node.id] = 0
 		}
 		this.revenue[node.id]+=1;
-
-		node.parent.newRevenue(this.h, this.revenue);
 	}
 };
