@@ -1,9 +1,9 @@
 function get_random_color(ranges) {
             if (!ranges) {
                 ranges = [
-                    [150,256],
-                    [0, 190],
-                    [0, 30]
+                    [50,190],
+                    [50, 190],
+                    [50, 190]
                 ];
             }
             var g = function() {
@@ -55,6 +55,8 @@ function Node(id, parent, p) {
 	this.mine = function(from, msg) {
 		if (Math.random() < this.mprob) {
 			this.chain.mined();
+
+			this.parent.newBlock(this, this.chain.h);
 
 			// tell our other nodes what our new status is
 			this._broadcastStatus();

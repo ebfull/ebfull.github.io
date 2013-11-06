@@ -210,6 +210,9 @@ var Nodes = {
 					case "setColor":
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
+					case "newBlock":
+						$("#revenue").prepend('<span style="color:' + change.node.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
+					break;
 				}
 
 				this.network.rehash();
@@ -223,6 +226,10 @@ var Nodes = {
 
 	get:function(id) {
 		return this.nodes[id];
+	},
+
+	newBlock: function(node, h) {
+		this.viewchange("newBlock", {node:node,h:h})
 	},
 
 	setColor: function(id, color) {
@@ -445,7 +452,7 @@ $(document).ready(function() {
 	// create a random probability distribution
 	probs = []
 
-	cp = 0.2;
+	cp = 0.02;
 	for (var i=0;i<=howmany;i++) {
 		probs.push(cp)
 		cp = cp * 0.8;
@@ -479,6 +486,10 @@ $(document).ready(function() {
 		interval = 10000;
 	})
 
+	$("#fastestest").click(function() {
+		interval = 100000;
+	})
+
 	setInterval(function() {
 		Nodes.exec(interval)
 	}, 10);
@@ -487,7 +498,7 @@ $(document).ready(function() {
 
 <p><a id="create" href="#">add a node</a> <a id="stop" href="#">stop everything</a> </p>
 
-<p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> </p>
+<p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
 
 
 </body>

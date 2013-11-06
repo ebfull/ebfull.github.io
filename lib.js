@@ -97,7 +97,5 @@ function Blockchain(node) {
 	this.mined = function() {
 		this.h+=1;
 		this.color = node.color;
-
-		$("#revenue").prepend('<span style="color:' + this.color + '">node ' + node.id + ' (' + ((node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + this.h + ')<BR />');
 	}
 };
