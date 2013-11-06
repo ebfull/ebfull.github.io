@@ -98,7 +98,7 @@ var Nodes = {
 
 	besth:1,
 	icolor:0,
-	colors:["red","green","blue","purple","orange"],
+	colors:["red","green","blue","purple","orange","chartreuse","darkred","dodgerblue"],
 
 	rcolor: function() {
 		this.icolor++;
@@ -236,7 +236,10 @@ var Nodes = {
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
 					case "newBlock":
-						$("#newblock").prepend('<span style="color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=' + change.h + ')<BR />');
+						$("#newblock").prepend('<span style="color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=<span class="height-' + change.h + '">' + change.h + '</span>)<BR />');
+						if ($(".height-" + change.h).length > 1) {
+							$(".height-" + change.h).css("font-weight", "bold");
+						}
 						var revchart = function(r) {
 							var res = "";
 							// sort r
