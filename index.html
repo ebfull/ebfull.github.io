@@ -64,8 +64,20 @@ line[y2=NaN] {
 </style>
 </head>
 <body>
-plz use chrome
-<table>
+Chrome simulates this faster than firefox.<BR /><br />
+<div id="optionpane">
+Node 0 and Node 1 hashing power each: <input id="hashrate" type="range" value="35" min="1", max="49" /> <span id="hashratep">35%</span><br />
+Node 0 selfish mining attack? <input type="checkbox" id="smattack" checked><br />
+Node 0 sybil attack? <input type="checkbox" id="sybil" checked><br />
+Freeze connection state after 100 seconds? <input type="checkbox" id="freezestate" checked><br />
+<h1><a href="#" id="gogogo">GO</a></h1>
+<script>
+$("#hashrate").change(function() {
+	$("#hashratep").html(this.value + "%")
+})
+</script>
+</div>
+<table id="sim" style="display:none">
 <tr>
 <td>
 <div class="network">
@@ -79,8 +91,16 @@ plz use chrome
 <div id="revenue" style="height:450px;overflow:hidden"></iframe>
 </td>
 </tr>
+<tr>
+<td colspan=3>
+	<p>Now (simulation): <b><span id="now" style="text-align:center"></span></b></p>
+
+	<p><a id="create" href="#">add nodes (non mining)</a> | <a id="stop" href="#">stop everything</a> </p>
+
+	<p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
+</td>
+</tr>
 </table>
-Now (simulation): <b><span id="now" style="text-align:center"></span></b>
 <script>
 var Nodes = {
 	network:null,
@@ -91,6 +111,7 @@ var Nodes = {
 	con:0,
 	queue:[],
 	active:false,
+	alreadyHalted:false,
 	now:0,
 	viewchanges:[], // view changes are events that are imposed on the network object
 
@@ -190,6 +211,7 @@ var Nodes = {
 			}
 
 			this.now = index;
+			$("#now").html(this.now / 1000 + " seconds")
 			var val = this.triggers[index].pop()
 			if (this.triggers[index].length == 0) {
 				delete this.triggers[index];
@@ -201,6 +223,16 @@ var Nodes = {
 		}
 
 		$("#now").html(this.now / 1000 + " seconds")
+
+		if (!this.alreadyHalted) {
+			if (this.now / 1000 > 200) {
+				if ($("#freezestate").val() == "on") {
+					for (var i =0;i<this.nindex;i++) {
+						this.nodes[i].actor.cmode = false;
+					}
+				}
+			}
+		}
 
 		// great! now, let's see if we can find any 'view' changes
 		// we need to reflect onto the network at the current time
@@ -504,21 +536,39 @@ var array_sum = function(a) {
 	return c
 }
 
-$(document).ready(function() {
+$("#gogogo").click(function() {
+	$("#sim").css('display', 'block')
+	$("#optionpane").css('display', 'none')
+
+	var howmany = 100;
 	var interval = 10;
-	var howmany = 100; // amount of nodes to start with
+
 	Nodes.init();
 
-	// create a random probability distribution
-	probs = [.35,.35]
+	var probs = []
 
-	cp = 0.15;
-	for (var i=0;i<(howmany-2);i++) {
-		probs.push(cp)
-		cp = cp * 0.5;
+	var hrate_total = 0;
+	for (var i=0;i<howmany;i++) {
+		var newp = Math.random() * 100000;
+		hrate_total += newp;
+		probs.push(newp);
 	}
 
-	//alert(array_sum(probs))
+	hrate_total -= probs[0];
+	hrate_total -= probs[1];
+
+	var y = 2 * (parseInt($("#hashrate").val())/100);
+
+	var p = y * hrate_total / (1-y)
+
+	hrate_total += p;
+
+	probs[0] = p/2;
+	probs[1] = p/2;
+
+	for (var i=0;i<howmany;i++) {
+		probs[i] = probs[i] / hrate_total;
+	}
 
 	$("#create").click(function() {
 		for (var i=0;i<howmany;i++) {
@@ -577,13 +627,8 @@ $(document).ready(function() {
 			alert("RACE CONDITION")
 		}
 	}, 10);
-});
+})
+
 </script>
-
-<p><a id="create" href="#">add nodes (non mining)</a> | <a id="stop" href="#">stop everything</a> </p>
-
-<p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
-
-<p><a id="sybil" href="#">SYBIL ATTACK GO</a> | <a id="attack" href="#">ATTACK TOGGLE</a> | <a id="halt" href="#">FREEZE CURRENT CONNECTION STATES</a></p>
 
 </body>

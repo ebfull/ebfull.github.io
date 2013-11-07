@@ -6,14 +6,14 @@ function Node(id, parent, p) {
 	this.npass = 0;
 	this.mprob = p; // probability of mining a block
 
-	if (this.id == 0)
+	if (this.id == 0 && ($("#smattack").val() == "on"))
 		this.attackmode = true;
 	else
 		this.attackmode = false;
 
 	this.cmode = true; // this is whether the node should accept new connections or try to make new connections
 
-	if (this.id == 0)
+	if (this.id == 0 && ($("#sybil").val() == "on"))
 		this.maxpeers = 50;
 	else
 		this.maxpeers = 8;
