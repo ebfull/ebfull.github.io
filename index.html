@@ -69,7 +69,7 @@ Chrome simulates this faster than firefox.<BR /><br />
 Node 0 and Node 1 hashing power each: <input id="hashrate" type="range" value="35" min="1", max="49" /> <span id="hashratep">35%</span><br />
 Node 0 selfish mining attack? <input type="checkbox" id="smattack" checked><br />
 Node 0 sybil attack? <input type="checkbox" id="sybil" checked><br />
-<!--Freeze connection state after 200 seconds? <input type="checkbox" id="freezestate" checked><br />-->
+Freeze connection state after 200 seconds? <input type="checkbox" id="freezestate" checked><br />
 <h1><a href="#" id="gogogo">GO</a></h1>
 <script>
 $("#hashrate").change(function() {
@@ -115,7 +115,7 @@ var Nodes = {
 	con:0,
 	queue:[],
 	active:false,
-	alreadyHalted:true,
+	alreadyHalted:false,
 	now:0,
 	viewchanges:[], // view changes are events that are imposed on the network object
 
@@ -230,7 +230,7 @@ var Nodes = {
 
 		if (!this.alreadyHalted) {
 			if (this.now / 1000 > 200) {
-				if ($("#freezestate").val() == "on") {
+				if ($("#freezestate").is(':checked')) {
 					for (var i =0;i<this.nindex;i++) {
 						this.nodes[i].actor.cmode = false;
 					}
