@@ -114,6 +114,7 @@ function Blockchain(node) {
 			this.revenue = jQuery.extend(true, {}, msg.revenue);
 
 			if (this.privatestack[0].h == this.h || this.privatestack[0].h == (this.h+1)) { // Is our private chainstate in close competition?
+				node.parent.attackLog("publishing our private chain (H=" + this.privatestack[0].h + ") (public H=" + this.h + ")");
 				// Publish our private chainstate, and reset the private chainstate.
 
 				this.h = this.privatestack[0].h;
@@ -125,6 +126,7 @@ function Blockchain(node) {
 				// Adopt the new public chain in our private chainstate.
 
 				this.privatestack = [{h:this.h,color:this.color,revenue:jQuery.extend(true, {}, this.revenue)}]
+				node.parent.attackLog("adopting public chain H=" + this.h);
 			} else {
 				// We're ahead, let's pop from the privatestack until we reach above the height of the public chain.
 
@@ -145,6 +147,7 @@ function Blockchain(node) {
 					this.h = publish.h;
 					this.color = publish.color;
 					this.revenue = jQuery.extend(true, {}, publish.revenue);
+					node.parent.attackLog("publishing partial private chain H=" + this.h);
 				}
 			}
 		} else {
@@ -173,6 +176,7 @@ function Blockchain(node) {
 			node.parent.newBlock(node, last.h, last.revenue, last.color, node.attackmode); // log our new block
 
 			this.privatestack.unshift(last); // add to the top of our private chain
+			node.parent.attackLog("mined a new block on private chain (height=" + last.h + ") chainlength=" + this.privatestack.length);
 		} else {
 			// we're an "honest" miner
 			this.h+=1;

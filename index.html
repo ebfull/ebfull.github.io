@@ -90,6 +90,10 @@ $("#hashrate").change(function() {
 <td><b>revenue</b>
 <div id="revenue" style="height:450px;overflow:hidden"></iframe>
 </td>
+<td bgcolor="gray">&nbsp;&nbsp;</td>
+<td><b>attack log</b>
+<div id="attackLog" style="height:450px;overflow:hidden"></iframe>
+</td>
 </tr>
 <tr>
 <td colspan=3>
@@ -267,6 +271,9 @@ var Nodes = {
 					case "setColor":
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
+					case "attackLog":
+						$("#attackLog").prepend(change.data + "<br />")
+					break;
 					case "newBlock":
 						$("#newblock").prepend('<span style="' + (change.attackmode ? 'background-color:black;' : '') + 'color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=<span class="height-' + change.h + '">' + change.h + '</span>)<BR />');
 						if ($(".height-" + change.h).length > 1) {
@@ -314,6 +321,10 @@ var Nodes = {
 
 	newBlock: function(node, h, rev, color, attackmode) {
 		this.viewchange("newBlock", {attackmode:attackmode,color:color,node:node,h:h,rev:jQuery.extend(true, {}, rev)})
+	},
+
+	attackLog: function(data) {
+		this.viewchange("attackLog", {data:data})
 	},
 
 	setColor: function(id, color) {
@@ -569,8 +580,6 @@ $("#gogogo").click(function() {
 	for (var i=0;i<howmany;i++) {
 		probs[i] = probs[i] / hrate_total;
 	}
-
-	console.log(array_sum(probs))
 
 	$("#create").click(function() {
 		for (var i=0;i<howmany;i++) {
