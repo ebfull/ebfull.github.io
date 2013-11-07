@@ -14,7 +14,7 @@ function Node(id, parent, p) {
 	this.cmode = true; // this is whether the node should accept new connections or try to make new connections
 
 	if (this.id == 0 && ($("#sybil").val() == "on"))
-		this.maxpeers = 50;
+		this.maxpeers = 95;
 	else
 		this.maxpeers = 8;
 
