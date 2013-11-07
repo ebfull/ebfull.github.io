@@ -186,12 +186,10 @@ var Nodes = {
 				// or skip a buffer's worth of time instead
 				// or both!
 				this.now+=buffer;
-				$("#now").html(this.now / 1000 + " seconds")
 				break;
 			}
 
 			this.now = index;
-			$("#now").html(this.now / 1000 + " seconds")
 			var val = this.triggers[index].pop()
 			if (this.triggers[index].length == 0) {
 				delete this.triggers[index];
@@ -201,6 +199,8 @@ var Nodes = {
 
 			lastindex = index;
 		}
+
+		$("#now").html(this.now / 1000 + " seconds")
 
 		// great! now, let's see if we can find any 'view' changes
 		// we need to reflect onto the network at the current time
@@ -236,7 +236,7 @@ var Nodes = {
 						$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
 					case "newBlock":
-						$("#newblock").prepend('<span style="color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=<span class="height-' + change.h + '">' + change.h + '</span>)<BR />');
+						$("#newblock").prepend('<span style="' + (change.attackmode ? 'background-color:black;' : '') + 'color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=<span class="height-' + change.h + '">' + change.h + '</span>)<BR />');
 						if ($(".height-" + change.h).length > 1) {
 							$(".height-" + change.h).css("font-weight", "bold");
 						}
@@ -280,8 +280,8 @@ var Nodes = {
 		return this.nodes[id];
 	},
 
-	newBlock: function(node, h, rev, color) {
-		this.viewchange("newBlock", {color:color,node:node,h:h,rev:jQuery.extend(true, {}, rev)})
+	newBlock: function(node, h, rev, color, attackmode) {
+		this.viewchange("newBlock", {attackmode:attackmode,color:color,node:node,h:h,rev:jQuery.extend(true, {}, rev)})
 	},
 
 	setColor: function(id, color) {
@@ -496,23 +496,33 @@ Nodes.network = {
 	}
 };
 
+var array_sum = function(a) {
+	var c = 0
+	for (var i=0;i<a.length;i++) {
+		c += a[i]
+	}
+	return c
+}
+
 $(document).ready(function() {
 	var interval = 10;
 	var howmany = 100; // amount of nodes to start with
 	Nodes.init();
 
 	// create a random probability distribution
-	probs = []
+	probs = [.35,.35]
 
-	cp = 0.02;
-	for (var i=0;i<=howmany;i++) {
+	cp = 0.15;
+	for (var i=0;i<(howmany-2);i++) {
 		probs.push(cp)
-		cp = cp * 0.8;
+		cp = cp * 0.5;
 	}
+
+	//alert(array_sum(probs))
 
 	$("#create").click(function() {
 		for (var i=0;i<howmany;i++) {
-			Nodes.add(probs.pop());
+			Nodes.add(probs.shift());
 		}
 	});
 
@@ -546,6 +556,12 @@ $(document).ready(function() {
 		Nodes.nodes[0].actor.maxpeers = 50;
 	})
 
+	$("#halt").click(function() {
+		for (var i=0;i<Nodes.nindex;i++) {
+			Nodes.nodes[i].actor.cmode = false;
+		}
+	})
+
 	$("#attack").click(function() {
 		Nodes.nodes[0].actor.attackmode = !Nodes.nodes[0].actor.attackmode;
 	})
@@ -568,6 +584,6 @@ $(document).ready(function() {
 
 <p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
 
-<p><a id="sybil" href="#">SYBIL ATTACK GO</a> | <a id="attack" href="#">ATTACK TOGGLE</a></p>
+<p><a id="sybil" href="#">SYBIL ATTACK GO</a> | <a id="attack" href="#">ATTACK TOGGLE</a> | <a id="halt" href="#">FREEZE CURRENT CONNECTION STATES</a></p>
 
 </body>

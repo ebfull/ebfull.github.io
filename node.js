@@ -6,16 +6,24 @@ function Node(id, parent, p) {
 	this.npass = 0;
 	this.mprob = p; // probability of mining a block
 
-	this.attackmode = false;
+	if (this.id == 0)
+		this.attackmode = true;
+	else
+		this.attackmode = false;
 
-	this.maxpeers = 8;
+	this.cmode = true; // this is whether the node should accept new connections or try to make new connections
+
+	if (this.id == 0)
+		this.maxpeers = 50;
+	else
+		this.maxpeers = 8;
 
 	// modules
 	this.peers = new PeerMgr(this);
 	this.chain = new Blockchain(this);
 
 	this.tick = function(from, msg) {
-		if (this.peers.amt < this.maxpeers) {
+		if (this.cmode && this.peers.amt < this.maxpeers) {
 			// we don't have eight peers
 			// let's try connecting to a known peer
 
@@ -39,11 +47,6 @@ function Node(id, parent, p) {
 	this.mine = function(from, msg) {
 		if (Math.random() < this.mprob) {
 			this.chain.mined();
-
-			this.parent.newBlock(this, this.chain.h, this.chain.revenue, this.chain.color);
-
-			// tell our other nodes what our new status is
-			this._broadcastStatus();
 		}
 	}
 
@@ -106,7 +109,6 @@ function Node(id, parent, p) {
 
 			if (msg.height > this._getStatus().height) {
 				this.chain.newstate(msg);
-				this._broadcastStatus();
 			}
 		} else {
 			// tell them nope
@@ -129,11 +131,13 @@ function Node(id, parent, p) {
 
 		if (msg.height > this._getStatus().height) {
 			this.chain.newstate(msg);
-			this._broadcastStatus();
 		}
 	}
 
 	this.connect = function(from, msg) {
+		if (!this.cmode)
+			return false;
+
 		if (this.peers.exists(from))
 			return false; // leave me alone, i'm already connected to you
 
