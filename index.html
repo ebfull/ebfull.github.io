@@ -570,6 +570,8 @@ $("#gogogo").click(function() {
 		probs[i] = probs[i] / hrate_total;
 	}
 
+	console.log(array_sum(probs))
+
 	$("#create").click(function() {
 		for (var i=0;i<howmany;i++) {
 			Nodes.add(probs.shift());
