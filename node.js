@@ -4,7 +4,7 @@ function Node(id, parent, p) {
 	this.nodeArchive = [0];
 	this.lock = false;
 	this.npass = 0;
-	this.mprob = p / 10; // probability of mining a block
+	this.mprob = p/100; // probability of mining a block
 
 	if (this.id == 0 && ($("#smattack").is(':checked')))
 		this.attackmode = true;
@@ -13,10 +13,14 @@ function Node(id, parent, p) {
 
 	this.cmode = true; // this is whether the node should accept new connections or try to make new connections
 
-	if (this.id == 0 && ($("#sybil").is(':checked')))
-		this.maxpeers = 95;
-	else
+	if (this.id == 0 && ($("#sybil").is(':checked'))) {
+		this.maxpeers = 999999;
+		this.sybil = true;
+	}
+	else {
 		this.maxpeers = 8;
+		this.sybil = false;
+	}
 
 	// modules
 	this.peers = new PeerMgr(this);
@@ -128,6 +132,9 @@ function Node(id, parent, p) {
 
 	this.newStatus = function(from, msg) {
 		this.peers.set(from, msg); // set the new status of the remote node
+
+		/*if (this.mprob == 0 && this.peers.exists(0) && (this.parent.nodes[0].actor.sybil == true) && from != 0) // we're a sybil zombie! we won't participate in your chain
+			return;*/
 
 		if (msg.height > this._getStatus().height) {
 			this.chain.newstate(msg);

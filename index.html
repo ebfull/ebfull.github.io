@@ -66,10 +66,10 @@ line[y2=NaN] {
 <body>
 Chrome simulates this faster than firefox.<BR /><br />
 <div id="optionpane">
-Node 0 and Node 1 hashing power each: <input id="hashrate" type="range" value="35" min="1", max="49" /> <span id="hashratep">35%</span><br />
+Node 0 hashing power each: <input id="hashrate" type="range" value="35" min="1", max="49" /> <span id="hashratep">35%</span><br />
 Node 0 selfish mining attack? <input type="checkbox" id="smattack" checked><br />
 Node 0 sybil attack? <input type="checkbox" id="sybil" checked><br />
-Freeze connection state after 200 seconds? <input type="checkbox" id="freezestate" checked><br />
+Freeze connection state after 500 seconds? <input type="checkbox" id="freezestate" checked><br />
 <h1><a href="#" id="gogogo">GO</a></h1>
 <script>
 $("#hashrate").change(function() {
@@ -93,6 +93,10 @@ $("#hashrate").change(function() {
 <td bgcolor="gray">&nbsp;&nbsp;</td>
 <td><b>attack log</b>
 <div id="attackLog" style="height:450px;overflow:hidden"></iframe>
+</td>
+<td bgcolor="gray">&nbsp;&nbsp;</td>
+<td><b>attack success</b>
+<div id="attackSuccess" style="height:450px;overflow:hidden"></iframe>
 </td>
 </tr>
 <tr>
@@ -229,7 +233,7 @@ var Nodes = {
 		$("#now").html(this.now / 1000 + " seconds")
 
 		if (!this.alreadyHalted) {
-			if (this.now / 1000 > 200) {
+			if (this.now / 1000 > 500) {
 				if ($("#freezestate").is(':checked')) {
 					for (var i =0;i<this.nindex;i++) {
 						this.nodes[i].actor.cmode = false;
@@ -274,6 +278,9 @@ var Nodes = {
 					case "attackLog":
 						$("#attackLog").prepend(change.data + "<br />")
 					break;
+					case "attackerSuccess":
+						$("#attackSuccess").html((change.rev / change.h * 100) + "% of revenue")
+					break;
 					case "newBlock":
 						$("#newblock").prepend('<span style="' + (change.attackmode ? 'background-color:black;' : '') + 'color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=<span class="height-' + change.h + '">' + change.h + '</span>)<BR />');
 						if ($(".height-" + change.h).length > 1) {
@@ -317,6 +324,10 @@ var Nodes = {
 
 	get:function(id) {
 		return this.nodes[id];
+	},
+
+	attackerSuccess: function(rev, h) {
+		this.viewchange("attackerSuccess", {rev:rev,h:h})
 	},
 
 	newBlock: function(node, h, rev, color, attackmode) {
@@ -552,6 +563,7 @@ $("#gogogo").click(function() {
 	$("#optionpane").css('display', 'none')
 
 	var howmany = 100;
+	//var howmanymore = 100;
 	var interval = 10;
 
 	Nodes.init();
@@ -566,16 +578,16 @@ $("#gogogo").click(function() {
 	}
 
 	hrate_total -= probs[0];
-	hrate_total -= probs[1];
+	//hrate_total -= probs[1];
 
-	var y = 2 * (parseInt($("#hashrate").val())/100);
+	var y = /*2 * */(parseInt($("#hashrate").val())/100);
 
 	var p = y * hrate_total / (1-y)
 
 	hrate_total += p;
 
-	probs[0] = p/2;
-	probs[1] = p/2;
+	probs[0] = p/*/2*/;
+	//probs[1] = p/2;
 
 	for (var i=0;i<howmany;i++) {
 		probs[i] = probs[i] / hrate_total;
@@ -585,6 +597,10 @@ $("#gogogo").click(function() {
 		for (var i=0;i<howmany;i++) {
 			Nodes.add(probs.shift());
 		}
+
+		//for (var i=0;i<howmanymore;i++) {
+		//	Nodes.add(0);
+		//}
 	});
 
 	$("#create").click();

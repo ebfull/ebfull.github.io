@@ -122,6 +122,7 @@ function Blockchain(node) {
 				this.revenue = jQuery.extend(true, {}, this.privatestack[0].revenue);
 
 				this.privatestack = [{h:this.h,color:this.color,revenue:jQuery.extend(true, {}, this.revenue)}]
+				node._broadcastStatus();
 			} else if (this.privatestack[0].h < this.h) { // Is our private chain now behind the public chain?
 				// Adopt the new public chain in our private chainstate.
 
@@ -148,6 +149,8 @@ function Blockchain(node) {
 					this.color = publish.color;
 					this.revenue = jQuery.extend(true, {}, publish.revenue);
 					node.parent.attackLog("publishing partial private chain H=" + this.h);
+
+					node._broadcastStatus();
 				}
 			}
 		} else {
@@ -156,9 +159,8 @@ function Blockchain(node) {
 			this.revenue = jQuery.extend(true, {}, msg.revenue); // is cloning really this retarded in js?
 
 			this.privatestack = [{h:msg.height,color:msg.color,revenue:jQuery.extend(true, {}, msg.revenue)}]
+			node._broadcastStatus();
 		}
-
-		node._broadcastStatus();
 	}
 
 	this.mined = function() {
@@ -177,6 +179,8 @@ function Blockchain(node) {
 
 			this.privatestack.unshift(last); // add to the top of our private chain
 			node.parent.attackLog("mined a new block on private chain (height=" + last.h + ") lead=" + (this.privatestack.length-1));
+
+			node.parent.attackerSuccess(last.revenue[node.id] , last.h)
 		} else {
 			// we're an "honest" miner
 			this.h+=1;
