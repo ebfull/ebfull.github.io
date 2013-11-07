@@ -176,7 +176,7 @@ function Blockchain(node) {
 			node.parent.newBlock(node, last.h, last.revenue, last.color, node.attackmode); // log our new block
 
 			this.privatestack.unshift(last); // add to the top of our private chain
-			node.parent.attackLog("mined a new block on private chain (height=" + last.h + ") chainlength=" + this.privatestack.length);
+			node.parent.attackLog("mined a new block on private chain (height=" + last.h + ") lead=" + (this.privatestack.length-1));
 		} else {
 			// we're an "honest" miner
 			this.h+=1;
