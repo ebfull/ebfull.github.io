@@ -207,14 +207,14 @@ var Nodes = {
 			this.resettriggers = false;
 			// assumes keys are sorted:
 
-			//for (var index in this.triggers) {
+			for (var index in this.triggers) {
 			// if they're not?
 			// ECMASCRIPT 5 TO THE RESCUE
 
-			var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+			//var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
 
-			for (var index_key in sorted_keys) {
-				var index = sorted_keys[index_key]
+			//for (var index_key in sorted_keys) {
+				//var index = sorted_keys[index_key]
 
 				index = parseInt(index)
 				//if (index < lastindex)
