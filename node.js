@@ -4,7 +4,7 @@ function Node(id, parent, p) {
 	this.nodeArchive = [0];
 	this.lock = false;
 	this.npass = 0;
-	this.mprob = p/100; // probability of mining a block
+	this.mprob = p/25; // probability of mining a block
 
 	if (this.id == 0 && ($("#smattack").is(':checked')))
 		this.attackmode = true;

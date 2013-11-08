@@ -187,7 +187,8 @@ var Nodes = {
 		this.triggers[this.now+parseInt(latency)].push(e);
 
 		// adding a new trigger means the current simulation needs to start over and iterate the triggers again
-		this.resettriggers = this.now+parseInt(latency);
+		if ((this.resettriggers == false) && ((this.now+parseInt(latency)) < this.resettriggers))
+			this.resettriggers = this.now+parseInt(latency);
 	},
 
 	// buffer describes the tolerance of this.now from the start to finish of exec
@@ -199,57 +200,65 @@ var Nodes = {
 		// executes a trigger
 		var starttime = this.now;
 
-		var lastindex = 0;
+		//var lastindex = 0;
 
 		wtfthisactuallyworks:
 		while (true) {
 			this.resettriggers = false;
 			// assumes keys are sorted:
-			for (var index in this.triggers) {
+
+			//for (var index in this.triggers) {
 			// if they're not?
 			// ECMASCRIPT 5 TO THE RESCUE
 
-			//var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+			var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
 
-			//for (var index_key in sorted_keys) {
-			//	var index = sorted_keys[index_key]
+			for (var index_key in sorted_keys) {
+				var index = sorted_keys[index_key]
 
 				index = parseInt(index)
-				if (index < lastindex)
-					alert("WTF")
+				//if (index < lastindex)
+				//	alert("WTF")
+
+				//if (index < starttime) {
+					//alert("FAG")
+					//break wtfthisactuallyworks;
+				//}
 
 				if ((starttime+buffer) <= index) {
 					// let's do a buffer's worth of tasks
 					// or skip a buffer's worth of time instead
 					// or both!
-					this.now+=buffer;
+					this.now=starttime+buffer;
 					break wtfthisactuallyworks;
 				}
 
 				this.now = index;
 				$("#now").html(this.now / 1000 + " seconds")
+
+				justthisone:
 				while (true) {
 					var val = this.triggers[index].pop()
 					if (typeof val == "undefined") {
 						delete this.triggers[index];
-						break;
+						break justthisone;
 					} else {
 						val();
 					}
 				}
 
-				lastindex = index;
+				//lastindex = index;
 
 				// i guess we need to do this, because we're iterating the object
 				// while we add new tasks to this "buffer" of the simulation
 				// and we weren't accounting for it before
-				if ((starttime+buffer) <= this.resettriggers) {
-					//console.log("resetting triggers");
+				if (this.resettriggers && ((starttime+buffer) >= this.resettriggers)) {
+					console.log("resetting triggers");
 					continue wtfthisactuallyworks;
 				}
 			}
 
-			break;
+			// break;
 		}
 
 		if (!this.alreadyHalted) {
@@ -264,6 +273,8 @@ var Nodes = {
 
 		// great! now, let's see if we can find any 'view' changes
 		// we need to reflect onto the network at the current time
+
+		var qrehash = false;
 
 		for (var index in this.viewchanges) {
 
@@ -289,9 +300,11 @@ var Nodes = {
 
 				switch(change.type) {
 					case "disconnect":
+						qrehash = true;
 						this.network.disconnect(this.get(change.a).networkid, this.get(change.b).networkid);
 					break;
 					case "connect":
+						qrehash = true;
 						this.network.connect(this.get(change.a).networkid, this.get(change.b).networkid);
 					break;
 					case "setColor":
@@ -341,13 +354,14 @@ var Nodes = {
 					break;
 				}
 
-				this.network.rehash();
+				//this.network.rehash();
 			}
 
 			delete this.viewchanges[index]
 		}
 
-		this.network.rehash();
+		if (qrehash)
+			this.network.rehash();
 	},
 
 	get:function(id) {
@@ -654,7 +668,7 @@ $("#gogogo").click(function() {
 	})
 
 	$("#fastestest").click(function() {
-		interval = 100000;
+		interval = 1000000;
 	})
 
 	$("#sybil").click(function() {
