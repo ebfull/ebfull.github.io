@@ -239,6 +239,7 @@ function Blockchain(node) {
 		c.history.unshift(guid())
 
 		node.parent.newBlock(node, c.h, c.revenue, c.color, node.attackmode, c.history);
+
 		if (node.attackmode == true) {
 			this.privatestack.unshift(c);
 			node.parent.attackLog("mined a new block on private chain (height=" + c.h + ") lead=" + (this.privatestack.length-1));
