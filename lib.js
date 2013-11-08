@@ -105,7 +105,7 @@ function Blockchain(node) {
 	this.history = ["genesis"];
 	this.competing = {"genesis":true};
 
-	this.privatestack = [{h : this.h, color: this.color, history: this.history.slice(0), revenue: JSON.parse(JSON.stringify(this.revenue))}]
+	this.privatestack = [{h : this.h, color: this.color, history: this.history.slice(0,50), revenue: JSON.parse(JSON.stringify(this.revenue))}]
 
 	this.height = function() {
 		return this.h;
@@ -153,7 +153,7 @@ function Blockchain(node) {
 			this.h = msg.h;
 			this.color = msg.color;
 			this.revenue = JSON.parse(JSON.stringify(msg.revenue));
-			this.history = msg.history.slice(0);
+			this.history = msg.history.slice(0,50);
 
 			if (this.privatestack[0].h == this.h || this.privatestack[0].h == (this.h+1)) { // Is our private chainstate in close competition?
 				node.parent.attackLog("publishing our private chain (H=" + this.privatestack[0].h + ") (public H=" + this.h + ")");
@@ -162,14 +162,14 @@ function Blockchain(node) {
 				this.h = this.privatestack[0].h;
 				this.color = this.privatestack[0].color;
 				this.revenue = JSON.parse(JSON.stringify(this.privatestack[0].revenue));
-				this.history = this.privatestack[0].history.slice(0)
+				this.history = this.privatestack[0].history.slice(0,50)
 
-				this.privatestack = [{h:this.h,color:this.color,history:this.history.slice(0),revenue:JSON.parse(JSON.stringify(this.revenue))}]
+				this.privatestack = [{h:this.h,color:this.color,history:this.history.slice(0,50),revenue:JSON.parse(JSON.stringify(this.revenue))}]
 				node._broadcastStatus();
 			} else if (this.privatestack[0].h < this.h) { // Is our private chain now behind the public chain?
 				// Adopt the new public chain in our private chainstate.
 
-				this.privatestack = [{h:this.h,color:this.color,history:this.history.slice(0),revenue:JSON.parse(JSON.stringify(this.revenue))}]
+				this.privatestack = [{h:this.h,color:this.color,history:this.history.slice(0,50),revenue:JSON.parse(JSON.stringify(this.revenue))}]
 				node.parent.attackLog("adopting public chain H=" + this.h);
 			} else {
 				// We're ahead, let's pop from the privatestack until we reach above the height of the public chain.
@@ -191,7 +191,7 @@ function Blockchain(node) {
 					this.h = publish.h;
 					this.color = publish.color;
 					this.revenue = JSON.parse(JSON.stringify(publish.revenue));
-					this.history = publish.history.slice(0);
+					this.history = publish.history.slice(0,50);
 					
 					node.parent.attackLog("publishing partial private chain H=" + this.h);
 
@@ -202,9 +202,9 @@ function Blockchain(node) {
 			this.h = msg.h;
 			this.color = msg.color;
 			this.revenue = JSON.parse(JSON.stringify(msg.revenue)); // is cloning really this retarded in js?
-			this.history = msg.history.slice(0); // is cloning really this retarded in js?
+			this.history = msg.history.slice(0, 50); // is cloning really this retarded in js?
 
-			this.privatestack = [{h:msg.h,color:msg.color,history:msg.history.slice(0),revenue:JSON.parse(JSON.stringify(msg.revenue))}]
+			this.privatestack = [{h:msg.h,color:msg.color,history:msg.history.slice(0, 50),revenue:JSON.parse(JSON.stringify(msg.revenue))}]
 			node._broadcastStatus();
 		}
 	}
@@ -234,7 +234,7 @@ function Blockchain(node) {
 			c.revenue[node.id] = 0;
 		}
 		c.revenue[node.id]+=1;
-		c.history = c.history.slice(0)
+		c.history = c.history.slice(0, 50)
 		c.history.unshift(guid())
 
 		node.parent.newBlock(node, c.h, c.revenue, c.color, node.attackmode, c.history);
