@@ -350,7 +350,7 @@ var Nodes = {
 						$("#attackSuccess").html((change.rev / change.h * 100) + "% of revenue")
 					break;
 					case "newBlock":
-						$("#newblock").prepend('<span class="block" id="' + (change.history[0]) + '"><span style="' + (change.attackmode ? 'background-color:black;' : '') + 'color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=<span class="height-' + change.h + '">' + change.h + '</span>)</span><BR />');
+						$("#newblock").prepend('<span class="block" id="' + (change.history[0]) + '"><span style="' + (change.attackmode ? 'background-color:black;' : '') + 'color:' + change.color + '">node ' + change.node.id + ' (' + ((change.node.mprob*100)).toFixed(2) + '%)</span> mined a block (H=<span class="height-' + change.h + '">' + change.h + '</span>)<BR /></span>');
 						if ($(".height-" + change.h).length > 1) {
 							$(".height-" + change.h).css("font-weight", "bold");
 						}
@@ -372,7 +372,7 @@ var Nodes = {
 		if (qrehash)
 			this.network.rehash();
 
-
+		$("#newblock .block").slice(60).remove();
 		$("#revenue").html("<table><tr><td>" + this.revchart(this.bestrev) + "</td></tr></table>");
 		$(".block").each(function() {
 			$(this).css('text-decoration', 'line-through')
