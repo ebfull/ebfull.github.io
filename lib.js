@@ -118,7 +118,6 @@ function Blockchain(node) {
 
 	this.newstate = function(msg) {
 		if (msg.h < this.h) {
-			console.log("ignoring " + msg.history[0])
 			return;
 		}
 
