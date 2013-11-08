@@ -84,6 +84,10 @@ function PeerMgr(node) {
 	}
 };
 
+function getRandomInt (min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function s4() {
   return Math.floor((1 + Math.random()) * 0x10000)
              .toString(16)
@@ -100,6 +104,7 @@ function Blockchain(node) {
 	this.color = "black";
 	this.revenue = {};
 	this.history = ["genesis"];
+	this.competing = {"genesis":true};
 
 	this.privatestack = [{h : this.h, color: this.color, history: jQuery.extend(true, [], this.history), revenue: jQuery.extend(true, {}, this.revenue)}]
 
@@ -108,12 +113,34 @@ function Blockchain(node) {
 	}
 
 	this.chainstate = function() {
-		return {height:this.h,color:this.color,revenue:this.revenue,history:this.history};
+		return {h:this.h,color:this.color,revenue:this.revenue,history:this.history};
 	}
 
 	this.newstate = function(msg) {
-		if (msg.height <= this.h) {
+		if (msg.h < this.h) {
+			console.log("ignoring " + msg.history[0])
 			return;
+		}
+
+		if ($("#patch").is(':checked')) {
+			if (msg.h == this.h) {
+				if (node.attackmode == true)
+					return;
+
+				if ((typeof this.competing[msg.history[0]]) == "undefined") {
+					this.competing[msg.history[0]] = msg;
+				} else {
+					return;
+				}
+			}
+
+			if (msg.h > this.h) {
+				this.competing = {};
+				this.competing[msg.history[0]] = msg;
+			}
+		} else {
+			if (msg.h == this.h)
+				return;
 		}
 
 		if (node.attackmode == true) {
@@ -125,7 +152,7 @@ function Blockchain(node) {
 			// publish our chainstate at the public chainstate's height.
 
 			// append new block to public chain
-			this.h = msg.height;
+			this.h = msg.h;
 			this.color = msg.color;
 			this.revenue = jQuery.extend(true, {}, msg.revenue);
 			this.history = jQuery.extend(true, [], msg.history);
@@ -174,47 +201,62 @@ function Blockchain(node) {
 				}
 			}
 		} else {
-			this.h = msg.height;
+			this.h = msg.h;
 			this.color = msg.color;
 			this.revenue = jQuery.extend(true, {}, msg.revenue); // is cloning really this retarded in js?
 			this.history = jQuery.extend(true, [], msg.history); // is cloning really this retarded in js?
 
-			this.privatestack = [{h:msg.height,color:msg.color,history:jQuery.extend(true, [], msg.history),revenue:jQuery.extend(true, {}, msg.revenue)}]
+			this.privatestack = [{h:msg.h,color:msg.color,history:jQuery.extend(true, [], msg.history),revenue:jQuery.extend(true, {}, msg.revenue)}]
 			node._broadcastStatus();
 		}
 	}
 
 	this.mined = function() {
-		if (node.attackmode == true) {
-			// if we're in attack mode, we're always mining on our private chain
-			var last = jQuery.extend(true, {}, this.privatestack[0]);
-			last.h+=1;
-			last.color = node.parent.rcolor();
-			last.revenue = jQuery.extend(true, {}, last.revenue);
-			if (typeof last.revenue[node.id] == "undefined") {
-				last.revenue[node.id] = 0;
+		var c;
+		var broadcast = false;
+
+		if (node.attackmode == false) {
+			// We're an honest node!
+			if (Object.keys(this.competing).length > 1) {
+				// there's competing chains, let's mine on all of them evenly
+				var i = getRandomInt(0, Object.keys(this.competing).length-1);
+				c = this.competing[Object.keys(this.competing)[i]];
+			} else {
+				c = this; // tricky
 			}
-			last.revenue[node.id]+=1;
-			last.history = jQuery.extend(true, [], last.history);
-			last.history.unshift(guid())
-
-			node.parent.newBlock(node, last.h, last.revenue, last.color, node.attackmode, last.history); // log our new block
-
-			this.privatestack.unshift(last); // add to the top of our private chain
-			node.parent.attackLog("mined a new block on private chain (height=" + last.h + ") lead=" + (this.privatestack.length-1));
-
-			node.parent.attackerSuccess(last.revenue[node.id] , last.h)
 		} else {
-			// we're an "honest" miner
-			this.h+=1;
-			this.color = node.parent.rcolor();
-			if (typeof this.revenue[node.id] == "undefined") {
-				this.revenue[node.id] = 0
-			}
-			this.revenue[node.id]+=1;
-			this.history.unshift(guid())
+			// we're an attacker, so we're mining exclusively on our private chain
+			c = this.privatestack[0];
+		}
 
-			node.parent.newBlock(node, this.h, this.revenue, this.color, node.attackmode, this.history);
+		c.h+=1;
+		c.color = node.parent.rcolor();
+		c.revenue = jQuery.extend(true, {}, c.revenue);
+		if (typeof c.revenue[node.id] == "undefined") {
+			c.revenue[node.id] = 0;
+		}
+		c.revenue[node.id]+=1;
+		c.history = jQuery.extend(true, [], c.history)
+		c.history.unshift(guid())
+
+		node.parent.newBlock(node, c.h, c.revenue, c.color, node.attackmode, c.history);
+		if (node.attackmode == true) {
+			this.privatestack.unshift(c);
+			node.parent.attackLog("mined a new block on private chain (height=" + c.h + ") lead=" + (this.privatestack.length-1));
+			node.parent.attackerSuccess(c.revenue[node.id] , c.h);
+
+			if (broadcast) {
+				this.h = c.h;
+				this.color = c.color;
+				this.revenue = c.revenue;
+				this.history = c.history;
+				node._broadcastStatus();
+			}
+		} else {
+			this.h = c.h;
+			this.color = c.color;
+			this.revenue = c.revenue;
+			this.history = c.history;
 			node._broadcastStatus();
 		}
 	}

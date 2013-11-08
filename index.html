@@ -70,6 +70,7 @@ Node 0 hashing power each: <input id="hashrate" type="range" value="35" min="1",
 Node 0 selfish mining attack? <input type="checkbox" id="smattack" checked><br />
 Node 0 sybil attack? <input type="checkbox" id="sybil" checked><br />
 Freeze connection state after 500 seconds? <input type="checkbox" id="freezestate" checked><br />
+Enable "patch" for SM attack? <input type="checkbox" id="patch"><br />
 <h1><a href="#" id="gogogo">GO</a></h1>
 <script>
 $("#hashrate").change(function() {
@@ -174,7 +175,7 @@ var Nodes = {
 		var parent = this;
 
 		var e = function() {
-			//console.log("RUNNING " + name + " ON " + toid + " FROM " + fromid + ": " + JSON.stringify(obj))
+			console.log("RUNNING " + name + " ON " + toid + " FROM " + fromid + ": " + JSON.stringify(obj))
 
 			if (parent.nodes.hasOwnProperty(toid))
 				parent.nodes[toid].actor[name](fromid, obj);
@@ -243,7 +244,7 @@ var Nodes = {
 				// while we add new tasks to this "buffer" of the simulation
 				// and we weren't accounting for it before
 				if ((starttime+buffer) <= this.resettriggers) {
-					console.log("resetting triggers");
+					//console.log("resetting triggers");
 					continue wtfthisactuallyworks;
 				}
 			}
