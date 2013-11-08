@@ -64,7 +64,7 @@ line[y2=NaN] {
 </style>
 </head>
 <body>
-Chrome simulates this faster than firefox.<BR /><br />
+<h1>TESTED ON CHROME ONLY</h1><BR /><br />
 <div id="optionpane">
 Node 0 hashing power each: <input id="hashrate" type="range" value="35" min="1", max="49" /> <span id="hashratep">35%</span><br />
 Node 0 selfish mining attack? <input type="checkbox" id="smattack" checked><br />
@@ -124,6 +124,7 @@ var Nodes = {
 	viewchanges:[], // view changes are events that are imposed on the network object
 
 	triggers:[], // triggers are events that execute at certain times
+	resettriggers:false,
 
 	besth:1,
 	icolor:0,
@@ -183,6 +184,9 @@ var Nodes = {
 			this.triggers[this.now+parseInt(latency)] = [];
 
 		this.triggers[this.now+parseInt(latency)].push(e);
+
+		// adding a new trigger means the current simulation needs to start over and iterate the triggers again
+		this.resettriggers = this.now+parseInt(latency);
 	},
 
 	// buffer describes the tolerance of this.now from the start to finish of exec
@@ -194,43 +198,58 @@ var Nodes = {
 		// executes a trigger
 		var starttime = this.now;
 
-		// assumes keys are sorted:
-		//for (var index in this.triggers) {
-		// if they're not?
-		// ECMASCRIPT 5 TO THE RESCUE
-
-		var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
-
 		var lastindex = 0;
 
-		for (var index_key in sorted_keys) {
-			var index = sorted_keys[index_key]
+		wtfthisactuallyworks:
+		while (true) {
+			this.resettriggers = false;
+			// assumes keys are sorted:
+			for (var index in this.triggers) {
+			// if they're not?
+			// ECMASCRIPT 5 TO THE RESCUE
 
-			index = parseInt(index)
-			if (index < lastindex)
-				alert("WTF")
+			//var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
 
-			if ((starttime+buffer) <= index) {
-				// let's do a buffer's worth of tasks
-				// or skip a buffer's worth of time instead
-				// or both!
-				this.now+=buffer;
-				break;
+			//for (var index_key in sorted_keys) {
+			//	var index = sorted_keys[index_key]
+
+				index = parseInt(index)
+				if (index < lastindex)
+					alert("WTF")
+
+				if ((starttime+buffer) <= index) {
+					// let's do a buffer's worth of tasks
+					// or skip a buffer's worth of time instead
+					// or both!
+					this.now+=buffer;
+					break wtfthisactuallyworks;
+				}
+
+				this.now = index;
+				$("#now").html(this.now / 1000 + " seconds")
+				while (true) {
+					var val = this.triggers[index].pop()
+					if (typeof val == "undefined") {
+						delete this.triggers[index];
+						break;
+					} else {
+						val();
+					}
+				}
+
+				lastindex = index;
+
+				// i guess we need to do this, because we're iterating the object
+				// while we add new tasks to this "buffer" of the simulation
+				// and we weren't accounting for it before
+				if ((starttime+buffer) <= this.resettriggers) {
+					console.log("resetting triggers");
+					continue wtfthisactuallyworks;
+				}
 			}
 
-			this.now = index;
-			$("#now").html(this.now / 1000 + " seconds")
-			var val = this.triggers[index].pop()
-			if (this.triggers[index].length == 0) {
-				delete this.triggers[index];
-			}
-
-			val();
-
-			lastindex = index;
+			break;
 		}
-
-		$("#now").html(this.now / 1000 + " seconds")
 
 		if (!this.alreadyHalted) {
 			if (this.now / 1000 > 500) {
@@ -245,10 +264,12 @@ var Nodes = {
 		// great! now, let's see if we can find any 'view' changes
 		// we need to reflect onto the network at the current time
 
-		var sorted_keys = Object.keys(this.viewchanges).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+		for (var index in this.viewchanges) {
 
-		for (var index_key in sorted_keys) {
-			var index = sorted_keys[index_key]
+		//var sorted_keys = Object.keys(this.viewchanges).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+
+		//for (var index_key in sorted_keys) {
+		//	var index = sorted_keys[index_key]
 			index = parseInt(index)
 
 
