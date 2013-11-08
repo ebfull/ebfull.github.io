@@ -118,6 +118,7 @@ var Nodes = {
 	tindex: 50,
 	runlock:false,
 	con:0,
+	interval:10,
 	queue:[],
 	active:false,
 	alreadyHalted:false,
@@ -128,6 +129,10 @@ var Nodes = {
 	resettriggers:false,
 
 	besth:1,
+	bestrev:{},
+	besthistory:[],
+
+
 	icolor:0,
 	colors:["red","green","blue","purple","orange","chartreuse","darkred","dodgerblue"],
 
@@ -174,12 +179,16 @@ var Nodes = {
 
 		var parent = this;
 
+		
+		var e = {toid:toid,fromid:fromid,name:name,obj:obj};
+		/*
 		var e = function() {
 			//console.log("RUNNING " + name + " ON " + toid + " FROM " + fromid + ": " + JSON.stringify(obj))
 
 			if (parent.nodes.hasOwnProperty(toid))
 				parent.nodes[toid].actor[name](fromid, obj);
 		}
+		*/
 
 		if (typeof(this.triggers[this.now+parseInt(latency)]) == "undefined")
 			this.triggers[this.now+parseInt(latency)] = [];
@@ -196,7 +205,26 @@ var Nodes = {
 	// we can do that
 	// viewchanges that are shown will also be, then, 10 seconds behind the simulation at most
 
-	exec:function(buffer) {
+	revchart: function(r) {
+		var res = "";
+		// sort r
+		var n = [];
+		for (var id in r) {
+			n.push({id:id,rev:r[id]})
+		}
+		n.sort(function(a,b) {
+			if (a.rev == b.rev) return 0;
+
+			return a.rev > b.rev ? -1 : 1;
+		})
+		for (var i=0;i<n.length;i++) {
+			res += n[i].id + " : " + n[i].rev + "<br />";
+		}
+		return res;
+	},
+
+	exec:function() {
+		var buffer = this.interval;
 		// executes a trigger
 		var starttime = this.now;
 
@@ -234,16 +262,19 @@ var Nodes = {
 				}
 
 				this.now = index;
-				$("#now").html(this.now / 1000 + " seconds")
+				//$("#now").html(this.now / 1000 + " seconds")
 
 				justthisone:
 				while (true) {
-					var val = this.triggers[index].pop()
+					var val = this.triggers[index].shift()
 					if (typeof val == "undefined") {
 						delete this.triggers[index];
 						break justthisone;
 					} else {
-						val();
+						// val();
+						if (this.nodes.hasOwnProperty(val.toid)) {
+							this.nodes[val.toid].actor[val.name](val.fromid, val.obj);
+						}
 					}
 				}
 
@@ -260,6 +291,8 @@ var Nodes = {
 
 			// break;
 		}
+
+		$("#now").html(this.now / 1000 + " seconds")
 
 		if (!this.alreadyHalted) {
 			if (this.now / 1000 > 500) {
@@ -321,35 +354,11 @@ var Nodes = {
 						if ($(".height-" + change.h).length > 1) {
 							$(".height-" + change.h).css("font-weight", "bold");
 						}
-						var revchart = function(r) {
-							var res = "";
-							// sort r
-							var n = [];
-							for (var id in r) {
-								n.push({id:id,rev:r[id]})
-							}
-							n.sort(function(a,b) {
-								if (a.rev == b.rev) return 0;
-
-								return a.rev > b.rev ? -1 : 1;
-							})
-							for (var i=0;i<n.length;i++) {
-								res += n[i].id + " : " + n[i].rev + "<br />";
-							}
-							return res;
-						}
 
 						if (this.besth < change.h) {
 							this.besth = change.h;
-							$("#revenue").html("<table><tr><td>" + revchart(change.rev) + "</td></tr></table>");
-							$(".block").each(function() {
-								$(this).css('text-decoration', 'line-through')
-							});
-							for (var i=0;i<change.history.length;i++) {
-								$("#" + change.history[i]).css('text-decoration', 'none')
-							}
-						} else if (this.besth == change.h) {
-							$("#revenue table tr").append("<td bgcolor='black'>&nbsp;</td><td>" + revchart(change.rev) + "</td>");
+							this.bestrev = change.rev;
+							this.besthistory = change.history;
 						}
 					break;
 				}
@@ -362,6 +371,15 @@ var Nodes = {
 
 		if (qrehash)
 			this.network.rehash();
+
+
+		$("#revenue").html("<table><tr><td>" + this.revchart(this.bestrev) + "</td></tr></table>");
+		$(".block").each(function() {
+			$(this).css('text-decoration', 'line-through')
+		});
+		for (var i=0;i<this.besthistory.length;i++) {
+			$("#" + this.besthistory[i]).css('text-decoration', 'none')
+		}
 	},
 
 	get:function(id) {
@@ -606,7 +624,6 @@ $("#gogogo").click(function() {
 
 	var howmany = 100;
 	//var howmanymore = 100;
-	var interval = 10;
 
 	Nodes.init();
 
@@ -652,23 +669,23 @@ $("#gogogo").click(function() {
 	});
 
 	$("#normal").click(function() {
-		interval = 10;
+		Nodes.interval = 10;
 	})
 
 	$("#fast").click(function() {
-		interval = 100;
+		Nodes.interval = 100;
 	})
 
 	$("#faster").click(function() {
-		interval = 1000;
+		Nodes.interval = 1000;
 	})
 
 	$("#fastest").click(function() {
-		interval = 10000;
+		Nodes.interval = 10000;
 	})
 
 	$("#fastestest").click(function() {
-		interval = 1000000;
+		Nodes.interval = 1000000;
 	})
 
 	$("#sybil").click(function() {
@@ -685,17 +702,7 @@ $("#gogogo").click(function() {
 		Nodes.nodes[0].actor.attackmode = !Nodes.nodes[0].actor.attackmode;
 	})
 
-	running_exec = false;
-
-	setInterval(function() {
-		if (!running_exec) {
-			running_exec = true;
-			Nodes.exec(interval)
-			running_exec = false;
-		} else {
-			alert("RACE CONDITION")
-		}
-	}, 10);
+	setInterval(function() {Nodes.exec(); }, 10);
 })
 
 </script>
