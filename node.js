@@ -111,9 +111,7 @@ function Node(id, parent, p) {
 			// the height of the remote node may be higher than ours
 			this.peers.set(from, msg); // set the new status of the remote node
 
-			if (msg.height > this._getStatus().height) {
-				this.chain.newstate(msg);
-			}
+			this.chain.newstate(msg); // mine on top of this instead
 		} else {
 			// tell them nope
 			this.getpeer(from, {});
@@ -133,12 +131,7 @@ function Node(id, parent, p) {
 	this.newStatus = function(from, msg) {
 		this.peers.set(from, msg); // set the new status of the remote node
 
-		/*if (this.mprob == 0 && this.peers.exists(0) && (this.parent.nodes[0].actor.sybil == true) && from != 0) // we're a sybil zombie! we won't participate in your chain
-			return;*/
-
-		if (msg.height > this._getStatus().height) {
-			this.chain.newstate(msg);
-		}
+		this.chain.newstate(msg); // mine on top of this instead
 	}
 
 	this.connect = function(from, msg) {

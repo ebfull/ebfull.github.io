@@ -84,22 +84,38 @@ function PeerMgr(node) {
 	}
 };
 
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1);
+};
+
+function guid() {
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+         s4() + '-' + s4() + s4() + s4();
+}
+
 function Blockchain(node) {
 	this.h = 1;
 	this.color = "black";
 	this.revenue = {};
+	this.history = ["genesis"];
 
-	this.privatestack = [{h : 1, color: "black", revenue: {}}]
+	this.privatestack = [{h : this.h, color: this.color, history: jQuery.extend(true, [], this.history), revenue: jQuery.extend(true, {}, this.revenue)}]
 
 	this.height = function() {
 		return this.h;
 	}
 
 	this.chainstate = function() {
-		return {height:this.h,color:this.color,revenue:this.revenue};
+		return {height:this.h,color:this.color,revenue:this.revenue,history:this.history};
 	}
 
 	this.newstate = function(msg) {
+		if (msg.height <= this.h) {
+			return;
+		}
+
 		if (node.attackmode == true) {
 			/***** ATTACK MODE *****/
 			// In attack mode, when we receive a new chainstate, we need to compare it with our private
@@ -112,6 +128,7 @@ function Blockchain(node) {
 			this.h = msg.height;
 			this.color = msg.color;
 			this.revenue = jQuery.extend(true, {}, msg.revenue);
+			this.history = jQuery.extend(true, [], msg.history);
 
 			if (this.privatestack[0].h == this.h || this.privatestack[0].h == (this.h+1)) { // Is our private chainstate in close competition?
 				node.parent.attackLog("publishing our private chain (H=" + this.privatestack[0].h + ") (public H=" + this.h + ")");
@@ -120,13 +137,14 @@ function Blockchain(node) {
 				this.h = this.privatestack[0].h;
 				this.color = this.privatestack[0].color;
 				this.revenue = jQuery.extend(true, {}, this.privatestack[0].revenue);
+				this.history = jQuery.extend(true, [], this.privatestack[0].history);
 
-				this.privatestack = [{h:this.h,color:this.color,revenue:jQuery.extend(true, {}, this.revenue)}]
+				this.privatestack = [{h:this.h,color:this.color,history:jQuery.extend(true, {}, this.history),revenue:jQuery.extend(true, [], this.revenue)}]
 				node._broadcastStatus();
 			} else if (this.privatestack[0].h < this.h) { // Is our private chain now behind the public chain?
 				// Adopt the new public chain in our private chainstate.
 
-				this.privatestack = [{h:this.h,color:this.color,revenue:jQuery.extend(true, {}, this.revenue)}]
+				this.privatestack = [{h:this.h,color:this.color,history:jQuery.extend(true, {}, this.history),revenue:jQuery.extend(true, [], this.revenue)}]
 				node.parent.attackLog("adopting public chain H=" + this.h);
 			} else {
 				// We're ahead, let's pop from the privatestack until we reach above the height of the public chain.
@@ -148,6 +166,8 @@ function Blockchain(node) {
 					this.h = publish.h;
 					this.color = publish.color;
 					this.revenue = jQuery.extend(true, {}, publish.revenue);
+					this.history = jQuery.extend(true, [], publish.history);
+					
 					node.parent.attackLog("publishing partial private chain H=" + this.h);
 
 					node._broadcastStatus();
@@ -157,8 +177,9 @@ function Blockchain(node) {
 			this.h = msg.height;
 			this.color = msg.color;
 			this.revenue = jQuery.extend(true, {}, msg.revenue); // is cloning really this retarded in js?
+			this.history = jQuery.extend(true, [], msg.history); // is cloning really this retarded in js?
 
-			this.privatestack = [{h:msg.height,color:msg.color,revenue:jQuery.extend(true, {}, msg.revenue)}]
+			this.privatestack = [{h:msg.height,color:msg.color,history:jQuery.extend(true, [], msg.history),revenue:jQuery.extend(true, {}, msg.revenue)}]
 			node._broadcastStatus();
 		}
 	}
@@ -174,8 +195,10 @@ function Blockchain(node) {
 				last.revenue[node.id] = 0;
 			}
 			last.revenue[node.id]+=1;
+			last.history = jQuery.extend(true, [], last.history);
+			last.history.unshift(guid())
 
-			node.parent.newBlock(node, last.h, last.revenue, last.color, node.attackmode); // log our new block
+			node.parent.newBlock(node, last.h, last.revenue, last.color, node.attackmode, last.history); // log our new block
 
 			this.privatestack.unshift(last); // add to the top of our private chain
 			node.parent.attackLog("mined a new block on private chain (height=" + last.h + ") lead=" + (this.privatestack.length-1));
@@ -189,8 +212,9 @@ function Blockchain(node) {
 				this.revenue[node.id] = 0
 			}
 			this.revenue[node.id]+=1;
+			this.history.unshift(guid())
 
-			node.parent.newBlock(node, this.h, this.revenue, this.color, node.attackmode);
+			node.parent.newBlock(node, this.h, this.revenue, this.color, node.attackmode, this.history);
 			node._broadcastStatus();
 		}
 	}
