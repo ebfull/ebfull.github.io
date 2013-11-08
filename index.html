@@ -66,6 +66,7 @@ line[y2=NaN] {
 <body>
 <h1>TESTED ON CHROME ONLY</h1><BR /><br />
 <div id="optionpane">
+Visualize (graph, slower): <input type="checkbox" id="visualize" checked><br />
 Node 0 hashing power each: <input id="hashrate" type="range" value="35" min="1", max="49" /> <span id="hashratep">35%</span><br />
 Node 0 selfish mining attack? <input type="checkbox" id="smattack" checked><br />
 Node 0 sybil attack? <input type="checkbox" id="sybil" checked><br />
@@ -96,7 +97,7 @@ $("#hashrate").change(function() {
 <div id="attackLog" style="height:450px;overflow:hidden"></iframe>
 </td>
 <td bgcolor="gray">&nbsp;&nbsp;</td>
-<td><b>attack success</b>
+<td><b>node 0</b>
 <div id="attackSuccess" style="height:450px;overflow:hidden"></iframe>
 </td>
 </tr>
@@ -104,9 +105,9 @@ $("#hashrate").change(function() {
 <td colspan=3>
 	<p>Now (simulation): <b><span id="now" style="text-align:center"></span></b></p>
 
-	<p><a id="create" href="#">add nodes (non mining)</a> | <a id="stop" href="#">stop everything</a> </p>
+	<p><a id="create" href="#">add nodes (non mining)</a> | <a id="stop" href="#">halt events</a> </p>
 
-	<p>Speed: <a id="normal" href="#">default</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> <a id="fastestest" href="#">fastestest</a></p>
+	<p>Speed: <a id="normal" href="#">default</a> <a id="faster" href="#">faster</a> <a id="slower" href="#">slower</a></p>
 </td>
 </tr>
 </table>
@@ -127,6 +128,8 @@ var Nodes = {
 
 	triggers:[], // triggers are events that execute at certain times
 	resettriggers:false,
+
+	visualize:false,
 
 	besth:1,
 	bestrev:{},
@@ -334,17 +337,20 @@ var Nodes = {
 				switch(change.type) {
 					case "disconnect":
 						qrehash = true;
-						this.network.disconnect(this.get(change.a).networkid, this.get(change.b).networkid);
+						if (this.visualize)
+							this.network.disconnect(this.get(change.a).networkid, this.get(change.b).networkid);
 					break;
 					case "connect":
 						qrehash = true;
-						this.network.connect(this.get(change.a).networkid, this.get(change.b).networkid);
+						if (this.visualize)
+							this.network.connect(this.get(change.a).networkid, this.get(change.b).networkid);
 					break;
 					case "setColor":
-						$(".n" + this.get(change.id).networkid).css('fill', change.color);
+						if (this.visualize)
+							$(".n" + this.get(change.id).networkid).css('fill', change.color);
 					break;
 					case "attackLog":
-						$("#attackLog").prepend(change.data + "<br />")
+						$("#attackLog").prepend('<span class="noteven">' + change.data + "<br /></span>")
 					break;
 					case "attackerSuccess":
 						$("#attackSuccess").html((change.rev / change.h * 100) + "% of revenue")
@@ -359,6 +365,9 @@ var Nodes = {
 							this.besth = change.h;
 							this.bestrev = change.rev;
 							this.besthistory = change.history;
+
+							if (typeof change.rev[0] != 'undefined')
+								$("#attackSuccess").html((change.rev[0] / change.h * 100) + "% of revenue")
 						}
 					break;
 				}
@@ -369,10 +378,11 @@ var Nodes = {
 			delete this.viewchanges[index]
 		}
 
-		if (qrehash)
+		if (this.visualize && qrehash)
 			this.network.rehash();
 
 		$("#newblock .block").slice(60).remove();
+		$("#attackLog .noteven").slice(60).remove();
 		$("#revenue").html("<table><tr><td>" + this.revchart(this.bestrev) + "</td></tr></table>");
 		$(".block").each(function() {
 			$(this).css('text-decoration', 'line-through')
@@ -627,6 +637,10 @@ $("#gogogo").click(function() {
 
 	Nodes.init();
 
+	if ($("#visualize").is(":checked")) {
+		Nodes.visualize = true;
+	}
+
 	var probs = []
 
 	var hrate_total = 0;
@@ -672,20 +686,12 @@ $("#gogogo").click(function() {
 		Nodes.interval = 10;
 	})
 
-	$("#fast").click(function() {
-		Nodes.interval = 100;
-	})
-
 	$("#faster").click(function() {
-		Nodes.interval = 1000;
+		Nodes.interval = Nodes.interval * 10;
 	})
 
-	$("#fastest").click(function() {
-		Nodes.interval = 10000;
-	})
-
-	$("#fastestest").click(function() {
-		Nodes.interval = 1000000;
+	$("#slower").click(function() {
+		Nodes.interval = Math.floor(Nodes.interval / 10);
 	})
 
 	$("#sybil").click(function() {
