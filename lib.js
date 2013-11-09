@@ -202,9 +202,9 @@ function Blockchain(node) {
 			this.h = msg.h;
 			this.color = msg.color;
 			this.revenue = JSON.parse(JSON.stringify(msg.revenue)); // is cloning really this retarded in js?
-			this.history = msg.history.slice(0, 50); // is cloning really this retarded in js?
+			this.history = msg.history.slice(0,50); // is cloning really this retarded in js?
 
-			this.privatestack = [{h:msg.h,color:msg.color,history:msg.history.slice(0, 50),revenue:JSON.parse(JSON.stringify(msg.revenue))}]
+			this.privatestack = [{h:msg.h,color:msg.color,history:msg.history.slice(0,50),revenue:JSON.parse(JSON.stringify(msg.revenue))}]
 			node._broadcastStatus();
 		}
 	}
@@ -224,7 +224,7 @@ function Blockchain(node) {
 			}
 		} else {
 			// we're an attacker, so we're mining exclusively on our private chain
-			c = this.privatestack[0];
+			c = JSON.parse(JSON.stringify(this.privatestack[0]));
 		}
 
 		c.h+=1;
@@ -234,7 +234,7 @@ function Blockchain(node) {
 			c.revenue[node.id] = 0;
 		}
 		c.revenue[node.id]+=1;
-		c.history = c.history.slice(0, 50)
+		c.history = c.history.slice(0,50)
 		c.history.unshift(guid())
 
 		node.parent.newBlock(node, c.h, c.revenue, c.color, node.attackmode, c.history);
