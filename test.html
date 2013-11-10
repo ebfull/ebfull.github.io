@@ -584,9 +584,12 @@ var btc = new Node();
 
 var net = new Network(".network");
 net.add(100, btc);
+net.run(10000);
 
+/*
 setInterval(function() {
 	net.run(10);
 }, 10);
+*/
 
 </script>
