@@ -1,0 +1,343 @@
+<script>
+
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+
+// TODO: arbitrary insertion complexity can be improved
+// considering creating a layered linked list like a skiplist
+// except structured by moments, because insertion points are
+// limited
+function EventChain() {
+	this.head = false;
+
+	// add a new event at time
+	this.add = function(time, event) {
+		var prev = false;
+		var cursor = this.head;
+		while(true) {
+			if (!cursor) {
+				var struct = {time:time, event:event, next:false, prev:prev};
+
+				if (!prev)
+					this.head = struct;
+				else
+					prev.next = struct;
+
+				break;
+			} else if (cursor.time > time) {
+				var struct = {time:time, event:event, next:cursor, prev:cursor.prev};
+				if (cursor.prev) {
+					cursor.prev.next = struct;
+					cursor.prev = struct;
+				} else {
+					cursor.prev = struct;
+					this.head = struct;
+				}
+
+				break; // insert done
+			}
+
+			prev = cursor;
+			cursor = cursor.next;
+		}
+	}
+
+	// read the next event, as long as it doesn't exceed maxtime
+	this.next = function(maxtime) {
+		if (!this.head || this.head.time >= maxtime)
+			return false;
+
+		var ret = {time:this.head.time,event:this.head.event};
+
+		this.head = this.head.next;
+		this.head.prev = false;
+
+		return ret;
+	}
+}
+
+function NodeState(node, network, id) {
+	this.node = node;
+	this.id = id;
+	this.network = network;
+	this.peers = {}; // PeerMgr
+
+	// send another node in the network a message
+	this.send = function(nid, name, obj) {
+		// TODO: a cooler latency computation! maybe based on JSON.stringify size of obj too
+		var delay = Math.floor(Math.random() * 300) + 50;
+
+		this.network.exec(new NodeMessageEvent(this.id, delay, nid, name, obj))
+	}
+
+	this.handle = function(from, name, obj) {
+		if (typeof this.node._handlers[name] != "undefined") {
+			this.node._handlers[name](this, from, obj)
+		}
+	}
+
+	this.now = function() {
+		return this.network.now;
+	}
+}
+
+function NodeEvent(delay, nid, f) {
+	this.nid = nid;
+	this.delay = delay;
+
+	this.run = function(self, now) {
+		f(self);
+	}
+}
+
+function NodeMessageEvent(from, delay, nid, name, obj) {
+	this.nid = nid;
+	this.delay = delay;
+
+	this.run = function(self, now) {
+		self.handle(from, name, obj) // tell the node to handle the message
+	}
+}
+
+// like a NodeMessageEvent, except we create a new event after we run
+function NodeTickEvent(delay, nid, f) {
+	this.nid = nid;
+	this.delay = delay;
+
+	this.run = function(self, now) {
+		f(self);
+		self.network.exec(this) // register ourselves again!
+	}
+}
+
+function Network() {
+	this.events = new EventChain();
+	this.now = 0;
+
+	this.nodes = [];
+	this.nindex = 0;
+
+	this.exec = function(e) {
+		this.events.add(e.delay+this.now, e)
+	}
+
+	// adds amt node objects to the network simulator
+	this.add = function(amt, node) {
+		for (;amt>0;amt--) {
+			var state = new NodeState(node, this, this.nindex);
+			node._init(state);
+			for (var i=0;i<node._ticks.length;i++) {
+				var t = node._ticks[i]
+				this.exec(new NodeTickEvent(t.delay, this.nindex, t.f))
+			}
+			this.nodes[this.nindex] = state; // init and receive a state object back
+			this.nindex++;
+		}
+	}
+
+	// run buffer time worth of tasks
+	this.run = function(buffer) {
+		var max = this.now+buffer;
+		var e = false;
+		while (e = this.events.next(max)) {
+			this.now = e.time;
+			e.event.run(this.nodes[e.event.nid], this.now)
+		}
+
+		this.now += buffer;
+	}
+}
+
+function Node() {
+	this._init = function(self) {self.peers = new PeerMgr(self);};
+	this._handlers = {
+		"connect":function(state, from, obj) {state.peers.event("connect", state, from, obj)},
+		"accept":function(state, from, obj) {state.peers.event("accept", state, from, obj)},
+		"reject":function(state, from, obj) {state.peers.event("reject", state, from, obj)},
+		"disconnect":function(state, from, obj) {state.peers.event("disconnect", state, from, obj)},
+		"getpeers":function(state, from, obj) {state.peers.event("getpeers", state, from, obj)},
+		"peerlist":function(state, from, obj) {state.peers.event("peerlist", state, from, obj)}
+	};
+	this._ticks = [{delay: 1000, f: function(self) {
+		self.peers.tick();
+	}}];
+
+	this.init = function(callback) {
+		this._init = function(self) {self.peers = new PeerMgr(self); callback(self);};
+	}
+
+	// network events
+	this.on = function(event, callback) {
+		this._handlers[event] = callback;
+	}
+
+	this.tick = function(delay, callback) {
+		this._ticks.push({delay: delay, f: callback})
+	}
+}
+
+function PeerState(id, lastmessage) {
+	this.id = id;
+	this.lastmessage = lastmessage;
+	this.active = false;
+}
+
+// PeerMgr for handling connections to other nodes.
+function PeerMgr(node) {
+	this.maxpeers = 8; // max number of peers we want
+	this.peers = {}; // peer index
+	this.nodearchive = [new PeerState(0, node.now())]; // seed with bootstrap node, archive of remote peers
+
+	this.event = function(name, node, from, obj) {
+		switch (name) {
+			case "accept":
+				if (typeof this.peers[from] != "undefined") {
+					// remote node has accepted our connection request
+					// remove them from our nodearchive
+					for (var i=0;i<this.nodearchive.length;i++) {
+						if (this.nodearchive[i].id == from) {
+							this.nodearchive.remove(i);
+						}
+					}
+
+					// set the connection as active
+					this.peers[from].lastmessage = node.now();
+					this.peers[from].active = true;
+				}
+			break;
+			case "reject":
+				// remote peer rejected our connect request
+				if (typeof this.peers[from] != "undefined") {
+					this.event("peerlist", node, from, obj) // get peerlist
+					delete this.peers[from];
+				}
+			break;
+			case "connect":
+				// remote node trying to connect to us
+				// do we have enough peers already?
+				if (Object.keys(this.peers).length < this.maxpeers) {
+					// you can connect
+					this.peers[from] = new PeerState(from, node.now());
+					this.event("accept", node, from, obj);
+					this.accept(from)
+				} else {
+					for (var k=0;k<this.nodearchive.length;k++) {
+						if (this.nodearchive[k].id == from) {
+							this.nodearchive.remove(k);
+						}
+					}
+
+					this.nodearchive.unshift(new PeerState(from, node.now()))
+
+					this.reject(from)
+				}
+			break;
+			case "disconnect":
+				// remote node disconnected
+				if (typeof this.peers[from] != "undefined") {
+					delete this.peers[from];
+					this.nodearchive.push(new PeerState(from, node.now()));
+				}
+			break;
+			case "getpeers":
+				// remote node wants peer list from us
+				if (typeof this.peers[from] != "undefined") {
+					this.sendpeers(from);
+				}
+			break;
+			case "peerlist":
+				if (typeof this.peers[from] != "undefined") {
+					// add these peers to our nodearchive
+					// if we don't have them already
+
+					for (var i=0;i<obj.length;i++) {
+						var candidate = obj[i];
+
+						for (var k=0;k<this.nodearchive.length;k++) {
+							if (this.nodearchive[k].id == candidate.id) {
+								this.nodearchive.remove(k);
+							}
+						}
+
+						this.nodearchive.unshift(new PeerState(candidate.id, node.now()))
+					}
+				}
+			break;
+		}
+	}
+
+	// find other peers
+	this.tick = function() {
+		document.write(node.now() + ": " + node.id + ": I have " + Object.keys(this.peers).length + " peers<br />")
+		if (Object.keys(this.peers).length < this.maxpeers) {
+			// we need new peers
+			// 1: getpeers to other peers
+			// 2: connect to new peers in our nodearchive if there are any
+
+			if (this.nodearchive.length) {
+				var p = this.nodearchive.shift();
+				this.nodearchive.push(p);
+
+				this.connect(p)
+			}
+
+			if (Object.keys(this.peers).length) {
+				var randomPeer = this.peers[Object.keys(this.peers)[Math.floor(Math.random() * Object.keys(this.peers).length)]]
+
+				if (randomPeer.active) {
+					this.getpeers(randomPeer.id)
+				}
+			}
+		}
+	}
+
+	this.getpeers = function(p) {
+		node.send(p, 'getpeers', {});
+	}
+
+	this.sendpeers = function(p, peers) {
+		node.send(p, 'peerlist', this.nodearchive.slice(0, 15));
+	}
+
+	this.accept = function(p) {
+		node.send(p, 'accept', {})
+	}
+
+	this.reject = function(p) {
+		node.send(p, 'reject', this.nodearchive.slice(0, 15))
+	}
+
+	// send a connect message to a peer
+	this.connect = function(p) {
+		this.peers[p.id] = p;
+		node.send(p.id, 'connect', {})
+	}
+
+	// send a disconnect message to a peer
+	this.disconnect = function(id) {
+		delete this.peers[p.id];
+		node.send(id, 'disconnect', {})
+	}
+}
+
+var btc = new Node();
+
+// btc.init() - an initialization function (post peermgr)
+// btc.tick() - a tick which occurs routinely
+// btc.on() - attaching new events
+
+var net = new Network();
+net.add(100, btc);
+
+net.run(100000);
+/*
+setInterval(function() {
+	net.run(10);
+}, 10);
+*/
+
+</script>
