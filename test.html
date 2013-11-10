@@ -1,4 +1,236 @@
+<script src="d3.v3.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<style>
+.network {
+  border: 1px solid #DEDEDE;
+  display:block;
+  margin:auto;
+}
+
+svg {
+  margin: auto;
+  display:block;
+}
+
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+circle {
+	display:block;
+}
+
+line {
+	display:block;
+}
+
+circle[cx=NaN] {
+	display:none !important;
+}
+
+circle[cy=NaN] {
+	display:none !important;
+}
+
+line[x1=NaN] {
+	display:none !important;
+}
+
+line[y1=NaN] {
+	display:none !important;
+}
+
+line[x2=NaN] {
+	display:none !important;
+}
+
+line[y2=NaN] {
+	display:none !important;
+}
+
+
+.node {
+  fill: #000;
+}
+
+.link {
+  stroke: #999;
+}
+</style>
+<div class="network">
+</div>
 <script>
+
+// init with .network for network class div
+function Visualizer(div) {
+	this.divname = div;
+}
+
+Visualizer.prototype = {
+	width: 500,
+	height: 350,
+	linkDistance: 30,
+	charge: -100,
+	gravity: .5,
+	nindex: 0, // the cursor of the nodes array
+
+	svg: null,
+	force: null,
+	nodes: null,
+	links: null,
+	slink: null,
+	snode: null,
+	edges: {},
+	inodes: [],
+	updated:false,
+
+	init: function() {
+		// init the network layout/svg
+		$(this.divname).css('width', this.width);
+		$(this.divname).css('height', this.height);
+
+		this.force = d3.layout.force()
+			.size([this.width,this.height])
+			.nodes([]) // no nodes
+			.linkDistance(this.linkDistance)
+			.charge(this.charge)
+			.gravity(this.gravity);
+
+		this.svg = d3.select(this.divname).append("svg")
+	    	.attr("width", this.width)
+	    	.attr("height", this.height);
+
+	   	this.svg.append("rect")
+		    .attr("width", this.width)
+		    .attr("height", this.height);
+
+		this.nodes = this.force.nodes();
+		this.links = this.force.links();
+		this.slink = this.svg.selectAll(".link");
+		this.snode = this.svg.selectAll(".node");
+
+		this.force = this.force.on("tick", this.tick());
+
+		this.updated = true;
+		this.rehash();
+	},
+
+	getRandomLink: function() {
+		var result;
+		var count=1;
+		for (var prop in this.edges) {
+			if (Math.random() < 1/++count)
+				result = prop;
+		}
+		if (!result)
+			return -1;
+		var e = result.split("-");
+		return [parseInt(e[0]), parseInt(e[1])];
+	},
+
+	getRandomNode: function() {
+		return this.inodes[Math.floor(Math.random()*this.inodes.length)];
+	},
+
+	getKeyForID: function(id) {
+		return this.inodes.indexOf(id);
+	},
+
+	incCharge: function(amt) {
+		this.force.charge(this.force.charge() - amt);
+		this.updated = true;
+		///////////this.rehash();
+	},
+
+	addNode: function() {
+		// add a node, return the index
+		this.nodes.push({id:"n"+this.nindex});
+		this.inodes.push(this.nindex);
+		this.updated = true;
+		/////////////this.rehash();
+
+		this.nindex++;
+		return this.nindex-1;
+	},
+
+	connect: function(a, b) {
+		if (this.edges.hasOwnProperty(a + '-' + b) || this.edges.hasOwnProperty(b + '-' + a))
+			return false; // we're already connected
+
+		if (a==b)
+			return false; // can't connect to ourself silly!
+
+		//console.log('CONNECTING EDGES ' + a + ' AND ' + b);
+		this.edges[a + '-' + b] = {source:this.nodes[this.getKeyForID(a)],target:this.nodes[this.getKeyForID(b)]};
+		this.links.push(this.edges[a + '-' + b]);
+
+		this.updated = true;
+		//////this.rehash();
+	},
+
+	disconnect: function(a, b) {
+		if (!this.edges.hasOwnProperty(a + '-' + b) && !this.edges.hasOwnProperty(b + '-' + a))
+			return false; // we're already disconnected
+
+		var i = this.links.indexOf(this.edges[a + '-' + b]);
+		if (i<0)
+			i = this.links.indexOf(this.edges[b + '-' + a]);
+
+		delete this.edges[a + '-' + b];
+		delete this.edges[b + '-' + a];
+
+		this.links.splice(i, 1); // remove the link
+
+		this.updated = true;
+		//////this.rehash();
+	},
+
+	removeNode: function(index) {
+		// remove a node at index
+		var i = this.getKeyForID(index);
+		if (i < 0)
+			return false; // this one has already been removed
+
+		this.nodes.splice(i, 1);
+		this.inodes.splice(i, 1);
+		this.updated = true;
+		///////////////////this.rehash();
+	},
+
+	tick: function() {
+		var svg = this.svg;
+		return function() {
+			svg.selectAll(".link").attr("x1", function(d) { return d.source.x; })
+				.attr("y1", function(d) { return d.source.y; })
+				.attr("x2", function(d) { return d.target.x; })
+				.attr("y2", function(d) { return d.target.y; });
+
+			svg.selectAll(".node").attr("cx", function(d) { return d.x; })
+				.attr("cy", function(d) { return d.y; });
+		}
+	},
+
+	rehash: function() {
+		if (!this.updated)
+			return;
+
+		this.slink = this.slink.data(this.force.links(), function(d) { return d.source.id + "-" + d.target.id; });
+		this.slink.enter().insert("line", ".node")
+			.attr("class", "link");
+		this.slink.exit().remove();
+
+		this.snode = this.snode.data(this.force.nodes(), function(d) {return d.id;});
+		this.snode.enter().append("circle").attr("class", function (d) {return "node " + d.id;})
+			.attr("r", 3)
+			.call(this.force.drag);
+		this.snode.exit().remove();
+
+		this.force.start();
+
+		this.updated = false;
+	}
+};
 
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function(from, to) {
@@ -64,6 +296,7 @@ function NodeState(node, network, id) {
 	this.node = node;
 	this.id = id;
 	this.network = network;
+	this.visualizerId = network.visualizer.addNode();
 	this.peers = {}; // PeerMgr
 
 	// send another node in the network a message
@@ -114,8 +347,10 @@ function NodeTickEvent(delay, nid, f) {
 	}
 }
 
-function Network() {
+function Network(visualizerDiv) {
 	this.events = new EventChain();
+	this.visualizer = new Visualizer(visualizerDiv);
+	this.visualizer.init();
 	this.now = 0;
 
 	this.nodes = [];
@@ -123,6 +358,16 @@ function Network() {
 
 	this.exec = function(e) {
 		this.events.add(e.delay+this.now, e)
+	}
+
+	// connects two nodes in the visualizer
+	this.connect = function (a, b) {
+		this.visualizer.connect(this.nodes[a].visualizerId, this.nodes[b].visualizerId);
+	}
+
+	// disconnects two nodes in the visualizer
+	this.disconnect = function (a, b) {
+		this.visualizer.disconnect(this.nodes[a].visualizerId, this.nodes[b].visualizerId);
 	}
 
 	// adds amt node objects to the network simulator
@@ -149,6 +394,8 @@ function Network() {
 		}
 
 		this.now += buffer;
+
+		this.visualizer.rehash();
 	}
 }
 
@@ -207,6 +454,9 @@ function PeerMgr(node) {
 					// set the connection as active
 					this.peers[from].lastmessage = node.now();
 					this.peers[from].active = true;
+
+					// notify network of connection
+					node.network.connect(node.id, from)
 				}
 			break;
 			case "reject":
@@ -241,6 +491,9 @@ function PeerMgr(node) {
 				if (typeof this.peers[from] != "undefined") {
 					delete this.peers[from];
 					this.nodearchive.push(new PeerState(from, node.now()));
+
+					// notify network of disconnection
+					node.network.disconnect(node.id, from)
 				}
 			break;
 			case "getpeers":
@@ -272,7 +525,6 @@ function PeerMgr(node) {
 
 	// find other peers
 	this.tick = function() {
-		document.write(node.now() + ": " + node.id + ": I have " + Object.keys(this.peers).length + " peers<br />")
 		if (Object.keys(this.peers).length < this.maxpeers) {
 			// we need new peers
 			// 1: getpeers to other peers
@@ -330,14 +582,11 @@ var btc = new Node();
 // btc.tick() - a tick which occurs routinely
 // btc.on() - attaching new events
 
-var net = new Network();
+var net = new Network(".network");
 net.add(100, btc);
 
-net.run(100000);
-/*
 setInterval(function() {
 	net.run(10);
 }, 10);
-*/
 
 </script>
