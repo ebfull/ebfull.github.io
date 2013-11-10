@@ -60,6 +60,10 @@ line[y2=NaN] {
 </style>
 <div class="network">
 </div>
+<br />
+<span id='timenow'>0 seconds elapsed</span>
+<br />
+<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a>
 <script>
 
 // init with .network for network class div
@@ -68,8 +72,8 @@ function Visualizer(div) {
 }
 
 Visualizer.prototype = {
-	width: 500,
-	height: 350,
+	width: 1000,
+	height: 500,
 	linkDistance: 30,
 	charge: -100,
 	gravity: .5,
@@ -84,6 +88,9 @@ Visualizer.prototype = {
 	edges: {},
 	inodes: [],
 	updated:false,
+
+	colormap:{},
+	colormap_u:false,
 
 	init: function() {
 		// init the network layout/svg
@@ -114,6 +121,11 @@ Visualizer.prototype = {
 
 		this.updated = true;
 		this.rehash();
+	},
+
+	setColor: function(p, color) {
+		this.colormap_u = true;
+		this.colormap[p] = color;
 	},
 
 	getRandomLink: function() {
@@ -228,6 +240,13 @@ Visualizer.prototype = {
 
 		this.force.start();
 
+		/***** COLORMAP *****/
+		if (this.colormap_u) {
+			for (var p in this.colormap) {
+				$(".n" + p).css('fill', this.colormap[p]);
+			}
+		}
+
 		this.updated = false;
 	}
 };
@@ -299,10 +318,14 @@ function NodeState(node, network, id) {
 	this.visualizerId = network.visualizer.addNode();
 	this.peers = {}; // PeerMgr
 
+	this.setColor = function(color) {
+		this.network.visualizer.setColor(this.visualizerId, color);
+	}
+
 	// send another node in the network a message
 	this.send = function(nid, name, obj) {
 		// TODO: a cooler latency computation! maybe based on JSON.stringify size of obj too
-		var delay = Math.floor(Math.random() * 300) + 50;
+		var delay = Math.floor(Math.random() * 5000) + 50;
 
 		this.network.exec(new NodeMessageEvent(this.id, delay, nid, name, obj))
 	}
@@ -342,8 +365,8 @@ function NodeTickEvent(delay, nid, f) {
 	this.delay = delay;
 
 	this.run = function(self, now) {
-		f(self);
-		self.network.exec(this) // register ourselves again!
+		if (f(self) !== false)
+			self.network.exec(this) // register ourselves again!
 	}
 }
 
@@ -395,7 +418,7 @@ function Network(visualizerDiv) {
 
 		this.now += buffer;
 
-		this.visualizer.rehash();
+		//this.visualizer.rehash();
 	}
 }
 
@@ -410,7 +433,7 @@ function Node() {
 		"peerlist":function(state, from, obj) {state.peers.event("peerlist", state, from, obj)}
 	};
 	this._ticks = [{delay: 1000, f: function(self) {
-		self.peers.tick();
+		return self.peers.tick();
 	}}];
 
 	this.init = function(callback) {
@@ -435,6 +458,7 @@ function PeerState(id, lastmessage) {
 
 // PeerMgr for handling connections to other nodes.
 function PeerMgr(node) {
+	this.curpeers = 0;
 	this.maxpeers = 8; // max number of peers we want
 	this.peers = {}; // peer index
 	this.nodearchive = [new PeerState(0, node.now())]; // seed with bootstrap node, archive of remote peers
@@ -464,6 +488,7 @@ function PeerMgr(node) {
 				if (typeof this.peers[from] != "undefined") {
 					this.event("peerlist", node, from, obj) // get peerlist
 					delete this.peers[from];
+					this.curpeers -= 1;
 				}
 			break;
 			case "connect":
@@ -472,6 +497,7 @@ function PeerMgr(node) {
 				if (Object.keys(this.peers).length < this.maxpeers) {
 					// you can connect
 					this.peers[from] = new PeerState(from, node.now());
+					this.curpeers += 1;
 					this.event("accept", node, from, obj);
 					this.accept(from)
 				} else {
@@ -490,6 +516,7 @@ function PeerMgr(node) {
 				// remote node disconnected
 				if (typeof this.peers[from] != "undefined") {
 					delete this.peers[from];
+					this.curpeers -= 1;
 					this.nodearchive.push(new PeerState(from, node.now()));
 
 					// notify network of disconnection
@@ -525,7 +552,11 @@ function PeerMgr(node) {
 
 	// find other peers
 	this.tick = function() {
-		if (Object.keys(this.peers).length < this.maxpeers) {
+		if (node.now() > 500000)
+			return false;
+
+		//console.log(node.id + ": I have " + Object.keys(this.peers).length + " peers")
+		if (this.curpeers < this.maxpeers) {
 			// we need new peers
 			// 1: getpeers to other peers
 			// 2: connect to new peers in our nodearchive if there are any
@@ -534,7 +565,8 @@ function PeerMgr(node) {
 				var p = this.nodearchive.shift();
 				this.nodearchive.push(p);
 
-				this.connect(p)
+				if (typeof this.peers[p.id] == "undefined")
+					this.connect(p)
 			}
 
 			if (Object.keys(this.peers).length) {
@@ -545,6 +577,24 @@ function PeerMgr(node) {
 				}
 			}
 		}
+	}
+
+	this.isConnected = function(p) {
+		return (typeof this.peers[p] != "undefined") && this.peers[p].active
+	}
+
+	this.broadcast = function(name, obj) {
+		// send the same message to all of our (active) peers
+		for (var p in this.peers) {
+			if (this.peers[p].active) {
+				this.send(p, name, obj);
+			}
+		}
+	}
+
+	// why abstract this? i don't know yet.
+	this.send = function(p, name, obj) {
+		node.send(p, name, obj);
 	}
 
 	this.getpeers = function(p) {
@@ -566,13 +616,66 @@ function PeerMgr(node) {
 	// send a connect message to a peer
 	this.connect = function(p) {
 		this.peers[p.id] = p;
+		this.curpeers += 1;
 		node.send(p.id, 'connect', {})
 	}
 
 	// send a disconnect message to a peer
 	this.disconnect = function(id) {
 		delete this.peers[p.id];
+		this.curpeers -= 1;
 		node.send(id, 'disconnect', {})
+	}
+}
+
+var cindex = 0;
+var colors = ["red","green","blue","purple","orange","chartreuse","darkred","dodgerblue"]
+
+function randomColor() {
+	cindex++;
+
+	return colors[cindex % colors.length]
+}
+
+// id, h, prev
+function Block(h, prev) {
+	if (h == 0) {
+		this.id = "genesis";
+		prev = false;
+	} else {
+		this.id = (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)); // just random data lol
+	}
+
+	this.h = h;
+	this.prev = prev;
+	this.color = randomColor();
+}
+
+function Blockchain() {
+	this.chainstate = new Block(0);
+
+	this.newstate = function(b) {
+		// is this new block larger than ours?
+		if (b.h > this.chainstate.h) {
+			this.chainstate = b;
+			return true;
+		}
+
+		return false;
+	}
+
+	this.mine = function() {
+		this.chainstate = new Block(this.chainstate.h+1, this.chainstate);
+	}
+
+	this.getstate = function() {
+		return this.chainstate;
 	}
 }
 
@@ -582,14 +685,59 @@ var btc = new Node();
 // btc.tick() - a tick which occurs routinely
 // btc.on() - attaching new events
 
-var net = new Network(".network");
-net.add(100, btc);
-net.run(10000);
+btc.init(function(self) {
+	self.blockchain = new Blockchain();
+})
 
-/*
+btc.tick(1000, function(self) {
+	if (Math.random() < .00001) {
+		// we mined something i guess lmao
+		self.blockchain.mine();
+
+		//self.setColor(self.blockchain.getstate().color);
+
+		// ok now send status to all of our peers
+		self.peers.broadcast("status", self.blockchain.chainstate);
+	}
+})
+
+btc.on("status", function(self, from, obj) {
+	if (self.peers.isConnected(from)) {
+		if (self.blockchain.newstate(obj)) {
+			//self.setColor(self.blockchain.getstate().color);
+
+			// ok now send status to all of our peers
+			self.peers.broadcast("status", self.blockchain.chainstate);
+		}
+	}
+})
+
+var net = new Network(".network");
+
+net.add(200, btc);
+
+var interval = 10;
+
 setInterval(function() {
-	net.run(10);
-}, 10);
-*/
+	net.run(interval);
+
+	$("#timenow").html((net.now/1000) + " seconds elapsed");
+}, 10)
+
+$('#faster').click(function() {
+	interval *= 2;
+})
+
+$('#slower').click(function() {
+	interval /= 2;
+})
+
+$('#default').click(function() {
+	interval = 10;
+})
+
+$("#stop").click(function() {
+	interval = 0;
+})
 
 </script>
