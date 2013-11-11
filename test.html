@@ -63,7 +63,7 @@ line[y2=NaN] {
 <br />
 <span id='timenow'>0 seconds elapsed</span>
 <br />
-<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a>
+<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a>
 <script>
 
 // init with .network for network class div
@@ -125,6 +125,7 @@ Visualizer.prototype = {
 
 	setColor: function(p, color) {
 		this.colormap_u = true;
+		this.updated = true;
 		this.colormap[p] = color;
 	},
 
@@ -245,6 +246,7 @@ Visualizer.prototype = {
 			for (var p in this.colormap) {
 				$(".n" + p).css('fill', this.colormap[p]);
 			}
+			this.colormap_u = false;
 		}
 
 		this.updated = false;
@@ -264,36 +266,43 @@ Array.prototype.remove = function(from, to) {
 // limited
 function EventChain() {
 	this.head = false;
+	this.tail = false;
 
 	// add a new event at time
 	this.add = function(time, event) {
-		var prev = false;
-		var cursor = this.head;
+		var next = false;
+		var cursor = this.tail;
+
 		while(true) {
 			if (!cursor) {
-				var struct = {time:time, event:event, next:false, prev:prev};
+				// we're the new head
+				var struct = {time:time, event:event, next:next, prev:false};
 
-				if (!prev)
-					this.head = struct;
+				this.head = struct;
+
+				if (!next)
+					this.tail = struct; // we're also the new tail
 				else
-					prev.next = struct;
+					next.prev = struct;
 
 				break;
-			} else if (cursor.time > time) {
-				var struct = {time:time, event:event, next:cursor, prev:cursor.prev};
-				if (cursor.prev) {
-					cursor.prev.next = struct;
-					cursor.prev = struct;
-				} else {
-					cursor.prev = struct;
-					this.head = struct;
-				}
 
-				break; // insert done
+			} else if (cursor.time <= time) {
+				// we need to insert here
+				var struct = {time:time, event:event, next:next, prev:cursor};
+
+				if (next)
+					next.prev = struct;
+				else
+					this.tail = struct;
+
+				cursor.next = struct;
+
+				break;
 			}
 
-			prev = cursor;
-			cursor = cursor.next;
+			next = cursor;
+			cursor = cursor.prev;
 		}
 	}
 
@@ -418,7 +427,7 @@ function Network(visualizerDiv) {
 
 		this.now += buffer;
 
-		//this.visualizer.rehash();
+		this.visualizer.rehash();
 	}
 }
 
@@ -638,7 +647,7 @@ function randomColor() {
 }
 
 // id, h, prev
-function Block(h, prev) {
+function Block(h, prev, time) {
 	if (h == 0) {
 		this.id = "genesis";
 		prev = false;
@@ -655,10 +664,18 @@ function Block(h, prev) {
 	this.h = h;
 	this.prev = prev;
 	this.color = randomColor();
+	this.time = time;
+	if (prev)
+		this.difficulty = prev.difficulty;
+	else
+		this.difficulty = 1;
 }
 
 function Blockchain() {
-	this.chainstate = new Block(0);
+	this.chainstate = new Block(0, false, 0);
+
+	this.target_avg_between_blocks = 10000; // target time between blocks
+	this.difficulty_adjustment_period = 20;
 
 	this.newstate = function(b) {
 		// is this new block larger than ours?
@@ -670,8 +687,28 @@ function Blockchain() {
 		return false;
 	}
 
-	this.mine = function() {
-		this.chainstate = new Block(this.chainstate.h+1, this.chainstate);
+	this.mine = function(now) {
+		var newh;
+		this.chainstate = new Block(newh = this.chainstate.h+1, this.chainstate, now);
+
+		if (!(newh % this.difficulty_adjustment_period)) {
+			// this is a difficulty adjustment block
+			var total = 0;
+			var last = this.chainstate.time;
+			var cur = this.chainstate.prev;
+			for (var i=0;i<this.difficulty_adjustment_period;i++) {
+				total += last - cur.time;
+				last = cur.time;
+				cur = cur.prev;
+			}
+			var avg = total / this.difficulty_adjustment_period;
+
+			// how much should we change the difficulty by?
+			var old = this.chainstate.difficulty;
+			this.chainstate.difficulty *= this.target_avg_between_blocks / avg; // 10 minutes?
+
+			console.log("(height = " + newh + ") Difficulty adjustment: from " + old + " to " + this.chainstate.difficulty + " (" + (this.target_avg_between_blocks / avg) + "x)")
+		}
 	}
 
 	this.getstate = function() {
@@ -690,11 +727,11 @@ btc.init(function(self) {
 })
 
 btc.tick(1000, function(self) {
-	if (Math.random() < .00001) {
+	if (Math.random() < (.01 / self.blockchain.getstate().difficulty)) {
 		// we mined something i guess lmao
-		self.blockchain.mine();
+		self.blockchain.mine(self.now());
 
-		//self.setColor(self.blockchain.getstate().color);
+		self.setColor(self.blockchain.getstate().color);
 
 		// ok now send status to all of our peers
 		self.peers.broadcast("status", self.blockchain.chainstate);
@@ -704,7 +741,7 @@ btc.tick(1000, function(self) {
 btc.on("status", function(self, from, obj) {
 	if (self.peers.isConnected(from)) {
 		if (self.blockchain.newstate(obj)) {
-			//self.setColor(self.blockchain.getstate().color);
+			self.setColor(self.blockchain.getstate().color);
 
 			// ok now send status to all of our peers
 			self.peers.broadcast("status", self.blockchain.chainstate);
@@ -739,5 +776,21 @@ $('#default').click(function() {
 $("#stop").click(function() {
 	interval = 0;
 })
+
+$("#addnode").click(function() {
+	net.add(1, btc);
+})
+
+/*
+document.write("<br /><br /><br />")
+
+var ev = new EventChain();
+ev.add(1, "faggot1")
+ev.add(2, "faggot2")
+
+document.write(JSON.stringify(ev.head.event))
+document.write(JSON.stringify(ev.tail.event))
+//document.write(JSON.stringify(ev.next()))
+*/
 
 </script>
