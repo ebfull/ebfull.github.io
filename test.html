@@ -82,7 +82,7 @@ line[y2=NaN] {
 <br />
 <span id='timenow'>0 seconds elapsed</span>
 <br />
-<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a> | <a href="#" id="attack">selfish mine</a>
+<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a> | <a href="#" id="attack">node 0 selfish mine</a>
 <script>
 
 function revchart(r, h) {
@@ -507,7 +507,7 @@ function NodeState(node, network, id) {
 	this.node = node;
 	this.id = id;
 	this.network = network;
-	this.visualizerId = network.visualizer.addNode();
+	this.visualizerId = -1;
 	this.mprob = 0;
 
 	this.mine = function(p) {
@@ -555,7 +555,7 @@ function NodeState(node, network, id) {
 	}
 
 	this.setColor = function(color) {
-		this.network.visualizer.setColor(this.visualizerId, color);
+		this.network.setColor(this.visualizerId, color);
 	}
 
 	// send another node in the network a message
@@ -695,9 +695,9 @@ function Network(visualizerDiv) {
 	this.events = new EventChain(); // normal events
 	this.mining = new MiningPool();
 	this.pevents = {}; // probablistic event references
-	$(visualizerDiv).html();
 	this.visualizer = new Visualizer(visualizerDiv);
-	if (visualizerDiv) {
+	if (typeof visualizerDiv != "undefined") {
+		$(visualizerDiv).html();
 		this.visualizer.init();
 	}
 	this.now = 0;
@@ -724,6 +724,12 @@ function Network(visualizerDiv) {
 		}
 	}
 
+	this.setColor = function(vid, color) {
+		if (typeof visualizerDiv != "undefined") {
+			this.visualizer.setColor(vid, color);
+		}
+	}
+
 	// registers an event to occur, only use this for a few rare things
 	this.quickexec = function(e) {
 		this.events.quickadd(e.delay+this.now, e)
@@ -736,18 +742,24 @@ function Network(visualizerDiv) {
 
 	// connects two nodes in the visualizer
 	this.connect = function (a, b) {
-		this.visualizer.connect(this.nodes[a].visualizerId, this.nodes[b].visualizerId);
+		if (typeof visualizerDiv != "undefined") {
+			this.visualizer.connect(this.nodes[a].visualizerId, this.nodes[b].visualizerId);
+		}
 	}
 
 	// disconnects two nodes in the visualizer
 	this.disconnect = function (a, b) {
-		this.visualizer.disconnect(this.nodes[a].visualizerId, this.nodes[b].visualizerId);
+		if (typeof visualizerDiv != "undefined") {
+			this.visualizer.disconnect(this.nodes[a].visualizerId, this.nodes[b].visualizerId);
+		}
 	}
 
 	// adds amt node objects to the network simulator
 	this.add = function(amt, node) {
 		for (;amt>0;amt--) {
 			var state = new NodeState(node, this, this.nindex);
+			if (typeof visualizerDiv != "undefined")
+				state.visualizerId = this.visualizer.addNode();
 			node._init(state);
 			for (var i=0;i<node._ticks.length;i++) {
 				var t = node._ticks[i]
@@ -779,7 +791,9 @@ function Network(visualizerDiv) {
 
 		$("#revenue").html(revchart(this.vars.revenue, this.vars.besth))
 
-		this.visualizer.rehash();
+		if (typeof visualizerDiv != "undefined") {
+			this.visualizer.rehash();
+		}
 	}
 }
 
@@ -1183,14 +1197,41 @@ var btc = new Node();
 // btc.on() - attaching new events
 
 btc.init(function(self) {
-	if (self.id < 2) {
-		self.mine(.35)
-	} else {
-		self.mine(false);
+	switch(self.id) {
+		case 0:
+			self.mine(0.31)
+		break;
+		case 1:
+			self.mine(0.22)
+		break;
+		case 2:
+			self.mine(0.13)
+		break;
+		case 3:
+			self.mine(0.06)
+		break;
+		case 4:
+			self.mine(0.05)
+		break;
+		case 5:
+			self.mine(0.03)
+		break;
+		case 6:
+			self.mine(0.02)
+		break;
+		case 7:
+			self.mine(0.02)
+		break;
+		default:
+			if (self.id < 100)
+				self.mine(true);
+			else
+				self.mine(false);
+		break;
 	}
 })
 
-var net = new Network(".network");
+var net = new Network();
 
 net.add(nodes, btc);
 
