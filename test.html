@@ -409,11 +409,16 @@ BinaryHeap.prototype = {
   }
 };
 
+// eventchain api, really just a toss up between a linked list
+// structure for less common events and a binary heap for frequent
+// ones. very accurate and simple (add and next are the only)
+// supported operations
 function EventChain() {
 	this.heap = new BinaryHeap(function(x) {return x.time;})
 	this.cache = false;
 	this.quickhead = false;
 
+	// add an event to a linked list
 	this.quickadd = function(time, event) {
 		var cur = this.quickhead;
 		var prev = false;
@@ -442,6 +447,7 @@ function EventChain() {
 		}
 	}
 
+	// used internally
 	this.quicktime = function() {
 		if (this.quickhead)
 			return this.quickhead.time;
@@ -449,12 +455,14 @@ function EventChain() {
 			return Number.POSITIVE_INFINITY;
 	}
 
+	// used internally
 	this.quickpop = function() {
 		var ret = {time:this.quickhead.time,event:this.quickhead.event};
 		this.quickhead = this.quickhead.next;
 		return ret;
 	}
 
+	// add event to binary heap
 	this.add = function(time, event) {
 		if (this.cache && (time < this.cache.time)){
 			this.heap.push(this.cache)
@@ -464,6 +472,8 @@ function EventChain() {
 		this.heap.push({time:time,event:event})
 	}
 
+	// visit the next event unless the event occurs
+	// on or after maxtime
 	this.next = function(maxtime) {
 		var ret;
 		if (!this.cache)
@@ -492,6 +502,7 @@ function EventChain() {
 	}
 }
 
+// the node's local state, or what it will know as "self"
 function NodeState(node, network, id) {
 	this.node = node;
 	this.id = id;
@@ -530,6 +541,7 @@ function NodeState(node, network, id) {
 	}
 }
 
+// simple interface for an event that occurs in the simulation
 function NodeEvent(delay, nid, f) {
 	this.nid = nid;
 	this.delay = delay;
@@ -539,6 +551,7 @@ function NodeEvent(delay, nid, f) {
 	}
 }
 
+// like NodeEvent, but used to call handler functions on nodes
 function NodeMessageEvent(from, delay, nid, name, obj) {
 	this.nid = nid;
 	this.delay = delay;
@@ -559,6 +572,7 @@ function NodeTickEvent(delay, nid, f) {
 	}
 }
 
+// like NodeTickEvent, but probabilistic
 function NodeProbabilisticTickEvent(delay) {
 	this.delay = delay;
 	this.events = {}
@@ -649,10 +663,12 @@ function Network(visualizerDiv) {
 		}
 	}
 
+	// registers an event to occur, only use this for a few rare things
 	this.quickexec = function(e) {
 		this.events.quickadd(e.delay+this.now, e)
 	}
 
+	// registers an event to occur
 	this.exec = function(e) {
 		this.events.add(e.delay+this.now, e)
 	}
@@ -704,6 +720,8 @@ function Network(visualizerDiv) {
 	}
 }
 
+// the base node object just has a bunch of built in handlers
+// with peermgr, and probably will have more built in things later
 function Node() {
 	this._init = function(self) {self.peers = new PeerMgr(self);};
 	this._handlers = {
@@ -732,6 +750,7 @@ function Node() {
 	}
 }
 
+// will need to update this to interact with the messageevents somehow?
 function PeerState(id, lastmessage) {
 	this.id = id;
 	this.lastmessage = lastmessage;
@@ -910,6 +929,7 @@ function PeerMgr(node) {
 	}
 }
 
+// todo remove this crap
 var cindex = 0;
 var colors = ["red","green","blue","purple","orange","chartreuse","darkred","dodgerblue"]
 
@@ -919,7 +939,6 @@ function randomColor() {
 	return colors[cindex % colors.length]
 }
 
-// id, h, prev
 function Block(h, prev, time, credit) {
 	if (h == 0) {
 		this.id = "genesis";
@@ -967,8 +986,7 @@ var GenesisBlock = new Block(0, false, 0);
 function Blockchain(node) {
 	this.chainstate = GenesisBlock;
 
-	// if we're an attacker!
-	this.attacker_status = false;
+	this.attacker_status = false; // selfish mining attack
 	this.private_chainstate = this.chainstate;
 
 	this.target_avg_between_blocks = 2.5 * 60 * 1000; // target time between blocks
@@ -1072,9 +1090,9 @@ function Blockchain(node) {
 				newrev[s] += cur.revenue[s];
 			}
 
-			b.revenue = newrev; // fuck yes.
+			b.revenue = newrev;
 
-			b.report(); // holy fuck
+			b.report();
 		}
 	}
 
@@ -1086,71 +1104,91 @@ function Blockchain(node) {
 	}
 }
 
+// ffs come up with a better name than this
+// also i'd rather build this into the nodes
+// like PeerMgr
+function MinerHelper() {
+	this.unreserved = 1;
+	this.unreserved_pool = [];
+
+	var rthis = this;
+
+	this.new = function(node, percentage) {
+		if (typeof percentage == "undefined") {
+			rthis.unreserved_pool.push(node);
+		} else {
+			node.mprob = percentage / 1000;
+			rthis.unreserved -= percentage;
+		}
+	}
+
+	this.setup = function() {
+		var m;
+		var per = rthis.unreserved / rthis.unreserved_pool.length;
+
+		for (var i=0;i<rthis.unreserved_pool.length;i++) {
+			m = rthis.unreserved_pool[i];
+
+			m.mprob = per / 1000;
+			rthis.start(m);
+		}
+	}
+
+	this.mined = function(self) {
+		self.blockchain.mine(self.now()); // tell the blockchain to mine a block
+
+		rthis.start(self); // restart mining
+	}
+
+	this.start = function(self) {
+		self.deprob("mining") // unregister our existing mining tick
+		self.prob("mining", 100, (self.mprob / self.blockchain.getstate().difficulty), rthis.mined); // re-register it
+		self.setColor(self.blockchain.getstate().color); // set the color of the node based on their real chainstate
+		self.peers.broadcast("status", self.blockchain.chainstate); // broadcast mining status to other nodes
+	}
+
+	this.status = function(self, from, obj) {
+		if (self.peers.isConnected(from)) {
+			if (self.blockchain.newstate(obj)) {
+				rthis.start(self);
+			}
+		}
+	}
+}
+
 var nodes = 200;
-var hashrate = [];
-var hashrate_total = 0;
-var target = 0.7;
-
-for (var i=0;i<nodes;i++) {
-	var newp;
-	hashrate.push(newp = Math.floor(Math.random() * 100000))
-	hashrate_total += newp;
-}
-
-hashrate_total -= hashrate[0]
-hashrate_total -= hashrate[1]
-
-var p = target * hashrate_total / (1-target)
-
-hashrate_total += p;
-hashrate[0] = p/2;
-hashrate[1] = p/2;
-
-for (var i=0;i<nodes;i++) {
-	hashrate[i] = (hashrate[i] / hashrate_total) / 1000; // dampening?
-}
 
 var btc = new Node();
+
+var mine = new MinerHelper();
 
 // btc.init() - an initialization function (post peermgr)
 // btc.tick() - a tick which occurs routinely
 // btc.on() - attaching new events
 
-function rehash(self) {
-	self.deprob("mining")
-	self.prob("mining", 100, (self.mprob / self.blockchain.getstate().difficulty), mined);
-	self.setColor(self.blockchain.getstate().color);
-	self.peers.broadcast("status", self.blockchain.chainstate);
-}
-
-function mined(self) {
-	self.blockchain.mine(self.now());
-
-	rehash(self)
-}
+// proposed: self.mine(false) = don't mine (default)
+//           self.mine(true) = mine a random unallocated portion of the network
+//           self.mine(.35) = mine an allocated 35% of network hashrate
 
 btc.init(function(self) {
-	if (self.id < 1) {
-		// be a sybil
-		self.peers.maxpeers = 195;
-	}
 	self.blockchain = new Blockchain(self);
-	self.mprob = hashrate.shift()
-
-	rehash(self)
-})
-
-btc.on("status", function(self, from, obj) {
-	if (self.peers.isConnected(from)) {
-		if (self.blockchain.newstate(obj)) {
-			rehash(self);
-		}
+	
+	if (self.id < 2) {
+		self.peers.maxpeers = 195;
+		mine.new(self, 0.35);
+		mine.start(self);
+	} else {
+		mine.new(self);
 	}
 })
+
+btc.on("status", mine.status)
 
 var net = new Network(".network");
 
 net.add(nodes, btc);
+
+mine.setup();
 
 var interval = 10;
 
