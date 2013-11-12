@@ -58,13 +58,50 @@ line[y2=NaN] {
   stroke: #999;
 }
 </style>
+<table>
+<tr>
+<td>
+</td>
+<td>
 <div class="network">
 </div>
+</td>
+<td>
+<b>new blocks</b>
+<div id="newblocklog" style="height: 500px; overflow: hidden">
+</div>
+</td>
+<td bgcolor="gray">&nbsp;&nbsp;</td>
+<td>
+<b>revenue</b>
+<div id="revenue" style="height: 500px; overflow: hidden">
+</div>
+</td>
+</tr>
+</table>
 <br />
 <span id='timenow'>0 seconds elapsed</span>
 <br />
-<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a>
+<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a> | <a href="#" id="attack">selfish mine</a>
 <script>
+
+function revchart(r) {
+	var res = "";
+	// sort r
+	var n = [];
+	for (var id in r) {
+		n.push({id:id,rev:r[id]})
+	}
+	n.sort(function(a,b) {
+		if (a.rev == b.rev) return 0;
+
+		return a.rev > b.rev ? -1 : 1;
+	})
+	for (var i=0;i<n.length;i++) {
+		res += n[i].id + " : " + n[i].rev + "<br />";
+	}
+	return res;
+}
 
 // init with .network for network class div
 function Visualizer(div) {
@@ -125,7 +162,6 @@ Visualizer.prototype = {
 
 	setColor: function(p, color) {
 		this.colormap_u = true;
-		this.updated = true;
 		this.colormap[p] = color;
 	},
 
@@ -225,6 +261,14 @@ Visualizer.prototype = {
 	},
 
 	rehash: function() {
+		/***** COLORMAP *****/
+		if (this.colormap_u) {
+			for (var p in this.colormap) {
+				$(".n" + p).css('fill', this.colormap[p]);
+			}
+			this.colormap_u = false;
+		}
+
 		if (!this.updated)
 			return;
 
@@ -241,14 +285,6 @@ Visualizer.prototype = {
 
 		this.force.start();
 
-		/***** COLORMAP *****/
-		if (this.colormap_u) {
-			for (var p in this.colormap) {
-				$(".n" + p).css('fill', this.colormap[p]);
-			}
-			this.colormap_u = false;
-		}
-
 		this.updated = false;
 	}
 };
@@ -260,63 +296,199 @@ Array.prototype.remove = function(from, to) {
   return this.push.apply(this, rest);
 };
 
-// TODO: arbitrary insertion complexity can be improved
-// considering creating a layered linked list like a skiplist
-// except structured by moments, because insertion points are
-// limited
-function EventChain() {
-	this.head = false;
-	this.tail = false;
+function BinaryHeap(scoreFunction){
+  this.content = [];
+  this.scoreFunction = scoreFunction;
+}
 
-	// add a new event at time
-	this.add = function(time, event) {
-		var next = false;
-		var cursor = this.tail;
+BinaryHeap.prototype = {
+  push: function(element) {
+    // Add the new element to the end of the array.
+    this.content.push(element);
+    // Allow it to bubble up.
+    this.bubbleUp(this.content.length - 1);
+  },
+
+  pop: function() {
+    // Store the first element so we can return it later.
+    var result = this.content[0];
+    // Get the element at the end of the array.
+    var end = this.content.pop();
+    // If there are any elements left, put the end element at the
+    // start, and let it sink down.
+    if (this.content.length > 0) {
+      this.content[0] = end;
+      this.sinkDown(0);
+    }
+    return result;
+  },
+
+  remove: function(node) {
+    var length = this.content.length;
+    // To remove a value, we must search through the array to find
+    // it.
+    for (var i = 0; i < length; i++) {
+      if (this.content[i] != node) continue;
+      // When it is found, the process seen in 'pop' is repeated
+      // to fill up the hole.
+      var end = this.content.pop();
+      // If the element we popped was the one we needed to remove,
+      // we're done.
+      if (i == length - 1) break;
+      // Otherwise, we replace the removed element with the popped
+      // one, and allow it to float up or sink down as appropriate.
+      this.content[i] = end;
+      this.bubbleUp(i);
+      this.sinkDown(i);
+      break;
+    }
+  },
+
+  size: function() {
+    return this.content.length;
+  },
+
+  bubbleUp: function(n) {
+    // Fetch the element that has to be moved.
+    var element = this.content[n], score = this.scoreFunction(element);
+    // When at 0, an element can not go up any further.
+    while (n > 0) {
+      // Compute the parent element's index, and fetch it.
+      var parentN = Math.floor((n + 1) / 2) - 1,
+      parent = this.content[parentN];
+      // If the parent has a lesser score, things are in order and we
+      // are done.
+      if (score >= this.scoreFunction(parent))
+        break;
+
+      // Otherwise, swap the parent with the current element and
+      // continue.
+      this.content[parentN] = element;
+      this.content[n] = parent;
+      n = parentN;
+    }
+  },
+
+  sinkDown: function(n) {
+    // Look up the target element and its score.
+    var length = this.content.length,
+    element = this.content[n],
+    elemScore = this.scoreFunction(element);
+
+    while(true) {
+      // Compute the indices of the child elements.
+      var child2N = (n + 1) * 2, child1N = child2N - 1;
+      // This is used to store the new position of the element,
+      // if any.
+      var swap = null;
+      // If the first child exists (is inside the array)...
+      if (child1N < length) {
+        // Look it up and compute its score.
+        var child1 = this.content[child1N],
+        child1Score = this.scoreFunction(child1);
+        // If the score is less than our element's, we need to swap.
+        if (child1Score < elemScore)
+          swap = child1N;
+      }
+      // Do the same checks for the other child.
+      if (child2N < length) {
+        var child2 = this.content[child2N],
+        child2Score = this.scoreFunction(child2);
+        if (child2Score < (swap == null ? elemScore : child1Score))
+          swap = child2N;
+      }
+
+      // No need to swap further, we are done.
+      if (swap == null) break;
+
+      // Otherwise, swap and continue.
+      this.content[n] = this.content[swap];
+      this.content[swap] = element;
+      n = swap;
+    }
+  }
+};
+
+function EventChain() {
+	this.heap = new BinaryHeap(function(x) {return x.time;})
+	this.cache = false;
+	this.quickhead = false;
+
+	this.quickadd = function(time, event) {
+		var cur = this.quickhead;
+		var prev = false;
 
 		while(true) {
-			if (!cursor) {
-				// we're the new head
-				var struct = {time:time, event:event, next:next, prev:false};
+			if (!cur) {
+				var struct = {time:time,event:event,next:false}
 
-				this.head = struct;
-
-				if (!next)
-					this.tail = struct; // we're also the new tail
+				if (prev)
+					prev.next = struct;
 				else
-					next.prev = struct;
+					this.quickhead = struct;
 
 				break;
+			} else if (cur.time > time) {
+				var struct = {time:time,event:event,next:cur}
 
-			} else if (cursor.time <= time) {
-				// we need to insert here
-				var struct = {time:time, event:event, next:next, prev:cursor};
-
-				if (next)
-					next.prev = struct;
-				else
-					this.tail = struct;
-
-				cursor.next = struct;
+				if (prev)
+					prev.next = struct;
 
 				break;
 			}
 
-			next = cursor;
-			cursor = cursor.prev;
+			prev = cur;
+			cur = cur.next;
 		}
 	}
 
-	// read the next event, as long as it doesn't exceed maxtime
-	this.next = function(maxtime) {
-		if (!this.head || this.head.time >= maxtime)
-			return false;
+	this.quicktime = function() {
+		if (this.quickhead)
+			return this.quickhead.time;
+		else
+			return Number.POSITIVE_INFINITY;
+	}
 
-		var ret = {time:this.head.time,event:this.head.event};
-
-		this.head = this.head.next;
-		this.head.prev = false;
-
+	this.quickpop = function() {
+		var ret = {time:this.quickhead.time,event:this.quickhead.event};
+		this.quickhead = this.quickhead.next;
 		return ret;
+	}
+
+	this.add = function(time, event) {
+		if (this.cache && (time < this.cache.time)){
+			this.heap.push(this.cache)
+			this.cache = false;
+		}
+
+		this.heap.push({time:time,event:event})
+	}
+
+	this.next = function(maxtime) {
+		var ret;
+		if (!this.cache)
+			ret = this.heap.pop();
+		else
+			ret = this.cache;
+
+		if (!ret || (ret.time > this.quicktime())) {
+			if (ret) this.cache = ret;
+
+			// quick goes first, if at all
+			if (this.quicktime() < maxtime) {
+				return this.quickpop();
+			}
+
+			return false;
+		} else {
+			if (ret.time >= maxtime) {
+				this.cache = ret;
+				return false;
+			} else {
+				this.cache = false;
+				return ret;
+			}
+		}
 	}
 }
 
@@ -326,6 +498,14 @@ function NodeState(node, network, id) {
 	this.network = network;
 	this.visualizerId = network.visualizer.addNode();
 	this.peers = {}; // PeerMgr
+
+	this.prob = function(label, delay, p, f) {
+		this.network.pregister(label, delay, p, this.id, f)
+	}
+
+	this.deprob = function(label) {
+		this.network.depregister(label, this.id)
+	}
 
 	this.setColor = function(color) {
 		this.network.visualizer.setColor(this.visualizerId, color);
@@ -354,8 +534,8 @@ function NodeEvent(delay, nid, f) {
 	this.nid = nid;
 	this.delay = delay;
 
-	this.run = function(self, now) {
-		f(self);
+	this.run = function(network) {
+		f(network.nodes[this.nid]);
 	}
 }
 
@@ -363,8 +543,8 @@ function NodeMessageEvent(from, delay, nid, name, obj) {
 	this.nid = nid;
 	this.delay = delay;
 
-	this.run = function(self, now) {
-		self.handle(from, name, obj) // tell the node to handle the message
+	this.run = function(network) {
+		network.nodes[this.nid].handle(from, name, obj) // tell the node to handle the message
 	}
 }
 
@@ -373,20 +553,105 @@ function NodeTickEvent(delay, nid, f) {
 	this.nid = nid;
 	this.delay = delay;
 
-	this.run = function(self, now) {
-		if (f(self) !== false)
-			self.network.exec(this) // register ourselves again!
+	this.run = function(network) {
+		if (f(network.nodes[this.nid]) !== false)
+			network.exec(this) // register ourselves again!
+	}
+}
+
+function NodeProbabilisticTickEvent(delay) {
+	this.delay = delay;
+	this.events = {}
+	this.pnothing = 1;
+	this.ptotal = 0;
+	this.numevents = 0;
+
+	this.register = function(p, nid, f) {
+		// p is the probability of the event firing at the given moment
+
+		this.events[nid] = {p:p, f:f}; // store the event
+		this.pnothing *= 1-p; // the probability of nothing happening decreases
+		this.ptotal += p;
+		this.numevents++;
+	}
+
+	this.deregister = function(nid) {
+		if (typeof this.events[nid] != "undefined") {
+			this.pnothing /= 1-(this.events[nid].p);
+			this.ptotal -= this.events[nid].p;
+			delete this.events[nid];
+			this.numevents--;
+		}
+	}
+
+	this.runevent = function(network) {
+		var which = Math.random() * this.ptotal;
+
+		var cur = 0;
+		for (var nid in this.events) {
+			cur += this.events[nid].p;
+
+			if (which <= cur) {
+				this.events[nid].f(network.nodes[nid])
+				break;
+			}
+		}
+	}
+
+	this.run = function(network) {
+		var ecount = 0;
+
+		while (Math.random() > this.pnothing) {
+			ecount++;
+		}
+
+		while (ecount > 0) {
+			// which event should occur?
+			this.runevent(network)
+			ecount--;
+		}
+
+		if (this.numevents) {
+			network.quickexec(this); // register ourselves again! we still have events that could occur again
+		}
 	}
 }
 
 function Network(visualizerDiv) {
-	this.events = new EventChain();
+	this.events = new EventChain(); // normal events
+	this.pevents = {}; // probablistic event references
+	$(visualizerDiv).html();
 	this.visualizer = new Visualizer(visualizerDiv);
-	this.visualizer.init();
+	if (visualizerDiv) {
+		this.visualizer.init();
+	}
 	this.now = 0;
 
 	this.nodes = [];
 	this.nindex = 0;
+
+	this.vars = {besth:-1,revenue:{},lastblocks:[]};
+
+	// registers a probabilistic event
+	this.pregister = function(label, delay, p, nid, cb) {
+		if (typeof this.pevents[label] == "undefined") {
+			this.pevents[label] = new NodeProbabilisticTickEvent(delay)
+			this.quickexec(this.pevents[label])
+		}
+		
+		this.pevents[label].register(p, nid, cb)
+	}
+
+	// deregisters a probablistic event
+	this.depregister = function(label, nid) {
+		if (typeof this.pevents[label] != "undefined") {
+			this.pevents[label].deregister(nid)
+		}
+	}
+
+	this.quickexec = function(e) {
+		this.events.quickadd(e.delay+this.now, e)
+	}
 
 	this.exec = function(e) {
 		this.events.add(e.delay+this.now, e)
@@ -422,10 +687,18 @@ function Network(visualizerDiv) {
 		var e = false;
 		while (e = this.events.next(max)) {
 			this.now = e.time;
-			e.event.run(this.nodes[e.event.nid], this.now)
+			e.event.run(this)
 		}
 
 		this.now += buffer;
+
+		var newblocklog = "";
+		for (var i=0;i<this.vars.lastblocks.length;i++) {
+			newblocklog = "<span style='color:white; background-color: " + this.vars.lastblocks[i].block.color + "'>node " + this.vars.lastblocks[i].node.id + " mined height " + this.vars.lastblocks[i].block.h + "<br /></span>" + newblocklog;
+		}
+		$("#newblocklog").html(newblocklog);
+
+		$("#revenue").html(revchart(this.vars.revenue))
 
 		this.visualizer.rehash();
 	}
@@ -647,7 +920,7 @@ function randomColor() {
 }
 
 // id, h, prev
-function Block(h, prev, time) {
+function Block(h, prev, time, credit) {
 	if (h == 0) {
 		this.id = "genesis";
 		prev = false;
@@ -665,22 +938,82 @@ function Block(h, prev, time) {
 	this.prev = prev;
 	this.color = randomColor();
 	this.time = time;
-	if (prev)
+	if (prev) {
 		this.difficulty = prev.difficulty;
-	else
+		this.revenue = JSON.parse(JSON.stringify(prev.revenue))
+		if (typeof this.revenue[credit.id] == "undefined") {
+			this.revenue[credit.id] = 0;
+		}
+
+		this.revenue[credit.id] += 1;
+	}
+	else {
+		this.revenue = {}
 		this.difficulty = 1;
+	}
+
+	if (this.h != 0) {
+		credit.network.vars.lastblocks.push({node:credit,block:this})
+
+		if (this.h > 50) {
+			credit.network.vars.lastblocks.shift()
+		}
+
+		if (this.h > credit.network.vars.besth) {
+			credit.network.vars.besth = this.h;
+			credit.network.vars.revenue = this.revenue;
+		}
+	}
 }
 
-function Blockchain() {
-	this.chainstate = new Block(0, false, 0);
+var GenesisBlock = new Block(0, false, 0);
 
-	this.target_avg_between_blocks = 10000; // target time between blocks
-	this.difficulty_adjustment_period = 20;
+function Blockchain(node) {
+	this.chainstate = GenesisBlock;
+
+	// if we're an attacker!
+	this.attacker_status = false;
+	this.private_chainstate = this.chainstate;
+
+	this.target_avg_between_blocks = 2.5 * 60 * 1000; // target time between blocks
+	this.difficulty_adjustment_period = 2016;
 
 	this.newstate = function(b) {
+		if (!this.attacker_status)
+			return this._newstate(b);
+
+		var r;
+		if (r = this._newstate(b)) {
+			// is the new block larger than our private chain?
+			if (b.h > this.private_chainstate.h) {
+				// give up. adopt the new (public) chainstate
+				this.private_chainstate = this.chainstate;
+				this.private_unpublished = 0;
+			} else {
+				// let's exceed or match the public chainstate height if possible
+				var cur = this.private_chainstate;
+				var lead = 0;
+				while(true) {
+					if ((cur.h == b.h) || (cur.h == b.h+1)) {
+						// publish this chainstate
+						this.chainstate = cur;
+						break;
+					}
+					lead++;
+					cur = cur.prev;
+				}
+			}
+		}
+
+		return r;
+	}
+
+	this._newstate = function(b) {
 		// is this new block larger than ours?
 		if (b.h > this.chainstate.h) {
 			this.chainstate = b;
+			if (!this.attacker_status)
+				this.private_chainstate = b;
 			return true;
 		}
 
@@ -688,14 +1021,24 @@ function Blockchain() {
 	}
 
 	this.mine = function(now) {
-		var newh;
-		this.chainstate = new Block(newh = this.chainstate.h+1, this.chainstate, now);
+		if (this.attacker_status) {
+			// always mine on the private chain
+			this.private_chainstate = new Block(this.private_chainstate.h+1, this.private_chainstate, now, node);
+			this.diff_adjust(this.private_chainstate);
+		} else {
+			// always mine on the public chain
+			this.chainstate = new Block(this.chainstate.h+1, this.chainstate, now, node);
+			this.diff_adjust(this.chainstate)
+		}
+	}
 
-		if (!(newh % this.difficulty_adjustment_period)) {
+	this.diff_adjust = function(b) {
+		if (!(b.h % this.difficulty_adjustment_period)) {
 			// this is a difficulty adjustment block
+
 			var total = 0;
-			var last = this.chainstate.time;
-			var cur = this.chainstate.prev;
+			var last = b.time;
+			var cur = b.prev;
 			for (var i=0;i<this.difficulty_adjustment_period;i++) {
 				total += last - cur.time;
 				last = cur.time;
@@ -704,16 +1047,43 @@ function Blockchain() {
 			var avg = total / this.difficulty_adjustment_period;
 
 			// how much should we change the difficulty by?
-			var old = this.chainstate.difficulty;
-			this.chainstate.difficulty *= this.target_avg_between_blocks / avg; // 10 minutes?
+			var old = b.difficulty;
+			b.difficulty *= this.target_avg_between_blocks / avg; // 10 minutes?
 
-			console.log("(height = " + newh + ") Difficulty adjustment: from " + old + " to " + this.chainstate.difficulty + " (" + (this.target_avg_between_blocks / avg) + "x)")
+			console.log("(height = " + b.h + ") Difficulty adjustment: from " + old + " to " + b.difficulty + " (" + (this.target_avg_between_blocks / avg) + "x)")
 		}
 	}
 
 	this.getstate = function() {
+		if (this.attacker_status)
+			return this.private_chainstate;
+
 		return this.chainstate;
 	}
+}
+
+var nodes = 200;
+var hashrate = [];
+var hashrate_total = 0;
+var target = 0.7;
+
+for (var i=0;i<nodes;i++) {
+	var newp;
+	hashrate.push(newp = Math.floor(Math.random() * 100000))
+	hashrate_total += newp;
+}
+
+hashrate_total -= hashrate[0]
+hashrate_total -= hashrate[1]
+
+var p = target * hashrate_total / (1-target)
+
+hashrate_total += p;
+hashrate[0] = p/2;
+hashrate[1] = p/2;
+
+for (var i=0;i<nodes;i++) {
+	hashrate[i] = (hashrate[i] / hashrate_total);
 }
 
 var btc = new Node();
@@ -722,42 +1092,46 @@ var btc = new Node();
 // btc.tick() - a tick which occurs routinely
 // btc.on() - attaching new events
 
+function rehash(self) {
+	self.deprob("mining")
+	self.prob("mining", 100, (self.mprob / self.blockchain.getstate().difficulty), mined);
+	self.setColor(self.blockchain.getstate().color);
+	self.peers.broadcast("status", self.blockchain.chainstate);
+}
+
+function mined(self) {
+	self.blockchain.mine(self.now());
+
+	rehash(self)
+}
+
 btc.init(function(self) {
-	self.blockchain = new Blockchain();
-})
-
-btc.tick(1000, function(self) {
-	if (Math.random() < (.01 / self.blockchain.getstate().difficulty)) {
-		// we mined something i guess lmao
-		self.blockchain.mine(self.now());
-
-		self.setColor(self.blockchain.getstate().color);
-
-		// ok now send status to all of our peers
-		self.peers.broadcast("status", self.blockchain.chainstate);
+	if (self.id < 2) {
+		// be a sybil
+		self.peers.maxpeers = 195;
 	}
+	self.blockchain = new Blockchain(self);
+	self.mprob = hashrate.shift()
+
+	rehash(self)
 })
 
 btc.on("status", function(self, from, obj) {
 	if (self.peers.isConnected(from)) {
 		if (self.blockchain.newstate(obj)) {
-			self.setColor(self.blockchain.getstate().color);
-
-			// ok now send status to all of our peers
-			self.peers.broadcast("status", self.blockchain.chainstate);
+			rehash(self);
 		}
 	}
 })
 
 var net = new Network(".network");
 
-net.add(200, btc);
+net.add(nodes, btc);
 
 var interval = 10;
 
 setInterval(function() {
 	net.run(interval);
-
 	$("#timenow").html((net.now/1000) + " seconds elapsed");
 }, 10)
 
@@ -779,6 +1153,10 @@ $("#stop").click(function() {
 
 $("#addnode").click(function() {
 	net.add(1, btc);
+})
+
+$("#attack").click(function() {
+	net.nodes[0].blockchain.attacker_status = true;
 })
 
 /*
