@@ -508,7 +508,43 @@ function NodeState(node, network, id) {
 	this.id = id;
 	this.network = network;
 	this.visualizerId = network.visualizer.addNode();
-	this.peers = {}; // PeerMgr
+	this.mprob = 0;
+
+	this.mine = function(p) {
+		if (p === false) {
+			this.mprob = 0;
+		} else if (p === true) {
+			network.mining.new(this);
+		} else {
+			this.mprob = p;
+			if (network.mining.unreserved < p)
+				return false;
+
+			network.mining.unreserved -= p;
+			this.startMining(); // start mining
+		}
+
+		return true;
+	}
+
+	this.onMined = function(self) {
+		self.blockchain.mine(self.now());
+
+		self.startMining();
+	}
+
+	this.startMining = function() {
+		this.stopMining();
+		if (this.mprob > 0) {
+			this.prob("mining", 100, (this.mprob / this.blockchain.getstate().difficulty), this.onMined);
+		}
+		this.setColor(this.blockchain.getstate().color);
+		this.peers.broadcast("status", this.blockchain.chainstate);
+	}
+
+	this.stopMining = function() {
+		this.deprob("mining")
+	}
 
 	this.prob = function(label, delay, p, f) {
 		this.network.pregister(label, delay, p, this.id, f)
@@ -539,6 +575,9 @@ function NodeState(node, network, id) {
 	this.now = function() {
 		return this.network.now;
 	}
+
+	this.peers = new PeerMgr(this);
+	this.blockchain = new Blockchain(this);
 }
 
 // simple interface for an event that occurs in the simulation
@@ -631,8 +670,30 @@ function NodeProbabilisticTickEvent(delay) {
 	}
 }
 
+function MiningPool() {
+	this.unreserved = 1;
+	this.unreserved_pool = [];
+
+	this.new = function(node) {
+		this.unreserved_pool.push(node);
+	}
+
+	this.setup = function() {
+		var m;
+		var per = this.unreserved / this.unreserved_pool.length;
+
+		for (var i=0;i<this.unreserved_pool.length;i++) {
+			m = this.unreserved_pool[i];
+
+			m.mprob = per;
+			m.startMining();
+		}
+	}
+}
+
 function Network(visualizerDiv) {
 	this.events = new EventChain(); // normal events
+	this.mining = new MiningPool();
 	this.pevents = {}; // probablistic event references
 	$(visualizerDiv).html();
 	this.visualizer = new Visualizer(visualizerDiv);
@@ -695,6 +756,8 @@ function Network(visualizerDiv) {
 			this.nodes[this.nindex] = state; // init and receive a state object back
 			this.nindex++;
 		}
+
+		this.mining.setup();
 	}
 
 	// run buffer time worth of tasks
@@ -723,21 +786,28 @@ function Network(visualizerDiv) {
 // the base node object just has a bunch of built in handlers
 // with peermgr, and probably will have more built in things later
 function Node() {
-	this._init = function(self) {self.peers = new PeerMgr(self);};
+	this._init = function(self) {};
 	this._handlers = {
 		"connect":function(state, from, obj) {state.peers.event("connect", state, from, obj)},
 		"accept":function(state, from, obj) {state.peers.event("accept", state, from, obj)},
 		"reject":function(state, from, obj) {state.peers.event("reject", state, from, obj)},
 		"disconnect":function(state, from, obj) {state.peers.event("disconnect", state, from, obj)},
 		"getpeers":function(state, from, obj) {state.peers.event("getpeers", state, from, obj)},
-		"peerlist":function(state, from, obj) {state.peers.event("peerlist", state, from, obj)}
+		"peerlist":function(state, from, obj) {state.peers.event("peerlist", state, from, obj)},
+		"status":function(state, from, obj) {
+			if (state.peers.isConnected(from)) {
+				if (state.blockchain.newstate(obj)) {
+					state.startMining();
+				}
+			}
+		}
 	};
 	this._ticks = [{delay: 1000, f: function(self) {
 		return self.peers.tick();
 	}}];
 
 	this.init = function(callback) {
-		this._init = function(self) {self.peers = new PeerMgr(self); callback(self);};
+		this._init = callback;
 	}
 
 	// network events
@@ -963,7 +1033,7 @@ function Block(h, prev, time, credit) {
 		this.signature = credit.id;
 	}
 	else {
-		this.difficulty = 1;
+		this.difficulty = 1000;
 		this.signature = false;
 	}
 
@@ -1104,91 +1174,25 @@ function Blockchain(node) {
 	}
 }
 
-// ffs come up with a better name than this
-// also i'd rather build this into the nodes
-// like PeerMgr
-function MinerHelper() {
-	this.unreserved = 1;
-	this.unreserved_pool = [];
-
-	var rthis = this;
-
-	this.new = function(node, percentage) {
-		if (typeof percentage == "undefined") {
-			rthis.unreserved_pool.push(node);
-		} else {
-			node.mprob = percentage / 1000;
-			rthis.unreserved -= percentage;
-		}
-	}
-
-	this.setup = function() {
-		var m;
-		var per = rthis.unreserved / rthis.unreserved_pool.length;
-
-		for (var i=0;i<rthis.unreserved_pool.length;i++) {
-			m = rthis.unreserved_pool[i];
-
-			m.mprob = per / 1000;
-			rthis.start(m);
-		}
-	}
-
-	this.mined = function(self) {
-		self.blockchain.mine(self.now()); // tell the blockchain to mine a block
-
-		rthis.start(self); // restart mining
-	}
-
-	this.start = function(self) {
-		self.deprob("mining") // unregister our existing mining tick
-		self.prob("mining", 100, (self.mprob / self.blockchain.getstate().difficulty), rthis.mined); // re-register it
-		self.setColor(self.blockchain.getstate().color); // set the color of the node based on their real chainstate
-		self.peers.broadcast("status", self.blockchain.chainstate); // broadcast mining status to other nodes
-	}
-
-	this.status = function(self, from, obj) {
-		if (self.peers.isConnected(from)) {
-			if (self.blockchain.newstate(obj)) {
-				rthis.start(self);
-			}
-		}
-	}
-}
-
 var nodes = 200;
 
 var btc = new Node();
-
-var mine = new MinerHelper();
 
 // btc.init() - an initialization function (post peermgr)
 // btc.tick() - a tick which occurs routinely
 // btc.on() - attaching new events
 
-// proposed: self.mine(false) = don't mine (default)
-//           self.mine(true) = mine a random unallocated portion of the network
-//           self.mine(.35) = mine an allocated 35% of network hashrate
-
 btc.init(function(self) {
-	self.blockchain = new Blockchain(self);
-	
 	if (self.id < 2) {
-		self.peers.maxpeers = 195;
-		mine.new(self, 0.35);
-		mine.start(self);
+		self.mine(.35)
 	} else {
-		mine.new(self);
+		self.mine(false);
 	}
 })
-
-btc.on("status", mine.status)
 
 var net = new Network(".network");
 
 net.add(nodes, btc);
-
-mine.setup();
 
 var interval = 10;
 
