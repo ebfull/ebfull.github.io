@@ -85,7 +85,7 @@ line[y2=NaN] {
 <a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a> | <a href="#" id="attack">selfish mine</a>
 <script>
 
-function revchart(r) {
+function revchart(r, h) {
 	var res = "";
 	// sort r
 	var n = [];
@@ -98,7 +98,7 @@ function revchart(r) {
 		return a.rev > b.rev ? -1 : 1;
 	})
 	for (var i=0;i<n.length;i++) {
-		res += n[i].id + " : " + n[i].rev + "<br />";
+		res += n[i].id + " : " + n[i].rev + " (" + ((n[i].rev/h)*100).toFixed(2) + "%)<br />";
 	}
 	return res;
 }
@@ -698,7 +698,7 @@ function Network(visualizerDiv) {
 		}
 		$("#newblocklog").html(newblocklog);
 
-		$("#revenue").html(revchart(this.vars.revenue))
+		$("#revenue").html(revchart(this.vars.revenue, this.vars.besth))
 
 		this.visualizer.rehash();
 	}
@@ -938,18 +938,14 @@ function Block(h, prev, time, credit) {
 	this.prev = prev;
 	this.color = randomColor();
 	this.time = time;
+	this.revenue = {};
 	if (prev) {
 		this.difficulty = prev.difficulty;
-		this.revenue = JSON.parse(JSON.stringify(prev.revenue))
-		if (typeof this.revenue[credit.id] == "undefined") {
-			this.revenue[credit.id] = 0;
-		}
-
-		this.revenue[credit.id] += 1;
+		this.signature = credit.id;
 	}
 	else {
-		this.revenue = {}
 		this.difficulty = 1;
+		this.signature = false;
 	}
 
 	if (this.h != 0) {
@@ -958,11 +954,11 @@ function Block(h, prev, time, credit) {
 		if (this.h > 50) {
 			credit.network.vars.lastblocks.shift()
 		}
+	}
 
-		if (this.h > credit.network.vars.besth) {
-			credit.network.vars.besth = this.h;
-			credit.network.vars.revenue = this.revenue;
-		}
+	this.report = function() {
+		credit.network.vars.besth = this.h;
+		credit.network.vars.revenue = this.revenue;
 	}
 }
 
@@ -1051,6 +1047,34 @@ function Blockchain(node) {
 			b.difficulty *= this.target_avg_between_blocks / avg; // 10 minutes?
 
 			console.log("(height = " + b.h + ") Difficulty adjustment: from " + old + " to " + b.difficulty + " (" + (this.target_avg_between_blocks / avg) + "x)")
+
+			// awesome, now since we're an adjustment block we can go fetch the revenue from the last diff block and perform a merge
+			var newrev = {};
+
+			cur = b;
+
+			while( (cur.h == b.h) || cur.h % this.difficulty_adjustment_period) {
+				if (cur.signature !== false) {
+					if (typeof newrev[cur.signature] == 'undefined') {
+						newrev[cur.signature] = 0;
+					}
+					newrev[cur.signature] += 1;
+				}
+
+				cur = cur.prev;
+			}
+
+			// cur should now be a diff adjustment block
+			for (var s in cur.revenue) {
+				if (typeof newrev[s] == 'undefined') {
+					newrev[s] = 0;
+				}
+				newrev[s] += cur.revenue[s];
+			}
+
+			b.revenue = newrev; // fuck yes.
+
+			b.report(); // holy fuck
 		}
 	}
 
