@@ -1083,7 +1083,7 @@ hashrate[0] = p/2;
 hashrate[1] = p/2;
 
 for (var i=0;i<nodes;i++) {
-	hashrate[i] = (hashrate[i] / hashrate_total);
+	hashrate[i] = (hashrate[i] / hashrate_total) / 1000; // dampening?
 }
 
 var btc = new Node();
@@ -1106,7 +1106,7 @@ function mined(self) {
 }
 
 btc.init(function(self) {
-	if (self.id < 2) {
+	if (self.id < 1) {
 		// be a sybil
 		self.peers.maxpeers = 195;
 	}
