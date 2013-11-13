@@ -1077,17 +1077,31 @@ function Transaction(input) {
              .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
              .toString(16)
              .substring(1)); // just random data lol
-    this.dependencies = [input];
+    this.outputs = [];
+
+    var no = Math.floor(Math.random() * 2) + 1;
+
+    for (var i=no;i>0;i--) {
+    	this.outputs.push((Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)));
+    }
+
+    this.inputs = [input];
     this.coinbase = false;
 
     // returns a string representation of inputs lol in an array
     this.getInputs = function() {
-    	return this.dependencies;
+    	return this.inputs;
     }
 
     // returns a string representation of outputs lol in an array
     this.getOutputs = function() {
-    	return [this.id];
+    	return this.outputs;
     }
 }
 
