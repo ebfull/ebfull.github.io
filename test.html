@@ -73,7 +73,6 @@ line[y2=NaN] {
 </td>
 <td bgcolor="gray">&nbsp;&nbsp;</td>
 <td>
-<b>revenue</b>
 <div id="revenue" style="height: 500px; overflow: hidden">
 </div>
 </td>
@@ -82,11 +81,11 @@ line[y2=NaN] {
 <br />
 <span id='timenow'>0 seconds elapsed</span>
 <br />
-<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a> | <a href="#" id="attack">node 0 selfish mine</a>
+<a href="#" id="faster">faster</a> | <a href="#" id="slower">slower</a> | <a href="#" id="default">default</a> | <a href="#" id="stop">stop</a> | <a href="#" id="addnode">add node</a> | <a href="#" id="attack">node 0 selfish mine</a> | <a href="#" id="sybil">node 0 maxpeers 100</a>
 <script>
 
 function revchart(r, h) {
-	var res = "";
+	var res = "<table><tr><td>node</td><td>revenue</td></tr>";
 	// sort r
 	var n = [];
 	for (var id in r) {
@@ -98,9 +97,9 @@ function revchart(r, h) {
 		return a.rev > b.rev ? -1 : 1;
 	})
 	for (var i=0;i<n.length;i++) {
-		res += n[i].id + " : " + n[i].rev + " (" + ((n[i].rev/h)*100).toFixed(2) + "%)<br />";
+		res += "<tr><td>" + n[i].id + "</td><td>" + n[i].rev + " (" + ((n[i].rev/h)*100).toFixed(2) + "%)<br /></td></tr>";
 	}
-	return res;
+	return res + "</table>";
 }
 
 // init with .network for network class div
@@ -438,6 +437,8 @@ function EventChain() {
 
 				if (prev)
 					prev.next = struct;
+				else
+					this.quickhead = struct;
 
 				break;
 			}
@@ -1196,6 +1197,17 @@ var btc = new Node();
 // btc.tick() - a tick which occurs routinely
 // btc.on() - attaching new events
 
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1);
+};
+
+function guid() {
+  return s4() + s4() + s4();
+}
+
+
 btc.init(function(self) {
 	switch(self.id) {
 		case 0:
@@ -1229,9 +1241,25 @@ btc.init(function(self) {
 				self.mine(false);
 		break;
 	}
-})
+/*
+	// node will randomly generate a new transaction
+	self.prob("newtx", 10, 0.01, function() {
+		var newtx = guid();
+		self.handle(-1, "newtx", newtx);
+	})
 
-var net = new Network();
+	self.mempool = {};
+*/
+})
+/*
+btc.on("newtx", function(self, from, obj) {
+	if (typeof self.mempool[obj] == "undefined") {
+		self.mempool[obj] = self.now(); // store in mempool
+		self.peers.broadcast("newtx", obj); // broadcast to other nodes
+	}
+})
+*/
+var net = new Network(".network");
 
 net.add(nodes, btc);
 
@@ -1264,6 +1292,10 @@ $("#addnode").click(function() {
 
 $("#attack").click(function() {
 	net.nodes[0].blockchain.attacker_status = true;
+})
+
+$("#sybil").click(function() {
+	net.nodes[0].peers.maxpeers = 100;
 })
 
 </script>
