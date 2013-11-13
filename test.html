@@ -540,7 +540,7 @@ function NodeState(node, network, id) {
 			this.prob("mining", 100, (this.mprob / this.blockchain.getstate().difficulty), this.onMined);
 		}
 		this.setColor(this.blockchain.getstate().color);
-		this.peers.broadcast("status", this.blockchain.chainstate);
+		this.peers.broadcast("status", this.blockchain.chainstate.get());
 	}
 
 	this.stopMining = function() {
@@ -710,6 +710,7 @@ function Network(visualizerDiv) {
 
 	// registers a probabilistic event
 	this.pregister = function(label, delay, p, nid, cb) {
+		//console.log("label: " + label + "; delay: " + delay + "; p: " + p + "; nid: " + nid + ";")
 		if (typeof this.pevents[label] == "undefined") {
 			this.pevents[label] = new NodeProbabilisticTickEvent(delay)
 			this.quickexec(this.pevents[label])
@@ -1068,11 +1069,56 @@ function Block(h, prev, time, credit) {
 
 var GenesisBlock = new Block(0, false, 0);
 
+function Chainstate(head) {
+	this.head = head;
+
+	this.get = function() {
+		return this.head;
+	}
+
+	this.set = function(block) {
+		var thiscur = this.head;
+		var newcur = block;
+
+		var numorphan = 0;
+
+		while (true) {
+			if (thiscur == newcur.prev) {
+				break;
+			} else if (thiscur.h >= newcur.h) {
+				thiscur = thiscur.prev;
+				numorphan++;
+			} else if (newcur.h > thiscur.h+1) {
+				newcur = newcur.prev;
+			} else {
+				thiscur = thiscur.prev;
+				newcur = newcur.prev;
+				numorphan++;
+			}
+		}
+
+		this.head = block;
+
+		return numorphan;
+	}
+
+	// unroll our head until we reach the given height
+	this.unroll = function(h) {
+		var cur = this.head;
+
+		while (cur.h != h) {
+			cur = cur.prev;
+		}
+
+		return cur;
+	}
+}
+
 function Blockchain(node) {
-	this.chainstate = GenesisBlock;
+	this.chainstate = new Chainstate(GenesisBlock);
 
 	this.attacker_status = false; // selfish mining attack
-	this.private_chainstate = this.chainstate;
+	this.private_chainstate = new Chainstate(this.chainstate.get());
 
 	this.target_avg_between_blocks = 2.5 * 60 * 1000; // target time between blocks
 	this.difficulty_adjustment_period = 2016;
@@ -1084,22 +1130,14 @@ function Blockchain(node) {
 		var r;
 		if (r = this._newstate(b)) {
 			// is the new block larger than our private chain?
-			if (b.h > this.private_chainstate.h) {
+			if (b.h > this.private_chainstate.get().h) {
 				// give up. adopt the new (public) chainstate
-				this.private_chainstate = this.chainstate;
-				this.private_unpublished = 0;
+				this.private_chainstate.set(this.chainstate.get());
 			} else {
-				// let's exceed or match the public chainstate height if possible
-				var cur = this.private_chainstate;
-				var lead = 0;
-				while(true) {
-					if ((cur.h == b.h) || (cur.h == b.h+1)) {
-						// publish this chainstate
-						this.chainstate = cur;
-						break;
-					}
-					lead++;
-					cur = cur.prev;
+				if (b.h == this.private_chainstate.get().h) {
+					this.chainstate.set(this.private_chainstate.get()); // publish private chainstate
+				} else {
+					this.chainstate.set(this.private_chainstate.unroll(b.h+1))
 				}
 			}
 		}
@@ -1109,10 +1147,12 @@ function Blockchain(node) {
 
 	this._newstate = function(b) {
 		// is this new block larger than ours?
-		if (b.h > this.chainstate.h) {
-			this.chainstate = b;
+		if (b.h > this.chainstate.get().h) {
+			this.chainstate.set(b);
+
 			if (!this.attacker_status)
-				this.private_chainstate = b;
+				this.private_chainstate.set(b);
+
 			return true;
 		}
 
@@ -1122,12 +1162,12 @@ function Blockchain(node) {
 	this.mine = function(now) {
 		if (this.attacker_status) {
 			// always mine on the private chain
-			this.private_chainstate = new Block(this.private_chainstate.h+1, this.private_chainstate, now, node);
-			this.diff_adjust(this.private_chainstate);
+			this.private_chainstate.set(new Block(this.private_chainstate.get().h+1, this.private_chainstate.get(), now, node));
+			this.diff_adjust(this.private_chainstate.get());
 		} else {
 			// always mine on the public chain
-			this.chainstate = new Block(this.chainstate.h+1, this.chainstate, now, node);
-			this.diff_adjust(this.chainstate)
+			this.chainstate.set(new Block(this.chainstate.get().h+1, this.chainstate.get(), now, node));
+			this.diff_adjust(this.chainstate.get());
 		}
 	}
 
@@ -1183,9 +1223,9 @@ function Blockchain(node) {
 
 	this.getstate = function() {
 		if (this.attacker_status)
-			return this.private_chainstate;
+			return this.private_chainstate.get();
 
-		return this.chainstate;
+		return this.chainstate.get();
 	}
 }
 
@@ -1241,7 +1281,8 @@ btc.init(function(self) {
 				self.mine(false);
 		break;
 	}
-/*
+
+	/*
 	// node will randomly generate a new transaction
 	self.prob("newtx", 10, 0.01, function() {
 		var newtx = guid();
@@ -1249,8 +1290,9 @@ btc.init(function(self) {
 	})
 
 	self.mempool = {};
-*/
+	*/
 })
+
 /*
 btc.on("newtx", function(self, from, obj) {
 	if (typeof self.mempool[obj] == "undefined") {
@@ -1259,6 +1301,7 @@ btc.on("newtx", function(self, from, obj) {
 	}
 })
 */
+
 var net = new Network(".network");
 
 net.add(nodes, btc);
