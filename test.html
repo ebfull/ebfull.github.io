@@ -1156,7 +1156,7 @@ function UTXO() {
 		if (typeof this.txmap[tx.id] != "undefined")
 			return true; // already added
 
-		if (!this.verifyinputs(tx))
+		if (this.verifyinputs(tx) != "valid")
 			return false;
 
 		this.spendinputs(tx);
@@ -1197,24 +1197,23 @@ function UTXO() {
 
 	this.verifyinputs = function(tx) {
 		if (tx.coinbase)
-			return true; // coinbase transactions don't need valid inputs
+			return "valid"; // coinbase transactions don't need valid inputs
 
-		// this transactions' inputs must be in the UTXO set and confirmed
+		// this transactions' inputs must be in the UTXO set
 
 		var txins = tx.getInputs();
 		for (var i=0;i<txins.length;i++) {
 			if (typeof(this.utxo[txins[i]]) == "undefined") {
 				// if we don't have the tx, we'll return -1
 				if (typeof this.txmap[tx.inputs[i].prevtxid] == "undefined") {
-					console.log("WOW OKAY WTF!!!!!!!")
-					return -1;
+					return "missing";
 				}
 
-				return false;
+				return "doublespend";
 			}
 		}
 
-		return true;
+		return "valid";
 	}
 }
 
@@ -1223,6 +1222,9 @@ function MapOrphans() {
 	this.transactionsByPrev = {};
 
 	this.add = function(tx) {
+		if (typeof this.transactions[tx.id] != "undefined")
+			return false;
+
 		this.transactions[tx.id] = tx;
 
 		var inputs = tx.getInputs(); // gets TxIn hashes
@@ -1236,50 +1238,183 @@ function MapOrphans() {
 	}
 
 	this.remove = function(tx) {
+		if (typeof this.transactions[tx.id] == "undefined")
+			return false;
+
 		delete this.transactions[tx.id];
 
 		var inputs = tx.getInputs(); // gets TxIn hashes
 
 		for (var i=0;i<inputs.length;i++) {
-			this.transactionsByPrev[inputs[i]].splice(this.transactionsByPrev[inputs[i]].indexOf(tx.id), 1)
+			this.transactionsByPrev[inputs[i]].remove(this.transactionsByPrev[inputs[i]].indexOf(tx.id))
 
 			if (this.transactionsByPrev[inputs[i]].length == 0) {
 				delete this.transactionsByPrev[inputs[i]];
 			}
-			this.transactionsByPrev[inputs[i]].push(tx.id);
+		}
+	}
+
+	this.forprev = function(txin, cb) {
+		if (typeof this.transactionsByPrev[txin] != "undefined") {
+			var tmp = this.transactionsByPrev[txin].slice(0);
+
+			for (var i=0;i<tmp.length;i++) {
+				var txid = tmp[i]
+
+				if (typeof this.transactions[txid] != "undefined")
+					cb(this.transactions[txid])
+			}
 		}
 	}
 }
 
 function Mempool() {
-	this.transactions = {};
-	this.depends = {};
+	this.transactions = [];
+	this.spends = {};
 	this.utxo = new UTXO();
+	this.maporphans = new MapOrphans();
 
-	// adds a transaction to the mempool or maporphans
+	/*
+		New transaction we received over the wire.
+
+		1. This transaction could have missing inputs. In which case, we will add it to
+		   MapOrphans.
+		2. This transaction could supply missing inputs. We will check MapOrphans for
+		   transactions that depend on our inputs, and try to re-add them to the mempool.
+        3. If we can add the transaction to our UTXO set, we can append the transaction
+		   to a list of transactions in the mempool.
+	*/
 	this.add = function(tx) {
-		
+		var v = this.utxo.verifyinputs(tx);
+
+		switch(v) {
+			case "missing":
+				// This transaction depends on inputs that aren't in the UTXO set.
+				// Further, at least one transaction it depends on has not been seen by the
+				// UTXO set. We will add this transaction to maporphans instead.
+
+				this.maporphans.add(tx);
+				return true;
+			break;
+			case "doublespend":
+				// This transaction depends on inputs that aren't in the UTXO set, but
+				// we've seen the transactions it references before. This implies it's a double-spend
+				// so we should reject the transaction. (It could also be the same transaction sent twice.)
+
+				return false;
+			break;
+			case "valid":
+				// This transaction is valid, and we can add it to the UTXO set.
+				this.utxo.add(tx);
+
+				// We can remove this transaction from MapOrphans if it's there.
+				this.maporphans.remove(tx);
+
+				// Further, we will push the transaction to our mempool list.
+				this.transactions.push(tx);
+
+				// It is possible this transaction supplies inputs for orphaned transactions.
+				// Iterate over all of this transaction's outputs and try to add orphaned
+				// transactions again.
+				var outputs = tx.getOutputs();
+
+				var self = this;
+				for (var i=0;i<outputs.length;i++) {
+					this.maporphans.forprev(outputs[i], function(dtx) {
+						self.add(dtx);
+					})
+				}
+
+				// To resolve conflicts later when the UTXO set may be forcefully reverted due to a
+				// block confirmation, we store 'spends' for inputs added to the mempool. These
+				// spends are removed when the transaction is committed.
+				var inputs = tx.getInputs();
+
+				for (var i=0;i<inputs.length;i++) {
+					this.spends[inputs[i]] = tx;
+				}
+
+				return true;
+			break;
+		}
 	}
 
-	// removes a transaction from the mempool, and by consequence, from our UTXO set
-	this.remove = function(tx) {
-		
-	}
+	/*
+		A transaction was 'confirmed' in a block in our chainstate. This means it MUST be
+		committed to our UTXO set.
 
-	// a transaction has left the chainstate, and should be re-entered into the mempool
-	this.unconfirm = function(tx) {
-		
-	}
+		This commitment _could_ conflict with previous spends committed to the UTXO set,
+		which have not been confirmed yet. We will iterate the spends for all of this
+		transaction's inputs, and remove transactions recursively as necessary.
 
-	// a transaction has entered the chainstate, and should no longer be in the mempool
-	// any transactions this conflicts with should be removed from the mempool and maporphans
+		Remove all spend entries and commit the transaction to UTXO.
+
+		Finally, remove the transaction from the mempool.
+	*/
 	this.confirm = function(tx) {
-		
+		// Iterate over our inputs and remove any conflicting transactions from the UTXO.
+
+		var inputs = tx.getInputs();
+
+		for (var i=0;i<inputs.length;i++) {
+			if (typeof this.spends[inputs[i]] != "undefined") {
+				this.remove(this.spends[inputs[i]])
+
+				// Remove this spend as we're committing the transaction.
+				delete this.spends[inputs[i]];
+			}
+		}
+
+		// Commit to UTXO if it hasn't been already.
+		this.utxo.add(tx);
+
+		// Remove from mempool list (if it's there).
+		var itx = this.transactions.indexOf(tx);
+		if (itx >= 0)
+			this.transactions.splice(this.transactions.indexOf(tx), 1);
+	}
+
+	/*
+		Remove a transaction from the UTXO set. It's possible that this transaction's outputs
+		are already spent by other transactions, in which case we will need to remove those as well.
+
+		This function acts recursively to remove a transaction from the UTXO.
+	*/
+	this.remove = function(tx) {
+		var outputs = tx.getOutputs();
+
+		for (var i=0;i<outputs.length;i++) {
+			if (typeof this.spends[outputs[i]] != "undefined") {
+				this.remove(this.spends[outputs[i]])
+
+				// Nothing spends this output anymore.
+				delete this.spends[outputs[i]];
+			}
+		}
+
+		// Remove from UTXO set.
+		this.utxo.remove(tx);
+	}
+
+	/*
+		A transaction is no longer confirmed, probably due to a rollback in the chainstate.
+
+		In this situation, the transaction will remain in our UTXO set, but its spends will be re-added
+		to the spend map, and it will be placed in the mempool again.
+	*/
+	this.unconfirm = function(tx) {
+		var inputs = tx.getInputs();
+
+		for (var i=0;i<inputs.length;i++) {
+			this.spends[inputs[i]] = tx;
+		}
+
+		this.transactions.push(tx);
 	}
 
 	// gets a list of all transactions in the mempool IN ORDER of when they were put in the mempool
 	this.get = function() {
-		
+		return this.transactions;
 	}
 }
 
@@ -1596,6 +1731,8 @@ btc.init(function(self) {
 			Object.keys(self.blockchain.chainstate.mempool.utxo.utxo)[Math.floor(Math.random() * Object.keys(self.blockchain.chainstate.mempool.utxo.utxo).length)]
 		];
 
+		//console.log(r);
+
 		var newtx = new Transaction([new TxIn(r)]);
 
 		self.handle(-1, "newtx", newtx);
@@ -1633,7 +1770,7 @@ btc.on("newtx", function(self, from, obj) {
 	}
 })
 
-var net = new Network(".network");
+var net = new Network();
 
 net.add(nodes, btc);
 
