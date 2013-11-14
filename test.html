@@ -1443,8 +1443,9 @@ function Mempool() {
 
 		// Remove from mempool list (if it's there).
 		var itx = this.transactions.indexOf(tx);
-		if (itx >= 0)
-			this.transactions.remove(this.transactions.indexOf(tx));
+		if (itx >= 0) {
+			this.transactions.remove(itx);
+		}
 	}
 
 	/*
@@ -1522,6 +1523,22 @@ function Chainstate(starthead) {
 
 	this.get = function() {
 		return this.head;
+	}
+
+	/*
+		Get the transaction from our index.
+
+		TODO: figure out what we're doing for indexing per node, etc.
+	*/
+	this.gettx = function(txid) {
+		return this.mempool.utxo.txmap[txid];
+	}
+
+	/*
+		Have we seen this tx?
+	*/
+	this.seentx = function(txid) {
+		return typeof(this.mempool.utxo.txmap[txid]) != "undefined"
 	}
 
 	/*
@@ -1608,7 +1625,8 @@ function Chainstate(starthead) {
 			}
 		}
 
-		this.rejects = {}; // reset rejects
+		// this.rejects = {}; // reset rejects
+		// TODO: we need a full-blown inventory system still
 
 		return numorphan;
 	}
@@ -1647,6 +1665,22 @@ function Blockchain(node) {
 
 	this.target_avg_between_blocks = 2.5 * 60 * 1000; // target time between blocks
 	this.difficulty_adjustment_period = 2016;
+
+	/*
+		Get the transaction from our index.
+
+		TODO: inventory system how many times do i have to
+	*/
+	this.gettx = function(txid) {
+		return this.chainstate.gettx(txid);
+	}
+
+	/*
+		Have we seen this transaction?
+	*/
+	this.seentx = function(txid) {
+		return this.chainstate.seentx(txid);
+	}
 
 	/*
 		New transaction received over the wire, hand it to our chainstate(s).
@@ -1846,6 +1880,9 @@ btc.init(function(self) {
 		break;
 	}
 
+	self.getqueue = new EventChain();
+	self.mapAlreadyAskedFor = {};
+
 	// node will randomly generate a new transaction
 	self.prob("newtx", 1000, 0.005, function() {
 		// get a random unspent output and just create a transaction with it
@@ -1859,7 +1896,7 @@ btc.init(function(self) {
 
 		var newtx = new Transaction([new TxIn(r)]);
 
-		self.handle(-1, "newtx", newtx);
+		self.handle(-1, "tx", newtx);
 		
 
 		// let's get it from the latest block
@@ -1887,14 +1924,65 @@ btc.init(function(self) {
 	})
 })
 
-btc.on("newtx", function(self, from, obj) {
+btc.on("tx", function(self, from, obj) {
 	if (self.blockchain.newtx(obj)) {
-		//console.log("BROADCASTING TX " + JSON.stringify(obj))
-		self.peers.broadcast("newtx", obj)
+		// transaction entered the mempool, announce INV to all peers
+		self.peers.broadcast("inv", obj.id)
 	}
 })
 
-var net = new Network();
+btc.on("inv", function(self, from, obj) {
+	// from has a (transaction) object, do we have it?
+	if (!self.blockchain.seentx(obj)) {
+		// we haven't seen it yet!
+
+		// this means we need to queue for the node to send us the data
+		self.getqueue.add(self.now(), {from:from,id:obj})
+	}
+})
+
+btc.on("getdata", function(self, from, obj) {
+	if (!self.blockchain.seentx(obj)) {
+		// why are they asking us, we don't have this
+	} else {
+		// send tx data back
+		self.send(from, "tx", self.blockchain.gettx(obj))
+	}
+})
+
+btc.tick(100, function(self) {
+	// every 100msec we simulate bitcoind's "SendMessages"
+
+	var e;
+	while (e = self.getqueue.next(self.now())) {
+		e = e.event;
+
+		// did we get it from another peer already?
+		if (self.blockchain.seentx(e.id))
+			continue; // next event please
+
+		if (typeof self.mapAlreadyAskedFor[e.from] == "undefined") {
+			self.mapAlreadyAskedFor[e.from] = {};
+		}
+
+		if (typeof self.mapAlreadyAskedFor[e.from][e.id] == "undefined") {
+			self.mapAlreadyAskedFor[e.from][e.id] = self.now() + (2 * 60 * 1000); // we can getdata this again in 2 minutes
+		} else {
+			if (self.mapAlreadyAskedFor[e.from][e.id] > self.now()) {
+				// requeue this event for that time
+				self.getqueue.add(self.mapAlreadyAskedFor[e.from][e.id], e)
+				continue; // next event please
+			} else {
+				self.mapAlreadyAskedFor[e.from][e.id] = self.now() + (2 * 60 * 1000); // we can getdata this again in 2 minutes
+			}
+		}
+
+		// if we've made it this far, we can request getdata from the other node
+		self.send(e.from, "getdata", e.id)
+	}
+})
+
+var net = new Network(".network");
 
 net.add(nodes, btc);
 
