@@ -1089,16 +1089,32 @@ function Block(h, prev, time, credit) {
 /*
 	TxIn object, has the same hash as the TxOut it references.
 */
-function TxIn(prevout) {
-	this.hash = prevout.hash;
-	this.prevtxid = prevout.intxid;
-	this.n = prevout.n;
+function TxIn(prevtx, n) {
+	// if prevtx is false, this is a coinbase input
+	if (prevtx == false) {
+		this.hash = (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1));
+        this.prevtxid = "x";
+        this.n = -1;
+	} else {
+		var prevout = prevtx.outputs[n];
+
+		this.hash = prevout.hash;
+		this.prevtxid = prevout.intxid;
+		this.n = prevout.n;
+		this.__prev = prevtx; // MEMORY MANAGEMENT PURPOSES, NODE MUST NOT USE THIS TO ITS ADVANTAGE!
+	}
 }
 
 /*
 	TxOut object, has the same hash as any TxIn that spends it.
 */
-function TxOut(intxid, n) {
+function TxOut(intx, n) {
 	this.hash = (Math.floor((1 + Math.random()) * 0x10000)
              .toString(16)
              .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
@@ -1106,8 +1122,9 @@ function TxOut(intxid, n) {
              .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
              .toString(16)
              .substring(1));
-    this.intxid = intxid;
+    this.intxid = intx.id;
     this.n = n;
+    this.__in = intx;
 }
 
 /*
@@ -1131,7 +1148,7 @@ function Transaction(inputs) {
     var no = Math.floor(Math.random() * 2) + 1;
 
     for (var i=0;i<no;i++) {
-    	this.outputs.push(new TxOut(this.id, i));
+    	this.outputs.push(new TxOut(this, i));
     }
 
     this.inputs = inputs;
@@ -1192,7 +1209,7 @@ function UTXO() {
 		this.spendinputs(tx);
 		this.addoutputs(tx);
 
-		this.txmap[tx.id] = tx;
+		this.txmap[tx.id] = true;
 	}
 
 	/*
@@ -1222,7 +1239,8 @@ function UTXO() {
 		for (var i=0;i<txins.length;i++) {
 			var txin = tx.inputs[i];
 
-			this.utxo[txins[i]] = this.txmap[txin.prevtxid].outputs[txin.n];
+			// set the old TxOut
+			this.utxo[txins[i]] = txin.__prev.outputs[txin.n]
 		}
 
 		delete this.txmap[tx.id];
@@ -1514,11 +1532,7 @@ function Mempool() {
 */
 var GenesisBlock = new Block(0, false, 0);
 GenesisBlock.transactions = [
-	new Transaction([new TxIn( new TxOut("_1", -1) )]),
-	new Transaction([new TxIn( new TxOut("_2", -1) )]),
-	new Transaction([new TxIn( new TxOut("_3", -1) )]),
-	new Transaction([new TxIn( new TxOut("_4", -1) )]),
-	new Transaction([new TxIn( new TxOut("_5", -1) )])
+	new Transaction([new TxIn( false )])
 ];
 GenesisBlock.transactions.map(function(tx) {
 	tx.coinbase = true;
@@ -1534,7 +1548,6 @@ GenesisBlock.transactions.map(function(tx) {
 function Chainstate(starthead) {
 	this.head = false;
 	this.mempool = new Mempool();
-	this.rejects = {};
 
 	this.get = function() {
 		return this.head;
@@ -1564,15 +1577,10 @@ function Chainstate(starthead) {
 	this.newtx = function(tx) {
 		// we received a new tx over the network or something, should we add to mempool?
 
-		if (typeof this.rejects[tx.id] != "undefined")
-			return false; // don't bother
-
 		if (!this.mempool.add(tx)) {
-			this.rejects[tx.id] = true;
 			return false;
 		} else {
 			// added to the mempool
-			this.rejects[tx.id] = true;
 			return true;
 		}
 	}
@@ -1907,9 +1915,7 @@ btc.init(function(self) {
 			Object.keys(self.blockchain.chainstate.mempool.utxo.utxo)[Math.floor(Math.random() * Object.keys(self.blockchain.chainstate.mempool.utxo.utxo).length)]
 		];
 
-		//console.log(r);
-
-		var newtx = new Transaction([new TxIn(r)]);
+		var newtx = new Transaction([new TxIn(r.__in, r.n)]);
 
 		self.handle(-1, "tx", newtx);
 		
@@ -1942,26 +1948,26 @@ btc.init(function(self) {
 btc.on("tx", function(self, from, obj) {
 	if (self.blockchain.newtx(obj)) {
 		// transaction entered the mempool, announce INV to all peers
-		self.peers.broadcast("inv", obj.id)
+		self.peers.broadcast("inv", obj)
 	}
 })
 
 btc.on("inv", function(self, from, obj) {
 	// from has a (transaction) object, do we have it?
-	if (!self.blockchain.seentx(obj)) {
+	if (!self.blockchain.seentx(obj.id)) {
 		// we haven't seen it yet!
 
 		// this means we need to queue for the node to send us the data
-		self.getqueue.add(self.now(), {from:from,id:obj})
+		self.getqueue.add(self.now(), {from:from,obj:obj})
 	}
 })
 
 btc.on("getdata", function(self, from, obj) {
-	if (!self.blockchain.seentx(obj)) {
+	if (!self.blockchain.seentx(obj.id)) {
 		// why are they asking us, we don't have this
 	} else {
 		// send tx data back
-		self.send(from, "tx", self.blockchain.gettx(obj))
+		self.send(from, "tx", obj)
 	}
 })
 
@@ -1973,27 +1979,27 @@ btc.tick(100, function(self) {
 		e = e.event;
 
 		// did we get it from another peer already?
-		if (self.blockchain.seentx(e.id))
+		if (self.blockchain.seentx(e.obj.id))
 			continue; // next event please
 
 		if (typeof self.mapAlreadyAskedFor[e.from] == "undefined") {
 			self.mapAlreadyAskedFor[e.from] = {};
 		}
 
-		if (typeof self.mapAlreadyAskedFor[e.from][e.id] == "undefined") {
-			self.mapAlreadyAskedFor[e.from][e.id] = self.now() + (2 * 60 * 1000); // we can getdata this again in 2 minutes
+		if (typeof self.mapAlreadyAskedFor[e.from][e.obj.id] == "undefined") {
+			self.mapAlreadyAskedFor[e.from][e.obj.id] = self.now() + (2 * 60 * 1000); // we can getdata this again in 2 minutes
 		} else {
-			if (self.mapAlreadyAskedFor[e.from][e.id] > self.now()) {
+			if (self.mapAlreadyAskedFor[e.from][e.obj.id] > self.now()) {
 				// requeue this event for that time
-				self.getqueue.add(self.mapAlreadyAskedFor[e.from][e.id], e)
+				self.getqueue.add(self.mapAlreadyAskedFor[e.from][e.obj.id], e)
 				continue; // next event please
 			} else {
-				self.mapAlreadyAskedFor[e.from][e.id] = self.now() + (2 * 60 * 1000); // we can getdata this again in 2 minutes
+				self.mapAlreadyAskedFor[e.from][e.obj.id] = self.now() + (2 * 60 * 1000); // we can getdata this again in 2 minutes
 			}
 		}
 
 		// if we've made it this far, we can request getdata from the other node
-		self.send(e.from, "getdata", e.id)
+		self.send(e.from, "getdata", e.obj)
 	}
 })
 
