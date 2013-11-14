@@ -1027,7 +1027,7 @@ function PeerMgr(node) {
 	}
 }
 
-// todo remove this crap
+// TODO: remove this crap
 var cindex = 0;
 var colors = ["red","green","blue","purple","orange","chartreuse","darkred","dodgerblue"]
 
@@ -1037,6 +1037,12 @@ function randomColor() {
 	return colors[cindex % colors.length]
 }
 
+/*
+	Very simple (and broken) block object. Currently acts as a linked list to
+	save memory.
+
+	TODO: In the future 1 coinbase transaction per block, and it'll be used to store revenue/signature information.
+*/
 function Block(h, prev, time, credit) {
 	if (h == 0) {
 		this.id = "genesis";
@@ -1080,16 +1086,18 @@ function Block(h, prev, time, credit) {
 	}
 }
 
-// an input in a transaction
-// references a previous transaction ID and the output number
+/*
+	TxIn object, has the same hash as the TxOut it references.
+*/
 function TxIn(prevout) {
 	this.hash = prevout.hash;
 	this.prevtxid = prevout.intxid;
 	this.n = prevout.n;
 }
 
-// an output in a transaction
-// references its own transaction ID
+/*
+	TxOut object, has the same hash as any TxIn that spends it.
+*/
 function TxOut(intxid, n) {
 	this.hash = (Math.floor((1 + Math.random()) * 0x10000)
              .toString(16)
@@ -1102,7 +1110,14 @@ function TxOut(intxid, n) {
     this.n = n;
 }
 
-// keep it simple at first
+/*
+	Transaction object.
+
+	TODO: make transaction constructor require outputs to be specified
+
+	Currently just creates an arbitrary number of outputs. There is, obviously,
+	no authentication or scripting.
+*/
 function Transaction(inputs) {
 	this.id = (Math.floor((1 + Math.random()) * 0x10000)
              .toString(16)
@@ -1140,10 +1155,20 @@ function Transaction(inputs) {
     }
 }
 
+/*
+	The unspent transaction output set object. This handles the transaction
+	graph, tracks which transactions are committed to it, and quickly verifies
+	new transactions.
+
+	TODO: Refactor, lots of duplicate functionality occuring.
+*/
 function UTXO() {
 	this.utxo = {};
 	this.txmap = {};
 
+	/*
+		Sets a transaction's outputs as unspent.
+	*/
 	this.addoutputs = function(tx) {
 		var out = tx.getOutputs();
 
@@ -1152,6 +1177,11 @@ function UTXO() {
 		}
 	}
 
+	/*
+		Adds a transaction to the UTXO set, setting its outputs as unspent
+		and inputs as spent. Records that the transaction was committed in our
+		committment map.
+	*/
 	this.add = function(tx) {
 		if (typeof this.txmap[tx.id] != "undefined")
 			return true; // already added
@@ -1162,11 +1192,17 @@ function UTXO() {
 		this.spendinputs(tx);
 		this.addoutputs(tx);
 
-		this.txmap[tx.id] = tx;
+		this.txmap[tx.id] = true; // just store true, we don't need to store the entire transaction, though it wouldn't matter
 	}
 
+	/*
+		Removes a transaction from the UTXO set, should ONLY be done if the
+		transaction's outputs are all unspent. Resets the transaction's inputs
+		as unspent and removes the transaction from the committment map.
+
+		TODO: Put extra checks in here to make sure it's working properly.
+	*/
 	this.remove = function(tx) {
-		// undo a transaction from the utxo set, like from a reorg
 		if (typeof this.txmap[tx.id] == "undefined")
 			return true; // already deleted
 
@@ -1187,6 +1223,9 @@ function UTXO() {
 		delete this.txmap[tx.id];
 	}
 
+	/*
+		Spends the inputs of the transaction.
+	*/
 	this.spendinputs = function(tx) {
 		var txins = tx.getInputs();
 
@@ -1195,6 +1234,14 @@ function UTXO() {
 		}
 	}
 
+	/*
+		Verifies a transaction's inputs.
+			1. "missing" means one or more of the inputs references a transaction we have yet to see. Thus, this
+			   transaction is an orphan transaction.
+			2. "doublespend" means one or more of the inputs has already been spent. Could be because we're verifying
+			   the same transaction twice for some reason.
+			3. "valid" means what you think it does.
+	*/
 	this.verifyinputs = function(tx) {
 		if (tx.coinbase)
 			return "valid"; // coinbase transactions don't need valid inputs
@@ -1204,7 +1251,8 @@ function UTXO() {
 		var txins = tx.getInputs();
 		for (var i=0;i<txins.length;i++) {
 			if (typeof(this.utxo[txins[i]]) == "undefined") {
-				// if we don't have the tx, we'll return -1
+
+				// we use the committment map as a txindex
 				if (typeof this.txmap[tx.inputs[i].prevtxid] == "undefined") {
 					return "missing";
 				}
@@ -1217,10 +1265,20 @@ function UTXO() {
 	}
 }
 
+/*
+	MapOrphans works (sort of) like bitcoin's mapOrphanTransactions and mapOrphanTransactionsByPrev.
+
+	Simply a pool for storing orphan transactions which depend on transactions we haven't seen.
+
+	TODO: Introduce maximum size, so when a new orphan transaction is added we can remove older ones.
+*/
 function MapOrphans() {
 	this.transactions = {};
 	this.transactionsByPrev = {};
 
+	/*
+		Add a transaction to the orphan pool, and track its inputs.
+	*/
 	this.add = function(tx) {
 		if (typeof this.transactions[tx.id] != "undefined")
 			return false;
@@ -1237,6 +1295,9 @@ function MapOrphans() {
 		}
 	}
 
+	/*
+		Remove transaction from orphan pool, stop tracking its inputs.
+	*/
 	this.remove = function(tx) {
 		if (typeof this.transactions[tx.id] == "undefined")
 			return false;
@@ -1254,6 +1315,15 @@ function MapOrphans() {
 		}
 	}
 
+	/*
+		Iterate over all of the orphan transactions that attempt to spend a prevout.
+		Uses a callback function.
+
+		This is probably called by the mempool.
+
+		Could be multiple calls, generally if the mempool finds good parent transactions the
+		first one will be accepted and the others will fail before the callback.
+	*/
 	this.forprev = function(txin, cb) {
 		if (typeof this.transactionsByPrev[txin] != "undefined") {
 			var tmp = this.transactionsByPrev[txin].slice(0);
@@ -1268,6 +1338,9 @@ function MapOrphans() {
 	}
 }
 
+/*
+	Mempool which tracks transactions which are ready to be placed in blocks.
+*/
 function Mempool() {
 	this.transactions = [];
 	this.spends = {};
@@ -1371,7 +1444,7 @@ function Mempool() {
 		// Remove from mempool list (if it's there).
 		var itx = this.transactions.indexOf(tx);
 		if (itx >= 0)
-			this.transactions.splice(this.transactions.indexOf(tx), 1);
+			this.transactions.remove(this.transactions.indexOf(tx));
 	}
 
 	/*
@@ -1412,12 +1485,17 @@ function Mempool() {
 		this.transactions.push(tx);
 	}
 
-	// gets a list of all transactions in the mempool IN ORDER of when they were put in the mempool
+	/*
+		Returns our mempool for block creation.
+	*/
 	this.get = function() {
 		return this.transactions;
 	}
 }
 
+/*
+	Genesis block contains 5 'coinbase' transactions with broken inputs that are ignored by UTXO during verification.
+*/
 var GenesisBlock = new Block(0, false, 0);
 GenesisBlock.transactions = [
 	new Transaction([new TxIn( new TxOut("_1", -1) )]),
@@ -1431,16 +1509,26 @@ GenesisBlock.transactions.map(function(tx) {
 	return tx;
 })
 
+/*
+	Chainstate handles changes to the blockchain from a node's perspective.
+
+	* performs reorganizations of blockchain
+	* handles new transactions
+*/
 function Chainstate(starthead) {
 	this.head = false;
-	this.mempool = new Mempool()
-	this.maporphans = new MapOrphans();
+	this.mempool = new Mempool();
 	this.rejects = {};
 
 	this.get = function() {
 		return this.head;
 	}
 
+	/*
+		Called whenever we receive a new transaction over the wire.
+
+		TODO: Remove rejects map and use inventory system instead.
+	*/
 	this.newtx = function(tx) {
 		// we received a new tx over the network or something, should we add to mempool?
 
@@ -1457,25 +1545,25 @@ function Chainstate(starthead) {
 		}
 	}
 
-	// reverses the head
-	//  1. transactions in the block are placed in the mempool
-	//  2. transactions' inputs are set to unspent in the transaction pool
+	/*
+		Reverses the head of the blockchain by undoing all of the constituent transactions.
+
+		Notifies the mempool of the changes for each transaction in reverse order of commitment.
+	*/
 	this.reverse = function() {
-		// all of the transactions in the current head must now be added to the mempool
-		// and removed from UTXO set
-		for (var i=0;i<this.head.transactions.length;i++) {
+		for (var i=this.head.transactions.length-1;i>=0;i--) {
 			this.mempool.unconfirm(this.head.transactions[i])
 		}
 
 		this.head = this.head.prev;
 	}
 
-	// move forward!
-	this.forward = function(b) {
-		// b is the new head
-		// every transaction in b must be removed from the mempool
-		// and added to utxo set
+	/*
+		Moves the head forward to b, by playing the transactions to the mempool.
 
+		b is the new head.
+	*/
+	this.forward = function(b) {
 		for (var i=0;i<b.transactions.length;i++) {
 			this.mempool.confirm(b.transactions[i])
 		}
@@ -1483,6 +1571,11 @@ function Chainstate(starthead) {
 		this.head = b;
 	}
 
+	/*
+		Sets the chainstate to the block, requires finding the common ancestor between the head
+		and the new block, reversing and forwarding the head as needed to reflect changes
+		to the UTXO set and remove conflicts from the mempool.
+	*/
 	this.set = function(block) {
 		var newcur = block.prev;
 
@@ -1521,6 +1614,7 @@ function Chainstate(starthead) {
 	}
 
 	// unroll our head until we reach the given height
+	// return the block at that height
 	// used for selfish mining attack
 	this.unroll = function(h) {
 		var cur = this.head;
@@ -1535,10 +1629,16 @@ function Chainstate(starthead) {
 
 
 
-
-	this.forward(starthead); // FORWARD!
+	/*
+		Initialization of the chainstate using the seed block.
+	*/
+	this.forward(starthead);
 }
 
+/*
+	Blockchain object handles interactions between new transactions, mining, blocks
+	and other events from the perspective of the miner. Also handles difficulty changes.
+*/
 function Blockchain(node) {
 	this.chainstate = new Chainstate(GenesisBlock);
 
@@ -1548,6 +1648,9 @@ function Blockchain(node) {
 	this.target_avg_between_blocks = 2.5 * 60 * 1000; // target time between blocks
 	this.difficulty_adjustment_period = 2016;
 
+	/*
+		New transaction received over the wire, hand it to our chainstate(s).
+	*/
 	this.newtx = function(tx) {
 		if (this.attacker_status)
 			this.private_chainstate.newtx(tx); // add to private chainstate if possible
@@ -1555,6 +1658,12 @@ function Blockchain(node) {
 		return this.chainstate.newtx(tx);
 	}
 
+	/*
+		New block received over the wire.
+
+		TODO: Merge this into the inventory system somehow, because this assumes instant
+		communication of the entire branch.
+	*/
 	this.newstate = function(b) {
 		if (!this.attacker_status)
 			return this._newstate(b);
@@ -1577,6 +1686,11 @@ function Blockchain(node) {
 		return r;
 	}
 
+	/*
+		The real newstate handler. Performs a simple height change.
+
+		TODO: Centralize block comparison and use work instead of height like bitcoin does.
+	*/
 	this._newstate = function(b) {
 		// is this new block larger than ours?
 		if (b.h > this.chainstate.get().h) {
@@ -1591,6 +1705,10 @@ function Blockchain(node) {
 		return false;
 	}
 
+	/*
+		Triggered whenever a new block is mined, we retroactively determine how we were acting
+		before the block was mined by us.
+	*/
 	this.mine = function(now) {
 		if (this.attacker_status) {
 			// always mine on the private chain
@@ -1611,6 +1729,9 @@ function Blockchain(node) {
 		}
 	}
 
+	/*
+		Difficulty adjustment algorithm, similar to bitcoin. Also used to condense revenues for reporting.
+	*/
 	this.diff_adjust = function(b) {
 		if (!(b.h % this.difficulty_adjustment_period)) {
 			// this is a difficulty adjustment block
@@ -1661,6 +1782,9 @@ function Blockchain(node) {
 		}
 	}
 
+	/*
+		Used to get the _real_ chainstate from the perspective of the node, for reporting purposes.
+	*/
 	this.getstate = function() {
 		if (this.attacker_status)
 			return this.private_chainstate.get();
