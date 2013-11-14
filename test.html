@@ -799,7 +799,7 @@ function Network(visualizerDiv) {
 
 		var newblocklog = "";
 		for (var i=0;i<this.vars.lastblocks.length;i++) {
-			newblocklog = "<span style='color:white; background-color: " + this.vars.lastblocks[i].block.color + "'>node " + this.vars.lastblocks[i].node.id + " mined height " + this.vars.lastblocks[i].block.h + "(" + this.vars.lastblocks[i].block.transactions.length + " tx)<br /></span>" + newblocklog;
+			newblocklog = "<span style='color:white; background-color: " + this.vars.lastblocks[i].block.color + "'>node " + this.vars.lastblocks[i].node.id + " mined height " + this.vars.lastblocks[i].block.h + " (" + this.vars.lastblocks[i].block.transactions.length + " tx)<br /></span>" + newblocklog;
 		}
 		$("#newblocklog").html(newblocklog);
 
