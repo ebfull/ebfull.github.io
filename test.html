@@ -799,7 +799,7 @@ function Network(visualizerDiv) {
 
 		var newblocklog = "";
 		for (var i=0;i<this.vars.lastblocks.length;i++) {
-			newblocklog = "<span style='color:white; background-color: " + this.vars.lastblocks[i].block.color + "'>node " + this.vars.lastblocks[i].node.id + " mined height " + this.vars.lastblocks[i].block.h + "<br /></span>" + newblocklog;
+			newblocklog = "<span style='color:white; background-color: " + this.vars.lastblocks[i].block.color + "'>node " + this.vars.lastblocks[i].node.id + " mined height " + this.vars.lastblocks[i].block.h + "(" + this.vars.lastblocks[i].block.transactions.length + " tx)<br /></span>" + newblocklog;
 		}
 		$("#newblocklog").html(newblocklog);
 
@@ -1206,12 +1206,17 @@ function UTXO() {
 		if (typeof this.txmap[tx.id] == "undefined")
 			return true; // already deleted
 
+		// remove this transaction's outputs from our UTXO set
 		var txouts = tx.getOutputs();
 
 		for (var i=0;i<txouts.length;i++) {
+			if (typeof this.utxo[txouts[i]] == "undefined")
+				console.log('fuck!! ' + JSON.stringify(tx))
+
 			delete this.utxo[txouts[i]] // delete this output
 		}
 
+		// set the old inputs to spendable again
 		var txins = tx.getInputs();
 
 		for (var i=0;i<txins.length;i++) {
@@ -1227,9 +1232,15 @@ function UTXO() {
 		Spends the inputs of the transaction.
 	*/
 	this.spendinputs = function(tx) {
+		if (tx.coinbase)
+			return; // no inputs to spend
+
 		var txins = tx.getInputs();
 
 		for (var i=0;i<txins.length;i++) {
+			if (typeof this.utxo[txins[i]] == "undefined")
+				console.log('fuck ' + JSON.stringify(tx))
+
 			delete this.utxo[txins[i]];
 		}
 	}
@@ -1431,11 +1442,15 @@ function Mempool() {
 
 		for (var i=0;i<inputs.length;i++) {
 			if (typeof this.spends[inputs[i]] != "undefined") {
-				this.remove(this.spends[inputs[i]])
+				// If this input was spent by a transaction other than us, let's remove it recursively.
 
-				// Remove this spend as we're committing the transaction.
-				delete this.spends[inputs[i]];
+				if (this.spends[inputs[i]].id != tx.id) {
+					this.remove(this.spends[inputs[i]])
+				}
 			}
+
+			// Remove this spend as we're committing the transaction.
+			delete this.spends[inputs[i]];
 		}
 
 		// Commit to UTXO if it hasn't been already.
@@ -1444,7 +1459,7 @@ function Mempool() {
 		// Remove from mempool list (if it's there).
 		var itx = this.transactions.indexOf(tx);
 		if (itx >= 0) {
-			this.transactions.remove(itx);
+			this.transactions.splice(itx, 1);
 		}
 	}
 
@@ -1490,7 +1505,7 @@ function Mempool() {
 		Returns our mempool for block creation.
 	*/
 	this.get = function() {
-		return this.transactions;
+		return this.transactions.slice(0);
 	}
 }
 
@@ -1982,7 +1997,7 @@ btc.tick(100, function(self) {
 	}
 })
 
-var net = new Network(".network");
+var net = new Network();
 
 net.add(nodes, btc);
 
