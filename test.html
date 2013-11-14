@@ -288,6 +288,18 @@ Visualizer.prototype = {
 	}
 };
 
+Array.prototype.getUnique = function(){
+   var u = {}, a = [];
+   for(var i = 0, l = this.length; i < l; ++i){
+      if(u.hasOwnProperty(this[i])) {
+         continue;
+      }
+      a.push(this[i]);
+      u[this[i]] = 1;
+   }
+   return a;
+}
+
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function(from, to) {
   var rest = this.slice((to || from) + 1 || this.length);
@@ -1068,8 +1080,30 @@ function Block(h, prev, time, credit) {
 	}
 }
 
+// an input in a transaction
+// references a previous transaction ID and the output number
+function TxIn(prevout) {
+	this.hash = prevout.hash;
+	this.prevtxid = prevout.intxid;
+	this.n = prevout.n;
+}
+
+// an output in a transaction
+// references its own transaction ID
+function TxOut(intxid, n) {
+	this.hash = (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1));
+    this.intxid = intxid;
+    this.n = n;
+}
+
 // keep it simple at first
-function Transaction(input) {
+function Transaction(inputs) {
 	this.id = (Math.floor((1 + Math.random()) * 0x10000)
              .toString(16)
              .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
@@ -1081,242 +1115,60 @@ function Transaction(input) {
 
     var no = Math.floor(Math.random() * 2) + 1;
 
-    for (var i=no;i>0;i--) {
-    	this.outputs.push((Math.floor((1 + Math.random()) * 0x10000)
-             .toString(16)
-             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
-             .toString(16)
-             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
-             .toString(16)
-             .substring(1)));
+    for (var i=0;i<no;i++) {
+    	this.outputs.push(new TxOut(this.id, i));
     }
 
-    this.inputs = [input];
+    this.inputs = inputs;
     this.coinbase = false;
+
+    /*
+    // gets a unique list of transactions
+    this.getInputTransactions = function() {
+    	return this.inputs.map(function(i) {return i.intxid;}).getUnique();
+    }
+    */
 
     // returns a string representation of inputs lol in an array
     this.getInputs = function() {
-    	return this.inputs;
+    	return this.inputs.map(function(i) {return i.hash;});
     }
 
     // returns a string representation of outputs lol in an array
     this.getOutputs = function() {
-    	return this.outputs;
+    	return this.outputs.map(function(o) {return o.hash;});
     }
-}
-/*
-// not working
-
-// store the time transactions are in the mempool
-function MempoolTime() {
-	this.record = {};
-	this.hmap = {};
-
-	// calculates the transactionseconds in a list of transactions
-	this.calc = function(list) {
-		var n = 0;
-
-		for (var i=0;i<list.length;i++) {
-			var txid = list[i].id;
-
-			if (typeof this.record[txid] != "undefined")
-				n+= this.record[txid].transactionseconds;
-		}
-	}
-
-	// called to say a transaction appeared in the mempool
-	this.entered = function(tx,now) {
-		this.record[tx.id] = {tx:tx,start:now,transactionseconds:0};
-	}
-
-	// called to say when a transaction is confirmed by a block
-	this.confirmed = function(tx,now,h) {
-		if (this.record[tx.id].transactionseconds != 0)
-			return false; // we already confirmed it by another branch?
-
-		this.record[tx.id].transactionseconds = now - this.record[tx.id].start;
-		if (typeof this.hmap[h] == "undefined") {
-			this.hmap[h] = [];
-		}
-		this.hmap[h].push(tx.id);
-	}
-
-	// called to discard any time records h or below
-	this.discard = function(h) {
-		for (var i in this.hmap) {
-			if (parseInt(i) <= h) {
-				for (var n=0;n<this.hmap[i].length;n++) {
-					delete this.record[this.hmap[i][n]]
-				}
-				delete this.hmap[i];
-			}
-		}
-	}
-}
-*/
-function Mempool() {
-	this.transactions = {};
-	this.depends = {}; // lol
-
-	// removes a transaction from the mempool
-	// will also remove any transactions which depend on its inputs
-	this.remove = function(tx) {
-		var inputs = tx.getInputs();
-		var outputs = tx.getOutputs();
-
-		for (var i=0;i<outputs.length;i++) {
-			if (typeof this.depends[outputs[i]] != "undefined") {
-				this.remove(this.depends[outputs[i]]); // remove this one too
-			}
-		}
-
-		// we don't depend on any inputs anymore
-		for (var i=0;i<inputs.length;i++) {
-			delete this.depends[inputs[i]]
-		}
-
-		delete this.transactions[tx.id]
-	}
-
-	// a reorg has re-introduced a transaction into the mempool
-	this.unconfirm = function(tx) {
-		// all of this transaction's inputs
-
-		if (typeof(this.transactions[tx.id]) != "undefined") {
-			return true; // we already have the transaction in the mempool for some reason. this shouldn't happen tbh
-		}
-
-		var inputs = tx.getInputs();
-		var outputs = tx.getOutputs();
-
-		// check for conflicting transactions we must remove
-		for (var i=0;i<inputs.length;i++) {
-			if (typeof this.depends[inputs[i]] != "undefined") {
-				this.remove(this.depends[inputs[i]])
-			}
-
-			// WE depend on this input now
-			this.depends[inputs[i]] = tx;
-		}
-
-		// does anyone depend on our input? if so, we need to remove them from the mempool
-		// because we're not confirmed yet!
-
-		// they'll still be in the depends map, until all of their inputs are confirmed
-
-		for (var i=0;i<outputs.length;i++) {
-			// do any transactions in the mempool depend on our outputs?
-			if (typeof this.depends[outputs[i]] != "undefined") {
-				delete this.transactions[this.depends[outputs[i]].id]
-			}
-		}
-
-		this.transactions[tx.id] = tx; // add the transaction to the mempool
-	}
-
-	// a transaction has entered the chainstate, and should no longer be in the mempool
-	this.confirm = function(tx) {
-		var inputs = tx.getInputs();
-		var outputs = tx.getOutputs();
-
-		for (var i=0;i<inputs.length;i++) {
-			// apparently we don't depend on these inputs anymore!
-			if (typeof this.depends[inputs[i]] != "undefined") {
-				// IS THIS TRANSACTION US
-				if (this.depends[inputs[i]].id == tx.id) {
-					// YEP!
-					delete this.depends[inputs[i]]
-				} else {
-					// DELETE IT!
-					this.remove(this.depends[inputs[i]])
-				}
-			}
-		}
-
-		delete this.transactions[tx.id]; // delete the transaction from the mempool
-
-		for (var i=0;i<outputs.length;i++) {
-			if (typeof this.depends[outputs[i]] != "undefined") {
-				var dtx = this.depends[outputs[i]];
-				var still = false;
-
-				var dtxi = dtx.getInputs();
-
-				// does this dependant tx still depend on any transactions in the mempool?
-
-				for (var ii=0;ii<dtxi.length;ii++) {
-					if (typeof this.transactions[dtxi[ii]] != "undefined") {
-						still = true;
-					}
-				}
-
-				if (!still) {
-					this.transactions[dtx.id] = dtx; // add this transaction back to the mempool
-				}
-			}
-		}
-	}
-
-	// gets a list of all transactions in the mempool
-	this.get = function() {
-		var l = [];
-		for (var id in this.transactions) {
-			l.push(this.transactions[id])
-		}
-
-		return l;
-	}
-
-	// add to the mempool
-	// won't ever occur unless the tx uses confirmed UNSPENT inputs
-
-	// returns false if there's a conflict
-	this.add = function(tx) {
-		// if any of our dependent inputs are already used, return false
-
-		var inputs = tx.getInputs();
-
-		if (typeof this.transactions[tx.id] != "undefined")
-			return false; // already in the mempool
-
-		for (var i=0;i<inputs.length;i++) {
-			if (typeof this.depends[inputs[i]] != "undefined")
-				return false;
-		}
-
-		// i guess we can add our tx!
-
-		this.transactions[tx.id] = tx;
-
-		for (var i=0;i<inputs.length;i++) {
-			this.depends[inputs[i]] = tx;
-		}
-
-		return true;
-	}
 }
 
 function UTXO() {
 	this.utxo = {};
+	this.txmap = {};
 
 	this.addoutputs = function(tx) {
 		var out = tx.getOutputs();
 
 		for (var i=0;i<out.length;i++) {
-			this.utxo[out[i]] = true; // someday we'll use a TxOut obj
+			this.utxo[out[i]] = tx.outputs[i];
 		}
 	}
 
 	this.add = function(tx) {
+		if (typeof this.txmap[tx.id] != "undefined")
+			return true; // already added
+
 		if (!this.verifyinputs(tx))
 			return false;
 
 		this.spendinputs(tx);
 		this.addoutputs(tx);
+
+		this.txmap[tx.id] = tx;
 	}
 
 	this.remove = function(tx) {
 		// undo a transaction from the utxo set, like from a reorg
+		if (typeof this.txmap[tx.id] == "undefined")
+			return true; // already deleted
 
 		var txouts = tx.getOutputs();
 
@@ -1327,8 +1179,12 @@ function UTXO() {
 		var txins = tx.getInputs();
 
 		for (var i=0;i<txins.length;i++) {
-			this.utxo[txins[i]] = true; // someday we'll need to be able to find this TxOut obj
+			var txin = tx.inputs[i];
+
+			this.utxo[txins[i]] = this.txmap[txin.prevtxid].outputs[txin.n];
 		}
+
+		delete this.txmap[tx.id];
 	}
 
 	this.spendinputs = function(tx) {
@@ -1347,16 +1203,94 @@ function UTXO() {
 
 		var txins = tx.getInputs();
 		for (var i=0;i<txins.length;i++) {
-			if (typeof(this.utxo[txins[i]]) == "undefined")
+			if (typeof(this.utxo[txins[i]]) == "undefined") {
+				// if we don't have the tx, we'll return -1
+				if (typeof this.txmap[tx.inputs[i].prevtxid] == "undefined") {
+					console.log("WOW OKAY WTF!!!!!!!")
+					return -1;
+				}
+
 				return false;
+			}
 		}
 
 		return true;
 	}
 }
 
+function MapOrphans() {
+	this.transactions = {};
+	this.transactionsByPrev = {};
+
+	this.add = function(tx) {
+		this.transactions[tx.id] = tx;
+
+		var inputs = tx.getInputs(); // gets TxIn hashes
+
+		for (var i=0;i<inputs.length;i++) {
+			if (typeof this.transactionsByPrev[inputs[i]] == "undefined") {
+				this.transactionsByPrev[inputs[i]] = [];
+			}
+			this.transactionsByPrev[inputs[i]].push(tx.id);
+		}
+	}
+
+	this.remove = function(tx) {
+		delete this.transactions[tx.id];
+
+		var inputs = tx.getInputs(); // gets TxIn hashes
+
+		for (var i=0;i<inputs.length;i++) {
+			this.transactionsByPrev[inputs[i]].splice(this.transactionsByPrev[inputs[i]].indexOf(tx.id), 1)
+
+			if (this.transactionsByPrev[inputs[i]].length == 0) {
+				delete this.transactionsByPrev[inputs[i]];
+			}
+			this.transactionsByPrev[inputs[i]].push(tx.id);
+		}
+	}
+}
+
+function Mempool() {
+	this.transactions = {};
+	this.depends = {};
+	this.utxo = new UTXO();
+
+	// adds a transaction to the mempool or maporphans
+	this.add = function(tx) {
+		
+	}
+
+	// removes a transaction from the mempool, and by consequence, from our UTXO set
+	this.remove = function(tx) {
+		
+	}
+
+	// a transaction has left the chainstate, and should be re-entered into the mempool
+	this.unconfirm = function(tx) {
+		
+	}
+
+	// a transaction has entered the chainstate, and should no longer be in the mempool
+	// any transactions this conflicts with should be removed from the mempool and maporphans
+	this.confirm = function(tx) {
+		
+	}
+
+	// gets a list of all transactions in the mempool IN ORDER of when they were put in the mempool
+	this.get = function() {
+		
+	}
+}
+
 var GenesisBlock = new Block(0, false, 0);
-GenesisBlock.transactions = [new Transaction("_0"), new Transaction("_1"), new Transaction("_2"), new Transaction("_3"), new Transaction("_4")];
+GenesisBlock.transactions = [
+	new Transaction([new TxIn( new TxOut("_1", -1) )]),
+	new Transaction([new TxIn( new TxOut("_2", -1) )]),
+	new Transaction([new TxIn( new TxOut("_3", -1) )]),
+	new Transaction([new TxIn( new TxOut("_4", -1) )]),
+	new Transaction([new TxIn( new TxOut("_5", -1) )])
+];
 GenesisBlock.transactions.map(function(tx) {
 	tx.coinbase = true;
 	return tx;
@@ -1365,7 +1299,7 @@ GenesisBlock.transactions.map(function(tx) {
 function Chainstate(starthead) {
 	this.head = false;
 	this.mempool = new Mempool()
-	this.utxo = new UTXO();
+	this.maporphans = new MapOrphans();
 	this.rejects = {};
 
 	this.get = function() {
@@ -1378,21 +1312,13 @@ function Chainstate(starthead) {
 		if (typeof this.rejects[tx.id] != "undefined")
 			return false; // don't bother
 
-		// 1. all of its inputs must be in the UTXO set
-		if (this.utxo.verifyinputs(tx)) {
-			// 2. the mempool must be okay with adding it
-			if (!this.mempool.add(tx)) {
-				this.rejects[tx.id] = true;
-				return false;
-			} else {
-				// added to the mempool
-				//this.time_mempool.entered(tx);
-				this.rejects[tx.id] = true;
-				return true;
-			}
-		} else {
+		if (!this.mempool.add(tx)) {
 			this.rejects[tx.id] = true;
 			return false;
+		} else {
+			// added to the mempool
+			this.rejects[tx.id] = true;
+			return true;
 		}
 	}
 
@@ -1404,7 +1330,6 @@ function Chainstate(starthead) {
 		// and removed from UTXO set
 		for (var i=0;i<this.head.transactions.length;i++) {
 			this.mempool.unconfirm(this.head.transactions[i])
-			this.utxo.remove(this.head.transactions[i])
 		}
 
 		this.head = this.head.prev;
@@ -1418,11 +1343,7 @@ function Chainstate(starthead) {
 
 		for (var i=0;i<b.transactions.length;i++) {
 			this.mempool.confirm(b.transactions[i])
-			this.utxo.add(b.transactions[i])
-			//this.time_mempool.confirmed(b.transactions[i], b.h)
 		}
-
-		//this.time_mempool.discard(b.h-2);
 
 		this.head = b;
 	}
@@ -1531,22 +1452,6 @@ function Blockchain(node) {
 
 			return true;
 		}
-
-		/*
-		if (b.h == this.chainstate.get().h) {
-			// if the new block has more transactionseconds than the current one...
-
-			if (this.chainstate.time_mempool.calc(b.transactions) > this.chainstate.time_mempool.calc(this.chainstate.get().transactions)) {
-				// fuck it orphan the current one
-				this.chainstate.set(b);
-
-				if (!this.attacker_status)
-					this.private_chainstate.set(b);
-
-				return true;
-			}
-		}
-		*/
 
 		return false;
 	}
@@ -1686,11 +1591,38 @@ btc.init(function(self) {
 	self.prob("newtx", 1000, 0.005, function() {
 		// get a random unspent output and just create a transaction with it
 
-		var r = Object.keys(self.blockchain.chainstate.utxo.utxo)[Math.floor(Math.random() * Object.keys(self.blockchain.chainstate.utxo.utxo).length)];
+		
+		var r = self.blockchain.chainstate.mempool.utxo.utxo[
+			Object.keys(self.blockchain.chainstate.mempool.utxo.utxo)[Math.floor(Math.random() * Object.keys(self.blockchain.chainstate.mempool.utxo.utxo).length)]
+		];
 
-		var newtx = new Transaction(r);
+		var newtx = new Transaction([new TxIn(r)]);
 
 		self.handle(-1, "newtx", newtx);
+		
+
+		// let's get it from the latest block
+		/*
+		var cur = self.blockchain.chainstate.head;
+		while(true) {
+			if (cur.transactions.length) {
+				var rtx = cur.transactions[
+					Math.floor(Math.random() * cur.transactions.length)
+				];
+
+				var r = rtx.outputs[
+					Math.floor(Math.random() * rtx.outputs.length)
+				]
+
+				var newtx = new Transaction([new TxIn(r)]);
+
+				self.handle(-1, "newtx", newtx);
+				break;
+			}
+
+			cur = cur.prev;
+		}
+		*/
 	})
 })
 
