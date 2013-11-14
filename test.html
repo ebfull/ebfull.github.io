@@ -1192,7 +1192,7 @@ function UTXO() {
 		this.spendinputs(tx);
 		this.addoutputs(tx);
 
-		this.txmap[tx.id] = true; // just store true, we don't need to store the entire transaction, though it wouldn't matter
+		this.txmap[tx.id] = tx;
 	}
 
 	/*
