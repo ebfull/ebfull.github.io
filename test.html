@@ -2012,30 +2012,6 @@ btc.init(function(self) {
 		var newtx = new Transaction([new TxIn(r.__in, r.n)]);
 
 		self.handle(-1, "tx", newtx);
-		
-
-		// let's get it from the latest block
-		/*
-		var cur = self.blockchain.chainstate.head;
-		while(true) {
-			if (cur.transactions.length) {
-				var rtx = cur.transactions[
-					Math.floor(Math.random() * cur.transactions.length)
-				];
-
-				var r = rtx.outputs[
-					Math.floor(Math.random() * rtx.outputs.length)
-				]
-
-				var newtx = new Transaction([new TxIn(r)]);
-
-				self.handle(-1, "newtx", newtx);
-				break;
-			}
-
-			cur = cur.prev;
-		}
-		*/
 	})
 })
 
