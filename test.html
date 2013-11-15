@@ -620,7 +620,7 @@ function NodeTickEvent(delay, nid, f) {
 
 	this.run = function(network) {
 		if (f(network.nodes[this.nid]) !== false)
-			network.quickexec(this) // register ourselves again!
+			network.exec(this) // register ourselves again!
 	}
 }
 
@@ -777,7 +777,7 @@ function Network(visualizerDiv) {
 			node._init(state);
 			for (var i=0;i<node._ticks.length;i++) {
 				var t = node._ticks[i]
-				this.quickexec(new NodeTickEvent(t.delay, this.nindex, t.f))
+				this.exec(new NodeTickEvent(t.delay, this.nindex, t.f))
 			}
 			this.nodes[this.nindex] = state; // init and receive a state object back
 			this.nindex++;
@@ -1723,7 +1723,7 @@ function Chainstate(starthead, node) {
 
 		this.transactionseconds = this.mempooltime.get(this.head.transactions) // get the transactionseconds for the final set block
 
-		// this.mempooltime.purge(this.head.h - 10) // purge old mempooltime entries :)
+		this.mempooltime.purge(this.head.h - 10) // purge old mempooltime entries :)
 
 		// this.rejects = {}; // reset rejects
 		// TODO: we need a full-blown inventory system still
@@ -2011,7 +2011,7 @@ btc.init(function(self) {
 
 		var newtx = new Transaction([new TxIn(r.__in, r.n)]);
 
-		//self.handle(-1, "tx", newtx);
+		self.handle(-1, "tx", newtx);
 		
 
 		// let's get it from the latest block
