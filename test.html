@@ -620,7 +620,7 @@ function NodeTickEvent(delay, nid, f) {
 
 	this.run = function(network) {
 		if (f(network.nodes[this.nid]) !== false)
-			network.exec(this) // register ourselves again!
+			network.quickexec(this) // register ourselves again!
 	}
 }
 
@@ -777,7 +777,7 @@ function Network(visualizerDiv) {
 			node._init(state);
 			for (var i=0;i<node._ticks.length;i++) {
 				var t = node._ticks[i]
-				this.exec(new NodeTickEvent(t.delay, this.nindex, t.f))
+				this.quickexec(new NodeTickEvent(t.delay, this.nindex, t.f))
 			}
 			this.nodes[this.nindex] = state; // init and receive a state object back
 			this.nindex++;
@@ -1295,6 +1295,69 @@ function UTXO() {
 }
 
 /*
+	MempoolTime is a (fun) experiment with tracking the "transactionseconds" that a transaction exists in the mempool for.
+
+	When Blockchain sees two competing heights, it could select the one with the most transactionseconds. In an active environment
+	of transactions, a selfish miner's pre-mined blocks would not have as many transactionseconds, and it would not succeed in
+	orphaning an honest block from the chain, even during a sybil attack, due to the new relay behavior.
+
+	See https://bitcointalk.org/index.php?topic=327064.0
+
+	TODO: this is a pile of shit but it works
+*/
+
+function MempoolTime() {
+	this.transactions = {}; // transactions being timed
+	this.transactionsByH = {}; // transactions indexed by height entered into map
+	this.transactionSeconds = {}; // transactionseconds per transaction indexed by txid
+
+	this.get = function(txlist) {
+		var sum = 0;
+
+		for (var i=0;i<txlist.length;i++) {
+			if (typeof this.transactionSeconds[txlist[i].id] != "undefined")
+				sum += this.transactionSeconds[txlist[i].id];
+		}
+
+		return sum;
+	}
+
+	this.add = function(tx, h, now) {
+		if (typeof this.transactions[tx.id] == "undefined") {
+			this.transactions[tx.id] = now;
+
+			if (typeof this.transactionsByH[h] == "undefined")
+				this.transactionsByH[h] = [];
+
+			this.transactionsByH[h].push(tx.id)
+		}
+	}
+
+	this.confirm = function(tx, now) {
+		if (typeof this.transactions[tx.id] != "undefined") {
+			if (this.transactions[tx.id] !== true) {
+				this.transactionSeconds[tx.id] = now - this.transactions[tx.id];
+				this.transactions[tx.id] = true; // i don't remember why i'm doing this
+			}
+		}
+	}
+
+	// purge transactionseconds map of any old entries (h or below)
+	this.purge = function(h) {
+		for (var i in this.transactionsByH) {
+			if (parseInt(i) <= h) {
+				for (var j=0;j<this.transactionsByH[i].length;j++) {
+					delete this.transactions[this.transactionsByH[i][j]]
+					delete this.transactionSeconds[this.transactionsByH[i][j]]
+				}
+
+				delete this.transactionsByH[i];
+			}
+		}
+	}
+}
+
+/*
 	MapOrphans works (sort of) like bitcoin's mapOrphanTransactions and mapOrphanTransactionsByPrev.
 
 	Simply a pool for storing orphan transactions which depend on transactions we haven't seen.
@@ -1545,9 +1608,11 @@ GenesisBlock.transactions.map(function(tx) {
 	* performs reorganizations of blockchain
 	* handles new transactions
 */
-function Chainstate(starthead) {
+function Chainstate(starthead, node) {
 	this.head = false;
 	this.mempool = new Mempool();
+	this.mempooltime = new MempoolTime();
+	this.transactionseconds = 0;
 
 	this.get = function() {
 		return this.head;
@@ -1581,6 +1646,10 @@ function Chainstate(starthead) {
 			return false;
 		} else {
 			// added to the mempool
+			
+			// experiment:
+			this.mempooltime.add(tx, this.head.h, node.now())
+
 			return true;
 		}
 	}
@@ -1606,6 +1675,7 @@ function Chainstate(starthead) {
 	this.forward = function(b) {
 		for (var i=0;i<b.transactions.length;i++) {
 			this.mempool.confirm(b.transactions[i])
+			this.mempooltime.confirm(b.transactions[i], node.now())
 		}
 
 		this.head = b;
@@ -1621,6 +1691,9 @@ function Chainstate(starthead) {
 
 		var numorphan = 0;
 		var forwards = [block];
+
+		if (this.head == block)
+			return numorphan; // we're already set to this... :\
 
 		while (true) {
 			if (this.head == newcur) {
@@ -1647,6 +1720,10 @@ function Chainstate(starthead) {
 				newcur = newcur.prev;
 			}
 		}
+
+		this.transactionseconds = this.mempooltime.get(this.head.transactions) // get the transactionseconds for the final set block
+
+		// this.mempooltime.purge(this.head.h - 10) // purge old mempooltime entries :)
 
 		// this.rejects = {}; // reset rejects
 		// TODO: we need a full-blown inventory system still
@@ -1681,10 +1758,10 @@ function Chainstate(starthead) {
 	and other events from the perspective of the miner. Also handles difficulty changes.
 */
 function Blockchain(node) {
-	this.chainstate = new Chainstate(GenesisBlock);
+	this.chainstate = new Chainstate(GenesisBlock, node);
 
 	this.attacker_status = false; // selfish mining attack
-	this.private_chainstate = new Chainstate(this.chainstate.get());
+	this.private_chainstate = new Chainstate(this.chainstate.get(), node);
 
 	this.target_avg_between_blocks = 2.5 * 60 * 1000; // target time between blocks
 	this.difficulty_adjustment_period = 2016;
@@ -1758,6 +1835,22 @@ function Blockchain(node) {
 
 			return true;
 		}
+/*
+		// if they're the same height, should we orphan our current head
+		// use mempooltime to figure it out!
+		if (b.h == this.chainstate.get().h) {
+			// experiment:
+			// does this new block have more transactionseconds?
+			if (this.chainstate.mempooltime.get(b.transactions) > this.chainstate.transactionseconds) {
+				this.chainstate.set(b);
+
+				if (!this.attacker_status)
+					this.private_chainstate.set(b);
+
+				return true;
+			}
+		}
+*/
 
 		return false;
 	}
@@ -1905,9 +1998,10 @@ btc.init(function(self) {
 
 	self.getqueue = new EventChain();
 	self.mapAlreadyAskedFor = {};
+	self.mapAskFor = {};
 
 	// node will randomly generate a new transaction
-	self.prob("newtx", 1000, 0.005, function() {
+	self.prob("newtx", 1000, 0.0005, function() {
 		// get a random unspent output and just create a transaction with it
 
 		
@@ -1917,7 +2011,7 @@ btc.init(function(self) {
 
 		var newtx = new Transaction([new TxIn(r.__in, r.n)]);
 
-		self.handle(-1, "tx", newtx);
+		//self.handle(-1, "tx", newtx);
 		
 
 		// let's get it from the latest block
@@ -1950,6 +2044,13 @@ btc.on("tx", function(self, from, obj) {
 		// transaction entered the mempool, announce INV to all peers
 		self.peers.broadcast("inv", obj)
 	}
+
+	// we should also clear mapAlreadyAskedFor/mapAskFor
+	for (var f in self.mapAlreadyAskedFor) {
+		delete self.mapAlreadyAskedFor[f][obj.id]
+	}
+
+	delete self.mapAskFor[obj.id]
 })
 
 btc.on("inv", function(self, from, obj) {
@@ -1982,6 +2083,21 @@ btc.tick(100, function(self) {
 		if (self.blockchain.seentx(e.obj.id))
 			continue; // next event please
 
+		// did we already try getdata recently for this txid?
+		// recently = 10 seconds no tx response
+		if (typeof self.mapAskFor[e.obj.id] == "undefined") {
+			self.mapAskFor[e.obj.id] = self.now() + (10 * 1000);
+		} else {
+			if (self.mapAskFor[e.obj.id] > self.now()) {
+				self.getqueue.add(self.mapAskFor[e.obj.id], e)
+				continue; // next event please
+			} else {
+				self.mapAskFor[e.obj.id] = self.now() + (10 * 1000);
+			}
+		}
+
+		// did we already try getdata recently for this txid FROM THIS NODE
+		// recently = 2 minutes
 		if (typeof self.mapAlreadyAskedFor[e.from] == "undefined") {
 			self.mapAlreadyAskedFor[e.from] = {};
 		}
