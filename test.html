@@ -288,18 +288,6 @@ Visualizer.prototype = {
 	}
 };
 
-Array.prototype.getUnique = function(){
-   var u = {}, a = [];
-   for(var i = 0, l = this.length; i < l; ++i){
-      if(u.hasOwnProperty(this[i])) {
-         continue;
-      }
-      a.push(this[i]);
-      u[this[i]] = 1;
-   }
-   return a;
-}
-
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function(from, to) {
   var rest = this.slice((to || from) + 1 || this.length);
@@ -1154,13 +1142,6 @@ function Transaction(inputs) {
     this.inputs = inputs;
     this.coinbase = false;
 
-    /*
-    // gets a unique list of transactions
-    this.getInputTransactions = function() {
-    	return this.inputs.map(function(i) {return i.intxid;}).getUnique();
-    }
-    */
-
     // returns a string representation of inputs lol in an array
     this.getInputs = function() {
     	return this.inputs.map(function(i) {return i.hash;});
@@ -1540,7 +1521,7 @@ function Mempool() {
 		// Remove from mempool list (if it's there).
 		var itx = this.transactions.indexOf(tx);
 		if (itx >= 0) {
-			this.transactions.splice(itx, 1);
+			this.transactions.remove(itx);
 		}
 	}
 
