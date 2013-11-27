@@ -1,3 +1,11 @@
+// TODO: make this deterministic
+function latency(a, b) {
+	// a and b are integer node IDs (starting from 0)
+	// return the amount of msec latency
+
+	return Math.floor(Math.random() * 2000) + 150
+}
+
 function revchart(r, h) {
 	var res = "<table><tr><td>node</td><td>revenue</td></tr>";
 	// sort r
@@ -251,20 +259,19 @@ function NodeEvent(delay, nid, f) {
 }
 
 function NodeMessageEvent(from, nid, name, obj) {
-	// TODO: make this deterministic
-	this.delay = Math.floor(Math.random() * 400) + 50;
+	this.delay = latency(from, nid);
 
 	this.run = function(network) {
 		network.nodes[nid].handle(from, name, obj)
 	}
 }
 
-function NodeTickEvent(delay, nid, f) {
+function NodeTickEvent(delay, nid, f, ctx) {
 	this.delay = delay;
 
 	this.run = function(network) {
 		var newDelay;
-		if (newDelay = f(network.nodes[nid]) !== false) {
+		if (newDelay = f.call(ctx) !== false) {
 			if (typeof newDelay == "number")
 				this.delay = newDelay;
 
@@ -310,7 +317,7 @@ NodeProbabilisticTickEvent.prototype = {
 			cur += this.events[nid].p;
 
 			if (which <= cur) {
-				this.events[nid].f(network.nodes[nid])
+				this.events[nid].f.call(network.nodes[nid])
 				break;
 			}
 		}
@@ -374,8 +381,11 @@ NodeState.prototype = {
 		return this.network.now;
 	},
 
-	tick: function(delay, f) {
-		this.network.exec(new NodeTickEvent(delay, this.id, f))
+	tick: function(delay, f, ctx) {
+		if (typeof ctx == "undefined")
+			ctx = this;
+
+		this.network.exec(new NodeTickEvent(delay, this.id, f, ctx))
 	},
 
 	send: function(nid, name, obj) {
@@ -384,16 +394,19 @@ NodeState.prototype = {
 
 	handle: function(from, name, obj) {
 		if (typeof this.handlers[name] != "undefined") {
-			this.handlers[name](this, from, obj)
+			this.handlers[name](from, obj)
 		}
 	},
 
-	on: function(name, f) {
+	on: function(name, f, ctx) {
+		if (typeof ctx == "undefined")
+			ctx = this;
+
 		if (typeof this.handlers[name] != "undefined") {
 			var oldHandler = this.handlers[name];
-			this.handlers[name] = function(self, from, obj) {if (oldHandler(self, from, obj)) f(self, from, obj);}
+			this.handlers[name] = function(from, obj) {if (oldHandler()) f.call(ctx, from, obj);}
 		} else {
-			this.handlers[name] = f;
+			this.handlers[name] = function(from, obj) {return f.call(ctx, from, obj);};
 		}
 	},
 
@@ -406,11 +419,17 @@ function Node() {
 	this._handlers = [];
 	this._ticks = [];
 	this._probs = [];
+	this._use = [];
 	this._init = false;
 }
 
 Node.prototype = {
 	setup: function(node) {
+		// run middleware
+		for (var i=0;i<this._use.length;i++) {
+			new this._use[i](node);
+		}
+
 		// run init functions
 		if (this._init)
 			this._init(node);
@@ -432,8 +451,7 @@ Node.prototype = {
 	},
 
 	use: function(f) {
-		// runs f against the Node object for attaching middleware
-		f(this);
+		this._use.push(f);
 	},
 
 	init: function(callback) {
@@ -476,9 +494,20 @@ function Network(visualizerDiv) {
 
 	this.nodes = [];
 	this.nindex = 0;
+
+	this._shared = {};
 }
 
 Network.prototype = {
+	// grab a shared cache object
+	shared: function(name, def) {
+		if (typeof this._shared[name] == "undefined") {
+			this._shared[name] = new def();
+		}
+
+		return this._shared[name];
+	},
+
 	// registers probablistic event
 	pregister: function(label, delay, p, nid, cb) {
 		if (typeof this.pevents[label] == "undefined") {
