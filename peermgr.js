@@ -7,6 +7,7 @@ with other peers, thus forming a network.
 Current behavior: every 1 second it checks to see if it has 'maxpeers'. If not, it attempts
 either to connect to an archived addr, or get addresses from other nodes it has contacted.
 Initially, the only archived addr is the bootstrap node, 0. Once the node has received
+maxpeers, it stops ticking.
 */
 
 function PeerState(id, lastmessage) {
@@ -54,7 +55,7 @@ function PeerMgr(self) {
 	this.broadcast = function(name, msg) {
 		for (var p in this.peers) {
 			if (this.peers[p].active)
-				self.send(this.peers[p].id, name, msg);
+				self.send(this.peers[p].id, "__peermsg", {name:name,obj:msg});
 		}
 	}
 
@@ -97,6 +98,14 @@ function PeerMgr(self) {
 	// reject a remote node's connection
 	this.reject = function(p) {
 		self.send(p.id, 'reject', this.nodearchive.slice(0, 15))
+	}
+
+	// processes a received message from another peer
+	this.onReceive = function(from, o) {
+		if (typeof this.peers[from] != "undefined") {
+			self.handle(from, o.name, o.obj)
+			this.peers[from].lastmessage = self.now();
+		}
 	}
 
 	// receive a peerlist message
@@ -209,4 +218,5 @@ function PeerMgr(self) {
 	self.on("disconnect", this.onDisconnect, this);
 	self.on("peerlist", this.onPeerlist, this);
 	self.on("getpeers", this.onGetpeers, this);
+	self.on("__peermsg", this.onReceive, this);
 }

@@ -37,8 +37,8 @@ goog.require("goog.structs.PriorityQueue")
 <script src="network.js"></script> <!-- core of simulator -->
 <script src="peermgr.js"></script> <!-- PeerMgr for network formation -->
 <script src="inventory.js"></script> <!-- Inventory for shared object collection -->
+<script src="transactions.js"></script> <!-- Shared UTXO state transitions, mempool, mapOrphans -->
 <!--
-<script src="transaction.js"></script>
 <script src="blockchain.js"></script>
 -->
 </head>
@@ -48,6 +48,23 @@ goog.require("goog.structs.PriorityQueue")
 <b><a id="pause" href="#">(pause)</a></b> <b><a id="default" href="#">(default)</a></b> <b><a id="faster" href="#">+</a></b>/<b><a id="slower" href="#">-</a></b> <span id="timenow"></span><br /><br />
 <a id="restart" href="#">Restart</a>
 <script>
+/*
+var tx = new Transaction([new TxIn( false )]);
+tx.coinbase = true;
+var u = new UTXOState();
+
+var validate = u.verify(tx)
+var nu = u.add(tx, validate)
+
+var tx2 = new Transaction([new TxIn( false )]);
+var validate2 = nu.verify(tx2);
+
+nu = nu.add(tx2, validate2);
+
+console.log(u)
+*/
+
+/*
 var net;
 var btc;
 var interval = 10;
@@ -57,21 +74,7 @@ function start() {
 
 	btc.use(PeerMgr);
 	btc.use(Inventory);
-
-	btc.on("block", function(from, obj) {
-		//console.log("received inventory object")
-		if (this.inventory.add(obj)) {
-			this.peers.broadcast("block", obj);
-		}
-	})
-
-	btc.prob("mining", 100, 0.00001, function() {
-		//console.log("mined a block")
-		var n;
-		this.inventory.add(n = new NodeObject("block", false, "derp"))
-
-		this.peers.broadcast("block", n);
-	})
+	btc.use(Transactions);
 
 	net = new Network(".network")
 	net.add(200, btc)
@@ -112,6 +115,7 @@ $("#slower").click(function() {
 	interval = Math.floor(interval);
 	return false;
 })
+*/
 </script>
 </body>
 </html>

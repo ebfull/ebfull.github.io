@@ -28,7 +28,6 @@ function ObjectCollection(base) {
 }
 
 ObjectCollection.prototype = {
-	// returns TRUE if it's already in our inventory
 	exists: function(name) {
 		if (typeof this.objectMap[name] != "undefined") {
 			return true;
