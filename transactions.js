@@ -112,6 +112,7 @@ function UTXOStateValidation(state, extra) {
 UTXOStateValidation.CONFLICT = 1;
 UTXOStateValidation.ORPHAN = 2;
 UTXOStateValidation.VALID = 3;
+UTXOStateValidation.DUPLICATE = 4;
 
 function UTXOState(parent, tx) {
 	if (typeof parent == "undefined") {
@@ -121,35 +122,60 @@ function UTXOState(parent, tx) {
 	} else {
 		this.id = xor(parent.id, tx.id);
 		this.root = parent.root;
+		parent.children.push(this)
 	}
 
 	if (typeof tx != "undefined") {
-		this.tx = tx;
+		this.tx = [tx];
 		this.spents = tx.getInputs()
 		this.unspents = tx.getOutputs()
 	} else {
-		this.tx = false;
+		this.tx = [];
 		this.spents = {};
 		this.unspents = {};
 	}
 	this.parent = parent;
-	this.transitions = {};
+	this.cache = {};
+	this.children = [];
 	this.retain = 0;
 }
 
 UTXOState.prototype = {
 	add: function(tx, validation) {
 		if (validation.state == UTXOStateValidation.VALID) {
-			if (typeof this.root.transitions[xor(this.id, tx.id)] != "undefined") {
-				return this.root.transitions[xor(this.id, tx.id)] // someone already met this state
+			if (typeof this.root.cache[xor(this.id, tx.id)] != "undefined") {
+				return this.root.cache[xor(this.id, tx.id)] // someone already met this state
 			}
 			var n;
-			this.root.transitions[xor(this.id, tx.id)] = n = new UTXOState(this, tx);
+			this.root.cache[xor(this.id, tx.id)] = n = new UTXOState(this, tx);
 
 			return n;
 		}
 
 		return this;
+	},
+	remove: function(tx) {
+		// unwinds the current state until the transaction is removed, returns all casualty transactions
+		var cur = this;
+		var casualties = [];
+
+		while(cur) {
+			var cont = true;
+
+			for (var i=cur.tx.length-1;i>=0;i--) {
+				if (cur.tx[i] == tx)
+					cont = false;
+				else
+					casualties.unshift(tx)
+			}
+
+			if (cont)
+				cur = cur.parent;
+			else
+				break;
+		}
+
+		return {casualties:casualties,state:cur}
 	},
 	verify: function(tx) {
 		var cur = this;
@@ -162,6 +188,9 @@ UTXOState.prototype = {
 				break;
 
 			for (var i in inputsNotFound) {
+				if (cur.tx.indexOf(tx) != -1)
+					return new UTXOStateValidation(UTXOStateValidation.DUPLICATE, cur) // return the current state position where the conflict occurred
+
 				if (typeof cur.unspents[i] != "undefined") {
 					// found one of the inputs
 					delete inputsNotFound[i];
@@ -184,7 +213,7 @@ UTXOState.prototype = {
 		if (inputsNotFound.length) {
 			// if it's a coinbase tx, it doesn't matter
 			if (!tx.coinbase)
-				return new UTXOStateValidation(UTXOStateValidation.ORPHAN)
+				return new UTXOStateValidation(UTXOStateValidation.ORPHAN, inputsNotFound)
 		}
 
 		return new UTXOStateValidation(UTXOStateValidation.VALID, firstQualified) // return the first qualified state where the transition can occur (the last looped)
@@ -197,11 +226,50 @@ UTXOState.prototype = {
 
 		if (this.retain == 0) {
 			// nothing can transition to this state now
-			delete this.root.transitions[this.id]
+			delete this.root.cache[this.id]
+
+			// collapse into our children
+			for (var i=0;i<this.children;i++) {
+				for (var spend in this.spents) {
+					this.children[i].spents[spend] = this.spents[spend]
+				}
+				for (var unspend in this.unspents) {
+					this.children[i].unspents[unspend] = this.unspents[unspend]
+				}
+				for (var t=0;t<this.tx.length;t++) {
+					this.children[i].tx.unshift(this.tx[t])
+				}
+				this.children[i].parent = this.parent;
+			}
 		}
 	}
 }
 
-function Transactions() {
+function Transactions(self) {
 	self.utxo = new ObjectCollection(self.network.shared("utxo", UTXOState));
+	self.utxo.retain();
+
+	this.add = function(tx) {
+		var v = self.utxo.verify(tx)
+
+		switch (v.state) {
+			case UTXOStateValidation.VALID:
+				// The transaction is valid. We can run add on UTXO now.
+			break;
+			case UTXOStateValidation.ORPHAN:
+				// The transaction is an orphan, because some of its inputs are missing.
+			break;
+			case UTXOStateValidation.CONFLICT:
+				// The transaction conflicts with a previous transaction.
+			break;
+			case UTXOStateValidation.DUPLICATE:
+				// The transaction already appears in the UTXO.
+			break;
+		}
+	}
+
+	this.remove = function(tx) {
+		
+	}
 }
+
