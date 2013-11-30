@@ -1,6 +1,5 @@
 function StateTransitionValidation() {
 	this.state = 2;
-	this.base = false;
 }
 
 StateTransitionValidation.prototype = {
@@ -65,7 +64,6 @@ var StateTransition = {
 
 		// validation.state should be changed if:
 		//  1. we need no more inputs, or whatever, then VALID
-		//     (by the way, we need to set the validation.base to this state)
 		//  2. we still need inputs, so PARTIAL
 		//  3. this transition occurs within the state already, so DUPLICATE
 		//  4. this transition conflicts with a different transition, so CONFLICT
@@ -108,13 +106,13 @@ ConsensusState.prototype = {
 			// check the base object for cached transitions
 			var n;
 
-			if (validation.base.shifts[transition.xor(this.id)]) {
-				n = validation.base.shifts[transition.xor(this.id)];
+			if (this.root.shifts[transition.xor(this.id)]) {
+				n = this.root.shifts[transition.xor(this.id)];
 			} else {
 				n = new ConsensusState(this, transition)
 
 				// we need to cache this transition
-				validation.base.shifts[transition.xor(this.id)] = n;
+				this.root.shifts[transition.xor(this.id)] = n;
 
 				// new child means we retain
 				n.retain();
@@ -139,10 +137,10 @@ ConsensusState.prototype = {
 			validation = transition.validate(cur, validation);
 
 			switch (validation.state) {
-				case validation.VALID:
 				case validation.PARTIAL:
 					// do nothing, continue up the chain
 				break;
+				case validation.VALID:
 				case validation.CONFLICT:
 				case validation.INVALID:
 				case validation.DUPLICATE:
@@ -220,7 +218,6 @@ function InventoryTransition(name, obj) {
 			validation.state = validation.DUPLICATE;
 		} else {
 			validation.state = validation.VALID;
-			validation.base = state.root; // TODO wtf
 		}
 
 		return validation;
@@ -242,26 +239,26 @@ node1.retain() // node 1 retains state
 node2.retain() // node 2 retains state
 node3.retain() // node 3 retains state
 
-var val1 = node1.validate(inv1) // node 1 validates first transition
-node1 = node1.shift(inv1, val1) // node 1 performs first transition
+var val1 = node1.validate(inv1)
+node1 = node1.shift(inv1, val1)
 
-var val2 = node2.validate(inv2) // node 2 validates second transition
-node2 = node2.shift(inv2, val2) // node 2 performs second transition
+var val2 = node2.validate(inv2)
+node2 = node2.shift(inv2, val2)
 
-var val3 = node1.validate(inv2) // node 1 validates second transition
-node1 = node1.shift(inv2, val3) // node 1 performs second transition
+var val3 = node1.validate(inv2)
+node1 = node1.shift(inv2, val3)
 
-var val4 = node2.validate(inv1) // node 2 validates first transition
-node2 = node2.shift(inv1, val4) // node 2 performs first transition
+var val4 = node2.validate(inv1)
+node2 = node2.shift(inv1, val4)
 
-var val5 = node3.validate(inv2) // node 3 validates second transition
-node3 = node3.shift(inv2, val5) // node 3 performs second transition
+var val5 = node3.validate(inv2)
+node3 = node3.shift(inv2, val5)
 
-var val6 = node3.validate(inv3) // node 3 performs third transaction
-node3 = node3.shift(inv3, val6) // node 3 performs third transaction
+var val6 = node3.validate(inv3)
+node3 = node3.shift(inv3, val6)
 
-var val7 = node3.validate(inv1) // node 3 validates first transition
-node3 = node3.shift(inv1, val7) // node 3 performs first transition
+var val7 = node3.validate(inv1)
+node3 = node3.shift(inv1, val7)
 
 var val8 = node1.validate(inv3)
 node1 = node1.shift(inv3, val8)
