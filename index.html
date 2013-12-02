@@ -60,7 +60,6 @@ function start() {
 
 	btc.prob("transaction", 1000, 0.001, function() {
 		if (this.peers.numpeers > 3) {
-			console.log("tx: " + this.id)
 			var newobj = new InventoryTransition("" + Math.random(), "TEST " + Math.random())
 			var val = this.inventory.validate(newobj)
 
@@ -73,7 +72,6 @@ function start() {
 	btc.on("newtx", function(from, obj) {
 		var val = this.inventory.validate(obj)
 		if (val.state == val.VALID) {
-			console.log("applying obj")
 			this.inventory = this.inventory.shift(obj, val)
 
 			this.peers.broadcast("newtx", obj)
@@ -82,7 +80,7 @@ function start() {
 
 	//btc.use(Transactions);
 
-	net = new Network(".network")
+	net = new Network(/*".network"*/)
 	net.add(200, btc)
 }
 
