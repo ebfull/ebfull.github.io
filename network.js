@@ -511,9 +511,9 @@ function Network(visualizerDiv) {
 
 Network.prototype = {
 	// grab a shared cache object
-	shared: function(name, def) {
+	shared: function(name) {
 		if (typeof this._shared[name] == "undefined") {
-			this._shared[name] = new def();
+			this._shared[name] = new ConsensusState(false, false);
 		}
 
 		return this._shared[name];
@@ -582,6 +582,312 @@ Network.prototype = {
 
 		if (this.visualizer) {
 			this.visualizer.rehash();
+		}
+	}
+}
+
+
+
+
+
+/*
+	This is instantiated to store the validator state as the state deltas are traversed.
+*/
+function StateTransitionValidation() {
+	this.state = 2;
+}
+
+StateTransitionValidation.prototype = {
+	VALID: 1, // State transition is completely valid here.
+	PARTIAL: 2, // State transition is not yet fully valid.
+	CONFLICT: 3, // State transition conflicts with another transition here.
+	INVALID: 4, // State transition is otherwise invalid.
+	DUPLICATE: 5, // State transition already occurred here.
+}
+
+/*
+	Prototype transition for a ConsensusState.
+*/
+var StateTransition = {
+	id: 0x00,
+
+	// generate some random bytes
+	rand: function() {
+		return String.fromCharCode(
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256)
+			)
+	},
+
+	// xor bytes (commutative operation to compare states regardless of order of transitions)
+	xor: function(b) {
+		var a = this.id;
+		var n = "";
+
+		for (var i=0;i<a.length;i++) {
+			n += String.fromCharCode(a.charCodeAt(i) ^ b.charCodeAt(i));
+		}
+
+		return n;
+	},
+
+	// Applies this transition to the state.
+	//  1. Create any state vars we don't have.
+	//  2. If an 'untransition' exists in this state, delete the untransition and its effects.
+	//  3. Otherwise, apply the transition and push the transition to the state.
+	// NOTE: Transitions must be orderless.
+	apply: function(state) {
+
+	},
+
+	// Unapplies a transaction from the state.
+	// This is only called by the unshifter, so it's in charge of modifying the id of the ultimate state.
+	//  1. Don't unapply the same transaction twice on this state.
+	//  2. Create any state vars we need.
+	//  3. Apply the untransition and push the untransition to the state.
+	// NOTE: Once again, orderless.
+	unapply: function(state) {
+
+	},
+
+	// Validator, used to confirm the legitimacy of a transition at a particular state.
+	// 1. Validator should keep track of untransitions, so it can ignore duplicate transitions it comes across.
+	// 2. Should account for the effects of an 'unapply' to the state.
+	// 3. Identify duplicate transitions
+	// 4. Identify conflicts
+	// 5. Stay PARTIAL until we've reached a good state, become VALID
+	validate: function(state, validation) {
+		if (!validation) {
+			validation = new StateTransitionValidation(this)
+		}
+
+		return validation;
+	},
+
+	// Invalidator, used to identify 'untransitions' necessary to perform during unshifting.
+	// 1. Stay PARTIAL until we identify this transition, then become VALID
+	// 2. If we reach any states dependent on this transition, we should run the invalidator recursively on
+	//    the base state and merge the untransitions.
+	invalidate: function(state, validation) {
+		if (!validation) {
+			validation = new StateTransitionValidation(this)
+		}
+
+		return validation;
+	}
+}
+
+/*
+	ConsensusState object.
+
+	Node should retain this once they adopt it.
+*/
+function ConsensusState(parent, transition) {
+	this.transitions = []
+
+	this.untransitions = [];
+	this.parent = parent;
+	this.children = [];
+	this.shiftcache = {}; // cached validations for transitions FOR THIS STATE
+	this.unshiftcache = {}; // cached validations for untransitions FOR THIS STATE
+	this._retain = 0;
+
+	if (parent) {
+		this.id = parent.id;
+		parent.children.push(this)
+		this.root = parent.root;
+	} else {
+		this.id = StateTransition.rand();
+		this.root = this;
+		this.shifts = {};
+		this.unshifts = {};
+	}
+
+	if (transition) {
+		transition.apply(this)
+		this.id = transition.xor(this.id)
+	}
+}
+
+ConsensusState.prototype = {
+	// returns a new state, automatically retains and releases
+	shift: function(transition, validation) {
+		if (validation.state == validation.VALID) {
+			// check the base object for cached transitions
+			var n;
+
+			if (this.root.shifts[transition.xor(this.id)]) {
+				n = this.root.shifts[transition.xor(this.id)];
+			} else {
+				n = new ConsensusState(this, transition)
+
+				// we need to cache this transition
+				this.root.shifts[transition.xor(this.id)] = n;
+
+				// new child means we retain
+				n.retain();
+			}
+
+			// retain our new state
+			n.retain();
+
+			// release ourselves
+			this.release();
+
+			return n;
+		}
+		return false;
+	},
+	// returns a new state, automatically retains and releases
+	unshift: function(transition, validation) {
+		if (validation.state == validation.VALID) {
+			var n;
+
+			// check the base object for cached untransitions
+			if (this.root.unshifts[transition.xor(this.id)]) {
+				n = this.root.unshifts[transition.xor(this.id)]
+			} else {
+				n = new ConsensusState(this, false);
+				// unapply all of validation's transitions
+
+				validation.untransitions.forEach(function(tr) {
+					tr.unapply(n)
+				}, this)
+
+				this.root.unshifts[transition.xor(this.id)] = n
+
+				n.retain(); // new child means retain
+			}
+
+			// retain our new state
+			n.retain();
+
+			// release ourselves
+			this.release();
+
+			return n;
+		}
+
+		return false;
+	},
+	fetch: function(collection) {
+		var cur = this;
+
+		while (cur) {
+			if (!collection.handle(cur))
+				break;
+		}
+
+		return collection;
+	},
+	// used to validate a transition
+	validate: function(transition) {
+		if (typeof this.shiftcache[transition.id] != "undefined") {
+			return this.shiftcache[transition.id];
+		}
+
+		var cur = this;
+
+		var validation = false; // store our validation state
+
+		while (cur) {
+			validation = transition.validate(cur, validation);
+
+			switch (validation.state) {
+				case validation.PARTIAL:
+					// do nothing, continue up the chain
+				break;
+				case validation.VALID:
+				case validation.CONFLICT:
+				case validation.INVALID:
+				case validation.DUPLICATE:
+					this.shiftcache[transition.id] = validation;
+					return validation;
+				break;
+			}
+
+			cur = cur.parent;
+		}
+
+		this.shiftcache[transition.id] = validation;
+
+		return validation;
+	},
+	// used to invalidate a transition
+	invalidate: function(transition) {
+		if (typeof this.unshiftcache[transition.id] != "undefined") {
+			return this.unshiftcache[transition.id];
+		}
+
+		var cur = this;
+
+		var validation = false;
+
+		while(cur) {
+			validation = transition.invalidate(cur, validation)
+
+			switch(validation.state) {
+				case validation.PARTIAL:
+					// do nothing, continue up the chain
+				break;
+				case validation.VALID:
+				case validation.CONFLICT:
+				case validation.INVALID:
+				case validation.DUPLICATE:
+					this.unshiftcache[transition.id] = validation;
+					return validation;
+				break;
+			}
+
+			cur = cur.parent;
+		}
+
+		this.unshiftcache[transition.id] = validation;
+
+		return validation;
+	},
+	retain: function() {
+		this._retain++;
+	},
+	release: function() {
+		this._retain--;
+
+		if (this._retain == 0) {
+			// We (may) serve as the parent for a number of child states in this.children
+			// We should merge our state with all of our children
+
+			// nothing will ever shift to this state
+			delete this.root.shifts[this.id];
+
+			for (var s in this.root.unshifts) {
+				if (this.root.unshifts[s] == this)
+					delete this.root.unshifts[s]
+			}
+
+			this.children.forEach(function(child) {
+				child.parent = this.parent;
+
+				this.transitions.forEach(function(t) {
+					t.apply(child) // apply parent transition to child state
+				})
+
+				child.release();
+			}, this)
+
+			this.children = []
 		}
 	}
 }

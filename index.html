@@ -37,7 +37,6 @@ goog.require("goog.structs.PriorityQueue")
 <script src="network.js"></script> <!-- core of simulator -->
 <script src="peermgr.js"></script> <!-- PeerMgr for network formation -->
 <script src="inventory.js"></script> <!-- Inventory for shared object collection -->
-<script src="consensus.js"></script> <!-- shared state machine thingy -->
 <!--<script src="transactions.js"></script>--> <!-- Shared UTXO state transitions, mempool, mapOrphans -->
 <!--
 <script src="blockchain.js"></script>
@@ -49,23 +48,6 @@ goog.require("goog.structs.PriorityQueue")
 <b><a id="pause" href="#">(pause)</a></b> <b><a id="default" href="#">(default)</a></b> <b><a id="faster" href="#">+</a></b>/<b><a id="slower" href="#">-</a></b> <span id="timenow"></span><br /><br />
 <a id="restart" href="#">Restart</a>
 <script>
-/*
-var tx = new Transaction([new TxIn( false )]);
-tx.coinbase = true;
-var u = new UTXOState();
-
-var validate = u.verify(tx)
-var nu = u.add(tx, validate)
-
-var tx2 = new Transaction([new TxIn( false )]);
-var validate2 = nu.verify(tx2);
-
-nu = nu.add(tx2, validate2);
-
-console.log(u)
-*/
-
-/*
 var net;
 var btc;
 var interval = 10;
@@ -75,7 +57,30 @@ function start() {
 
 	btc.use(PeerMgr);
 	btc.use(Inventory);
-	btc.use(Transactions);
+
+	btc.prob("transaction", 1000, 0.001, function() {
+		if (this.peers.numpeers > 3) {
+			console.log("tx: " + this.id)
+			var newobj = new InventoryTransition("" + Math.random(), "TEST " + Math.random())
+			var val = this.inventory.validate(newobj)
+
+			this.inventory = this.inventory.shift(newobj, val)
+
+			this.peers.broadcast("newtx", newobj)
+		}
+	})
+
+	btc.on("newtx", function(from, obj) {
+		var val = this.inventory.validate(obj)
+		if (val.state == val.VALID) {
+			console.log("applying obj")
+			this.inventory = this.inventory.shift(obj, val)
+
+			this.peers.broadcast("newtx", obj)
+		}
+	})
+
+	//btc.use(Transactions);
 
 	net = new Network(".network")
 	net.add(200, btc)
@@ -116,7 +121,6 @@ $("#slower").click(function() {
 	interval = Math.floor(interval);
 	return false;
 })
-*/
 </script>
 </body>
 </html>

@@ -1,70 +1,128 @@
-function NodeObject(type, name, obj) {
-	this.type = type;
-	if (!name)
-		name = (Math.floor((1 + Math.random()) * 0x10000)
-             .toString(16)
-             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
-             .toString(16)
-             .substring(1)) + (Math.floor((1 + Math.random()) * 0x10000)
-             .toString(16)
-             .substring(1));
-
+function InventoryTransition(name, obj) {
+	this.id = this.rand();
 	this.name = name;
 	this.obj = obj;
-
-	this.retain = 0;
 }
 
-function ObjectCollection(base) {
-	if (typeof base == "undefined") {
-		base = false;
-	} else {
-		base.children.push(this);
+InventoryTransition.prototype = {
+	apply: function(state) {
+		if (typeof state.objs == "undefined") {
+			state.objs = {};
+			state.ignoreobjs = {};
+		}
+
+		if (state.untransitions.indexOf(this) != -1) {
+			state.untransitions.splice(state.untransitions.indexOf(this), 1)
+
+			delete state.ignoreobjs[this.name]
+		} else {
+			state.objs[this.name] = this.obj;
+
+			state.transitions.unshift(this)
+		}
+	},
+
+	unapply: function(state) {
+		if (state.untransitions.indexOf(this) != -1)
+			return; // don't unapply twice (happens in long reorgs)
+
+		if (typeof state.ignoreobjs == "undefined") {
+			state.objs = {};
+			state.ignoreobjs = {};
+		}
+
+		state.ignoreobjs[this.name] = this.obj;
+
+		state.id = this.xor(state.id)
+
+		state.untransitions.unshift(this)
+	},
+
+	validate: function(state, validation) {
+		if (!validation) {
+			validation = new StateTransitionValidation(this)
+			validation.ignoreObjs = {};
+			validation.untransitions = [];
+		}
+
+		validation.untransitions = validation.untransitions.concat(state.untransitions);
+
+		for (var i in state.ignoreobjs) {
+			validation.ignoreObjs[i] = state.ignoreobjs[i];
+		}
+
+		if (state.transitions.indexOf(this) != -1) {
+			if (validation.untransitions.indexOf(this) != -1) {
+				// remove untransition
+				validation.untransitions.splice(validation.untransitions.indexOf(this), 1)
+			} else {
+				validation.state = validation.DUPLICATE;
+
+				return validation;
+			}
+		} else {
+			if (typeof validation.ignoreObjs[this.name] != "undefined") {
+				delete validation.ignoreObjs[this.name]
+			} else {
+				
+			}
+		}
+
+		if (state.parent == false) {
+			if (validation.state == validation.PARTIAL) {
+				validation.state = validation.VALID;
+			}
+		}
+
+		return validation;
+	},
+
+	invalidate: function(state, validation) {
+		if (!validation) {
+			validation = new StateTransitionValidation(this)
+			validation.untransitions = [this];
+		}
+
+		if (state.untransitions.indexOf(this) != -1) {
+			validation.state = validation.DUPLICATE;
+		} else {
+			if (state.transitions.indexOf(this) != 1) {
+				validation.state = validation.VALID;
+			} else {
+				// otherwise, remain PARTIAL
+			}
+		}
+
+		return validation;
 	}
-
-	this.children = [];
-	this.base = base;
-	this.objectMap = {};
 }
 
-ObjectCollection.prototype = {
-	exists: function(name) {
-		if (typeof this.objectMap[name] != "undefined") {
-			return true;
+InventoryTransition.prototype.__proto__ = StateTransition;
+
+function FetchObject(name) {
+	this.ignore = false;
+	this.name = name;
+	this.result = false;
+}
+
+FetchObject.prototype = {
+	handle: function(state) {
+		if (typeof state.ignoreobjs[this.name] != "undefined")
+			this.ignore = true;
+
+		if (typeof state.objs[this.name] != "undefined") {
+			// we found it, but do we need to ignore
+			if (this.ignore) {
+				this.ignore = false;
+			} else {
+				this.result = state.objs[this.name]
+				return false;
+			}
 		}
-
-		if (this.base && this.base.exists(name)) {
-			return true;
-		}
-
-		return false;
-	},
-
-	add: function(obj) {
-		if (this.exists(obj.name)) {
-			return false;
-		}
-
-		this.objectMap[obj.name] = obj;
-
-		obj.retain++;
-
-		if (obj.retain == this.base.children.length) {
-			// cheap way of figuring out if we've reached network wide consensus and can merge the object
-			// into the shared collection
-
-			this.base.objectMap[obj.name] = obj;
-
-			// delete it from every single children objectcollection
-			this.base.children.forEach(function(child) {
-				delete child.objectMap[obj.name];
-			});
-		}
-
-		return true;
-	},
+	}
 }
 
 function Inventory(self) {
-	self.inventory = new ObjectCollection(self.network.shared("inventory", ObjectCollection));
+	self.inventory = self.network.shared("inventory");
+	self.inventory.retain();
 }
