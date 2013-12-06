@@ -64,7 +64,6 @@ function start() {
 			var val = this.inventory.validate(newobj)
 
 			this.inventory = this.inventory.shift(newobj, val)
-
 			this.peers.broadcast("newtx", newobj)
 		}
 	})

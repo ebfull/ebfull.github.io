@@ -701,6 +701,7 @@ function ConsensusState(parent, transition) {
 	this.untransitions = [];
 	this.parent = parent;
 	this.children = [];
+	this.branch = {};
 	this.shiftcache = {}; // cached validations for transitions FOR THIS STATE
 	this.unshiftcache = {}; // cached validations for untransitions FOR THIS STATE
 	this._retain = 0;
@@ -737,8 +738,8 @@ ConsensusState.prototype = {
 				// we need to cache this transition
 				this.root.shifts[transition.xor(this.id)] = n;
 
-				// new child means we retain
-				n.retain();
+				// new child means we retain, we don't need to run up the chain though
+				n._retain++;
 			}
 
 			// retain our new state
@@ -769,7 +770,7 @@ ConsensusState.prototype = {
 
 				this.root.unshifts[transition.xor(this.id)] = n
 
-				n.retain(); // new child means retain
+				n._retain++; // new child means retain, we don't need to run up the chain though
 			}
 
 			// retain our new state
@@ -859,17 +860,43 @@ ConsensusState.prototype = {
 
 		return validation;
 	},
+	lock: function(child) {
+		if (this._retain == 0)
+			return false;
+
+		var i = this.children.indexOf(child)
+
+		if (typeof this.branch[i] == "undefined") {
+			this.branch[i] = 0;
+		}
+
+		this.branch[i]++;
+	},
+	unlock: function(child) {
+		if (this._retain == 0)
+			return false;
+
+		var i = this.children.indexOf(child)
+
+		if (typeof this.branch[i] == "undefined") {
+			this.branch[i] = 0;
+		}
+
+		this.branch[i]--;
+	},
 	retain: function() {
 		this._retain++;
+
+		if (this.parent)
+			this.parent.lock(this);
 	},
 	release: function() {
 		this._retain--;
 
 		if (this._retain == 0) {
-			// We (may) serve as the parent for a number of child states in this.children
-			// We should merge our state with all of our children
+			// our parent must have released us
 
-			// nothing will ever shift to this state
+			// 1. nothing will ever shift to this state
 			delete this.root.shifts[this.id];
 
 			for (var s in this.root.unshifts) {
@@ -877,17 +904,88 @@ ConsensusState.prototype = {
 					delete this.root.unshifts[s]
 			}
 
-			this.children.forEach(function(child) {
-				child.parent = this.parent;
+			// 2. we should consider merging with our parent if we can (as many times as possible)
 
-				this.transitions.forEach(function(t) {
-					t.apply(child) // apply parent transition to child state
-				})
+			while (this.parent) {
+				if ((this.parent.transitions.length) <= (this.transitions.length)) {
+					// we have at least as many transitions, so let's merge.
 
-				child.release();
+					// first, keep a record of our transitions/untransitions
+					var ourTransitions = this.transitions;
+					var ourUntransitions = this.untransitions;
+					var ourId = this.id;
+
+					// second, clear ourselves
+					for (var prop in this) {
+						switch (prop) {
+							case "branch":
+							case "unshifts":
+							case "shifts":
+							case "shiftcache":
+							case "unshiftcache":
+							case "children":
+							case "root":
+							case "id":
+							case "parent":
+							case "_retain":
+							break;
+							case "transitions":
+							this.transitions = []
+							break;
+							case "untransitions":
+							this.untransitions = []
+							break;
+							default:
+								delete this[prop]
+							break;
+						}
+					}
+
+					// now, run our parent's transitions and untransitions on ourself
+					this.parent.transitions.forEach(function(t) {
+						t.apply(this)
+					}, this)
+
+					this.parent.untransitions.forEach(function(t) {
+						t.unapply(this)
+					}, this)
+
+					// now, run our recorded transitions/untransitions on ourself
+					ourTransitions.forEach(function(t) {
+						t.apply(this)
+					}, this)
+
+					ourUntransitions.forEach(function(t) {
+						t.unapply(this)
+					}, this)
+
+					// restore the id if it was changed by an unapply
+					this.id = ourId;
+
+					// our parent is now our parent's parent
+					this.parent = this.parent.parent;
+				} else {
+					break;
+				}
+			}
+
+			// lastly, release our children
+
+			this.children.forEach(function(child, i) {
+				// ignore children in defunct branches
+				if (this.branch[i]) {
+					child.release();
+				}
+				else
+					console.log("ignoring defunct branch")
+
 			}, this)
 
+			// don't store children anymore
 			this.children = []
+		} else {
+			if (this.parent)
+				this.parent.unlock();
 		}
 	}
 }
