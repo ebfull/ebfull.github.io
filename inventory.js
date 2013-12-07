@@ -1,15 +1,20 @@
-function InventoryTransition(name, obj) {
+function InventoryTransition(type, name, obj) {
 	this.id = this.rand();
 	this.name = name;
+	this.type = type;
 	this.obj = obj;
 }
 
 InventoryTransition.prototype = {
-	apply: function(state) {
+	init: function(state) {
 		if (typeof state.objs == "undefined") {
 			state.objs = {};
 			state.ignoreobjs = {};
 		}
+	},
+
+	apply: function(state) {
+		this.init(state)
 
 		if (state.untransitions.indexOf(this) != -1) {
 			state.untransitions.splice(state.untransitions.indexOf(this), 1)
@@ -24,12 +29,9 @@ InventoryTransition.prototype = {
 
 	unapply: function(state) {
 		if (state.untransitions.indexOf(this) != -1)
-			return; // don't unapply twice (happens in long reorgs)
+			return; // don't unapply twice (happens in complex reorgs)
 
-		if (typeof state.ignoreobjs == "undefined") {
-			state.objs = {};
-			state.ignoreobjs = {};
-		}
+		this.init(state)
 
 		state.ignoreobjs[this.name] = this.obj;
 
@@ -107,6 +109,8 @@ function FetchObject(name) {
 
 FetchObject.prototype = {
 	handle: function(state) {
+		InventoryTransition.prototype.init(state)
+
 		if (typeof state.ignoreobjs[this.name] != "undefined")
 			this.ignore = true;
 
@@ -127,13 +131,31 @@ function Inventory(self) {
 	this.inv = self.network.shared("inventory")
 	this.inv.retain();
 
-	this.peers = {};
+	this.peerHas = {};
+
+	// do we have this object?
+	this.getObj = function(name) {
+		return this.inv.fetch(new FetchObject(name)).result;
+	}
+
+	// add this object
+	this.addObj = function(type, name, data) {
+		var obj = new InventoryTransition(type, name, data)
+
+		var val = this.inv.validate(obj)
+		if (val.state == val.VALID) {
+			this.inv = this.inv.shift(obj, val)
+			return true;
+		}
+
+		return false;
+	}
 
 	self.on("peermgr:connect", function(from) {
-		this.peers[from] = self.network.shared("inventory_vector");
-	})
+		this.peerHas[from] = {};
+	}, this)
 
 	self.on("peermgr:disconnect", function(from) {
-		delete this.peers[from]
-	})
+		delete this.peerHas[from]
+	}, this)
 }

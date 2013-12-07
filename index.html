@@ -59,10 +59,10 @@ function start() {
 	btc = new Node();
 
 	btc.use(PeerMgr);
-	btc.prob("lol", 1000, (0.001/1000), function() {
-		l++;
-	})
-	//btc.use(Inventory);
+	//btc.prob("lol", (0.001/1000), function() {
+	//	l++;
+	//})
+	btc.use(Inventory);
 	/*
 
 	btc.prob("transaction", 1000, 0.001, function() {

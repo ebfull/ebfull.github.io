@@ -291,8 +291,8 @@ function NodeTickEvent(delay, nid, f, ctx) {
 	}
 }
 
-function NodeProbabilisticTickEvent(delay) {
-	this.delay = delay;
+function NodeProbabilisticTickEvent() {
+	this.delay = 100;
 	this.events = {}
 	this.pnothing = 1;
 	this.ptotal = 0;
@@ -344,7 +344,6 @@ NodeProbabilisticTickEvent.prototype = {
 
 		// when should the next event occur?
 		if (this.numevents) {
-			// use exponential distribution
 			this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (1-this.pnothing)));
 		}
 		else
@@ -377,8 +376,8 @@ function NodeState(node, network, id) {
 }
 
 NodeState.prototype = {
-	prob: function(label, delay, p, f) {
-		this.network.pregister(label, delay, p, this.id, f)
+	prob: function(label, p, f) {
+		this.network.pregister(label, p, this.id, f)
 	},
 
 	deprob: function(label) {
@@ -461,7 +460,7 @@ Node.prototype = {
 
 		// create prob tick events
 		for (var i=0;i<this._probs.length;i++) {
-			node.prob(this._probs[i].label, this._probs[i].delay, this._probs[i].p, this._probs[i].f)
+			node.prob(this._probs[i].label, this._probs[i].p, this._probs[i].f)
 		}
 
 		// create event handlers
@@ -491,8 +490,8 @@ Node.prototype = {
 		this._ticks.push({delay: delay, f: callback})
 	},
 
-	prob: function(label, delay, p, callback) {
-		this._probs.push({label:label, delay:delay, p:p, f:callback})
+	prob: function(label, p, callback) {
+		this._probs.push({label:label, p:p, f:callback})
 	}
 }
 
@@ -529,9 +528,9 @@ Network.prototype = {
 	},
 
 	// registers probablistic event
-	pregister: function(label, delay, p, nid, cb) {
+	pregister: function(label, p, nid, cb) {
 		if (typeof this.pevents[label] == "undefined") {
-			this.pevents[label] = new NodeProbabilisticTickEvent(delay)
+			this.pevents[label] = new NodeProbabilisticTickEvent()
 			this.exec(this.pevents[label])
 		}
 		
