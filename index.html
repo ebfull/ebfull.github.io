@@ -53,12 +53,14 @@ var net;
 var btc;
 var interval = 10;
 
+var l = 0;
+
 function start() {
 	btc = new Node();
 
 	btc.use(PeerMgr);
-	btc.prob("lol", 1000, 0.001, function() {
-		console.log("something happened this moment for meeeee")
+	btc.prob("lol", 1000, (0.001/1000), function() {
+		l++;
 	})
 	//btc.use(Inventory);
 	/*
@@ -104,6 +106,7 @@ setInterval(function() {
 		}
 		$("#stat").html(invchain);
 		*/
+		$("#stat").html(l)
 	}
 }, 10)
 

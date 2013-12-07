@@ -297,6 +297,7 @@ function NodeProbabilisticTickEvent(delay) {
 	this.pnothing = 1;
 	this.ptotal = 0;
 	this.numevents = 0;
+	this.init = false;
 }
 
 NodeProbabilisticTickEvent.prototype = {
@@ -335,19 +336,27 @@ NodeProbabilisticTickEvent.prototype = {
 	},
 
 	run: function(network) {
-		var ecount = 0;
-
-		while (Math.random() > this.pnothing) {
-			ecount++;
-		}
-
-		while (ecount > 0) {
-			// which event should occur?
+		if (!this.init) {
+			this.init = true;
+		} else {
 			this.runevent(network)
-			ecount--;
 		}
 
+		// when should the next event occur?
 		if (this.numevents) {
+			// use exponential distribution
+			this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (1-this.pnothing)));
+		}
+		else
+			this.delay = 100; // shouldn't happen but whatever
+
+		if (this.delay == 0) {
+			// run again :\
+			this.run(network)
+		} else {
+			if (!this.numevents)
+				this.init = false;
+
 			network.exec(this); // register ourselves again! we still have events that could occur again
 		}
 	}
