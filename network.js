@@ -261,11 +261,14 @@ Events.prototype = {
 	NodeProbabilisticTickEvent: a pool of events that can occur at any time, like mining
 */
 
-function NodeEvent(delay, nid, f) {
+function NodeEvent(delay, nid, f, ctx) {
+	if (typeof ctx == "undefined")
+		ctx = network.nodes[nid]
+
 	this.delay = delay;
 
 	this.run = function(network) {
-		f(network.nodes[nid]);
+		f.call(ctx);
 	}
 }
 
@@ -429,8 +432,8 @@ NodeState.prototype = {
 		}
 	},
 
-	delay: function(delay, f) {
-		this.network.exec(new NodeEvent(delay, this.id, f))
+	delay: function(delay, f, ctx) {
+		this.network.exec(new NodeEvent(delay, this.id, f, ctx))
 	}
 }
 
@@ -798,6 +801,8 @@ ConsensusState.prototype = {
 		while (cur) {
 			if (!collection.handle(cur))
 				break;
+
+			cur = cur.parent;
 		}
 
 		return collection;

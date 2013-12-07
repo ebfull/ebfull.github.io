@@ -52,6 +52,7 @@ goog.require("goog.structs.PriorityQueue")
 var net;
 var btc;
 var interval = 10;
+var findtx = true;
 
 var l = 0;
 
@@ -59,9 +60,17 @@ function start() {
 	btc = new Node();
 
 	btc.use(PeerMgr);
-	//btc.prob("lol", (0.001/1000), function() {
-	//	l++;
-	//})
+	btc.prob("lol", (0.000003), function() {
+		if (findtx && this.peers.numpeers > 4) {
+			var tx = {name:""+Math.random(),test:Math.random()};
+			console.log(this.id + ": creating tx " + tx.name)
+
+			this.inventory.createObj("tx", tx)
+		}
+	})
+	btc.on("inv:tx", function(from, obj) {
+		//console.log(this.id + ": received tx from " + from + ": " + obj.id)
+	})
 	btc.use(Inventory);
 	/*
 
@@ -106,7 +115,8 @@ setInterval(function() {
 		}
 		$("#stat").html(invchain);
 		*/
-		$("#stat").html(l)
+		$("#stat").html(Object.keys(net.nodes[0].inventory.inv.root.shifts).length)
+		//$("#stat").html(net.nodes[0].inventory.inv._retain)
 	}
 }, 10)
 

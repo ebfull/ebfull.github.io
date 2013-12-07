@@ -51,11 +51,15 @@ function PeerMgr(self) {
 		}
 	}
 
+	this.send = function(to, name, msg) {
+		if (this.peers[to].active)
+			self.send(this.peers[to].id, "__peermsg", {name:name,obj:msg})
+	}
+
 	// sends a message to all active peers
 	this.broadcast = function(name, msg) {
 		for (var p in this.peers) {
-			if (this.peers[p].active)
-				self.send(this.peers[p].id, "__peermsg", {name:name,obj:msg});
+			this.send(p, name, msg)
 		}
 	}
 
@@ -103,7 +107,7 @@ function PeerMgr(self) {
 
 	// processes a received message from another peer
 	this.onReceive = function(from, o) {
-		if (typeof this.peers[from] != "undefined") {
+		if (typeof this.peers[from] != "undefined" && this.peers[from].active) {
 			self.handle(from, o.name, o.obj)
 			this.peers[from].lastmessage = self.now();
 		}
