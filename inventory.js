@@ -123,6 +123,17 @@ FetchObject.prototype = {
 }
 
 function Inventory(self) {
-	self.inventory = self.network.shared("inventory");
-	self.inventory.retain();
+	self.inventory = this;
+	this.inv = self.network.shared("inventory")
+	this.inv.retain();
+
+	this.peers = {};
+
+	self.on("peermgr:connect", function(from) {
+		this.peers[from] = self.network.shared("inventory_vector");
+	})
+
+	self.on("peermgr:disconnect", function(from) {
+		delete this.peers[from]
+	})
 }

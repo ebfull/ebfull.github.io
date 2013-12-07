@@ -46,7 +46,8 @@ goog.require("goog.structs.PriorityQueue")
 <div class="network"></div>
 <hr>
 <b><a id="pause" href="#">(pause)</a></b> <b><a id="default" href="#">(default)</a></b> <b><a id="faster" href="#">+</a></b>/<b><a id="slower" href="#">-</a></b> <span id="timenow"></span><br /><br />
-<a id="restart" href="#">Restart</a>
+<a id="restart" href="#">Restart</a><br />
+<span id="stat"></span>
 <script>
 var net;
 var btc;
@@ -56,7 +57,11 @@ function start() {
 	btc = new Node();
 
 	btc.use(PeerMgr);
-	btc.use(Inventory);
+	btc.prob("lol", 1000, 0.001, function() {
+		console.log("something happened this moment for meeeee")
+	})
+	//btc.use(Inventory);
+	/*
 
 	btc.prob("transaction", 1000, 0.001, function() {
 		if (this.peers.numpeers > 3) {
@@ -76,7 +81,7 @@ function start() {
 			this.peers.broadcast("newtx", obj)
 		}
 	})
-
+*/
 	//btc.use(Transactions);
 
 	net = new Network(/*".network"*/)
@@ -89,6 +94,16 @@ setInterval(function() {
 	if (typeof net != "undefined") {
 		net.run(interval);
 		$("#timenow").html((net.now/1000) + " seconds elapsed");
+		/*
+		// for fun
+		var invchain = "";
+		var at = net.nodes[0].inventory;
+		while (at) {
+			invchain += "(" + at.transitions.length + ") -> ";
+			at = at.parent;
+		}
+		$("#stat").html(invchain);
+		*/
 	}
 }, 10)
 

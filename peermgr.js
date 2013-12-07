@@ -87,6 +87,7 @@ function PeerMgr(self) {
 			this.nodearchive.push(this.peers[p]);
 			delete this.peers[p]
 			this.numpeers -= 1;
+			self.handle(p, "peermgr:disconnect", p)
 		}
 	}
 
@@ -162,6 +163,8 @@ function PeerMgr(self) {
 
 			// notify Network of connection
 			self.connect(from);
+
+			self.handle(from, "peermgr:connect", from)
 		}
 	}
 
