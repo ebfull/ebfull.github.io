@@ -35,7 +35,7 @@ function Block(prev, time, miner) {
 	else {
 		this.h = 0;
 		this.prev = false;
-		this.difficulty = 120000;
+		this.difficulty = 110000;
 		this.work = 0;
 	}
 }

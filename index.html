@@ -1,4 +1,5 @@
 <!-- javascript bitcoin simulator -->
+<!-- sean bowe -->
 <!doctype html>
 <html>
 <head>
@@ -37,7 +38,7 @@ goog.require("goog.structs.PriorityQueue")
 <script src="network.js"></script> <!-- core of simulator -->
 <script src="peermgr.js"></script> <!-- PeerMgr for network formation -->
 <script src="inventory.js"></script> <!-- Inventory for shared object collection -->
-<script src="transactions.js"></script> <!-- Shared UTXO state transitions, mempool, mapOrphans -->
+<!--<script src="transactions.js"></script>--> <!-- Shared UTXO state transitions, mempool, mapOrphans -->
 <script src="blockchain.js"></script>
 <script src="miner.js"></script>
 </head>
@@ -104,7 +105,7 @@ function start(percent, sybil, attack) {
 		}
 	})
 
-	net = new Network(".network")
+	net = new Network()
 	net.add(numNodes, btc)
 }
 
