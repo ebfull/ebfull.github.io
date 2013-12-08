@@ -6,6 +6,11 @@ function Block(prev, time, miner) {
 		return prev;
 	}
 
+	if (miner)
+		this.credit = miner.id;
+	else
+		this.credit = false;
+
 	this.id = StateTransition.rand();
 	this.time = time;
 	this.color = colors[color_i]
@@ -30,7 +35,7 @@ function Block(prev, time, miner) {
 	else {
 		this.h = 0;
 		this.prev = false;
-		this.difficulty = 10000;
+		this.difficulty = 120000;
 		this.work = 0;
 	}
 }
@@ -77,14 +82,21 @@ Chainstate.prototype = {
 	/*
 		This function attempts to enter the block into the chainstate.
 	*/
-	enter: function(block) {
+	enter: function(block, force) {
 		if (block == this.head)
-			return 0
+			return -1
 
-		if (this.head.work < block.work) {
+		if (typeof force == "undefined")
+			force = false;
+		else if (force)
+			this.self.log("\tchainstate forcefully entering branch")
+
+		var numorphan = -1;
+
+		if ((this.head.work < block.work) || force) {
 			// the current head is now obsolete
 
-			var numorphan = 0;
+			numorphan = 0;
 			var forwards = []
 			var cur = block
 
@@ -101,34 +113,45 @@ Chainstate.prototype = {
 							break reorg;
 						}
 					}
-				} else /*if (this.head.h > cur.h)*/ {
+				} else {
 					numorphan++;
 					this.reverse()
 				}
 			}
-
-			return numorphan
+		} else if (this.head.work == block.work) {
+			this.self.log("\tblock rejected; already seen one at this chainlength")
 		}
+
+		return numorphan
 	}
 }
 
-function Blockchain(self) {
-	self.blockchain = this;
+function Blockchain(self, instance) {
+	if (typeof instance == "undefined")
+		instance = "blockchain"
 
+	self[instance] = this;
 	this.chainstate = new Chainstate(GenesisBlock, self);
+
+	this.onBlock = function(b) {
+		this.chainstate.enter(b)
+	}
+
+	this.onMine = function(b, force) {
+		if (this.chainstate.enter(b, force) != -1) {
+			self.log("\tpushing new inventory object")
+			self.inventory.createObj("block", {name:b.id,block:b})
+		}
+	}
 
 	this.mineBlock = function() {
 		var newb = new Block(this.chainstate.head, self.now(), self)
 
-		this.chainstate.enter(newb)
-
-		self.inventory.createObj("block", {name:newb.id,block:newb})
+		this.onMine(newb)
 	}
 
 	self.on("inv:block", function(from, o) {
-		var block = o.obj.block;
-
-		this.chainstate.enter(block)
+		this.onBlock(o.obj.block)
 	}, this)
 
 	self.inventory.subscribe("block")

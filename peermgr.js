@@ -77,7 +77,14 @@ function PeerMgr(self) {
 
 	// send a portion of our archived node list
 	this.sendpeers = function(p) {
-		self.send(p, 'peerlist', this.nodearchive.slice(0, 15));
+		var someNodes = this.nodearchive.slice(0, 15)
+		if (someNodes.length == 0) {
+			var randomPeer = this.peers[Object.keys(this.peers)[Math.floor(Math.random() * Object.keys(this.peers).length)]]
+			if (randomPeer.active)
+				someNodes = [this.randomPeer]
+		}
+
+		self.send(p, 'peerlist', someNodes);
 	}
 
 	// connect to a remote node (if we haven't already tried)
@@ -110,7 +117,14 @@ function PeerMgr(self) {
 
 	// reject a remote node's connection
 	this.reject = function(p) {
-		self.send(p.id, 'reject', this.nodearchive.slice(0, 15))
+		var someNodes = this.nodearchive.slice(0, 15)
+		if (someNodes.length == 0) {
+			var randomPeer = this.peers[Object.keys(this.peers)[Math.floor(Math.random() * Object.keys(this.peers).length)]]
+			if (randomPeer.active)
+				someNodes = [this.randomPeer]
+		}
+
+		self.send(p.id, 'reject', someNodes)
 	}
 
 	this.onAck = function(from, o) {

@@ -9,12 +9,12 @@ Array.prototype.remove = function() {
     return this;
 };
 
-// TODO: make this deterministic
 function latency(a, b) {
-	// a and b are integer node IDs (starting from 0)
-	// return the amount of msec latency
+	var seed = 239847234;
+	var min = 10 + Math.abs(((a*seed)^(b*seed)) % 300);
+	var avgVariance = 15;
 
-	return Math.floor(Math.random() * 2000) + 150
+	return Math.floor((Math.log(1-Math.random())/-1) * (avgVariance)) + min
 }
 
 function revchart(r, h) {
@@ -399,6 +399,12 @@ NodeState.prototype = {
 		this.network.disconnect(this.id, remoteid);
 	},
 
+	log: function(msg) {
+		return;
+		if (this.id == 0)
+			console.log(this.id + ": " + msg)
+	},
+
 	now: function() {
 		return this.network.now;
 	},
@@ -426,7 +432,7 @@ NodeState.prototype = {
 
 		if (typeof this.handlers[name] != "undefined") {
 			var oldHandler = this.handlers[name];
-			this.handlers[name] = function(from, obj) {if (oldHandler()) f.call(ctx, from, obj);}
+			this.handlers[name] = function(from, obj) {oldHandler.call(ctx, from, obj); f.call(ctx, from, obj);}
 		} else {
 			this.handlers[name] = function(from, obj) {return f.call(ctx, from, obj);};
 		}
@@ -454,7 +460,7 @@ Node.prototype = {
 
 		// run init functions
 		if (this._init)
-			this._init(node);
+			this._init.call(node);
 
 		// create tick events
 		for (var i=0;i<this._ticks.length;i++) {
@@ -481,7 +487,7 @@ Node.prototype = {
 			this._init = callback;
 		else {
 			var oldInit = this._init;
-			this._init = function(self) {oldInit(self); callback(init)};
+			this._init = function() {oldInit.call(this); callback.call(this)};
 		}
 	},
 

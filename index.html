@@ -45,15 +45,41 @@ goog.require("goog.structs.PriorityQueue")
 <div class="network"></div>
 <hr>
 <b><a id="pause" href="#">(pause)</a></b> <b><a id="default" href="#">(default)</a></b> <b><a id="faster" href="#">+</a></b>/<b><a id="slower" href="#">-</a></b> <span id="timenow"></span><br /><br />
-<a id="restart" href="#">Restart</a><br />
-<span id="stat"></span>
+<!--<a id="restart" href="#">Restart</a><br />-->
+<div id="statchart"></div>
 <script>
 var net;
 var btc;
 var interval = 10;
-var findtx = false;
 
-function start() {
+var targetHeight = 5000;
+var numNodes = 200;
+
+var trials = [{percent:0.35, sybil: true, attack: true},{percent:0.35, sybil: true, attack: true},{percent:0.35, sybil: true, attack: true}]
+
+/*
+for (var i=0.1;i<0.5;i+=0.01) {
+	trials.push({percent:i, sybil: false, attack: false})
+	trials.push({percent:i, sybil: false, attack: false})
+	trials.push({percent:i, sybil: false, attack: false})
+
+	trials.push({percent:i, sybil: true, attack: false})
+	trials.push({percent:i, sybil: true, attack: false})
+	trials.push({percent:i, sybil: true, attack: false})
+
+	trials.push({percent:i, sybil: false, attack: true})
+	trials.push({percent:i, sybil: false, attack: true})
+	trials.push({percent:i, sybil: false, attack: true})
+
+	trials.push({percent:i, sybil: true, attack: true})
+	trials.push({percent:i, sybil: true, attack: true})
+	trials.push({percent:i, sybil: true, attack: true})
+}
+*/
+
+function start(percent, sybil, attack) {
+	$("#statchart").append('<br />(' + (attack ? "selfish," : "") + (sybil ? "sybil" : "") + ') <b>' + (percent*100) + '%</b>: <span class="stat"><span>')
+	var allpercent = 1;
 	btc = new Node();
 
 	btc.use(PeerMgr);
@@ -62,38 +88,58 @@ function start() {
 	btc.use(Blockchain);
 	btc.use(Miner);
 
-/*
-	btc.prob("txspam", (0.000003), function() {
-		if (findtx && this.peers.numpeers > 4) {
-			console.log("creating tx")
-			this.mempool.createTransaction([], ["" + Math.random()])
+	btc.init(function() {
+		if(this.id == 0) {
+			this.mine(percent)
+			allpercent-=percent;
+			if (attack)
+				this.attack()
+			if (sybil)
+				this.peers.maxpeers = numNodes - 20;
+		}
+		else {
+			var thispercent = Math.random() * (allpercent * 0.3)
+			allpercent -= thispercent;
+			this.mine(thispercent)
 		}
 	})
-*/
 
-	net = new Network(/*".network"*/)
-	net.add(200, btc)
+	net = new Network(".network")
+	net.add(numNodes, btc)
 }
 
-start();
+var curtrial = trials.shift()
+start(curtrial.percent, curtrial.sybil, curtrial.attack);
 
 setInterval(function() {
 	if (typeof net != "undefined") {
 		net.run(interval);
 		$("#timenow").html((net.now/1000) + " seconds elapsed");
-		/*
-		// for fun
-		var invchain = "";
-		var at = net.nodes[0].inventory;
-		while (at) {
-			invchain += "(" + at.transitions.length + ") -> ";
-			at = at.parent;
+		var total = 0;
+		var my = 0;
+		var cur = net.nodes[99].blockchain.chainstate.head;
+		while (cur) {
+			if (cur.credit === 0)
+				my++;
+			total++;
+			cur = cur._prev();
 		}
-		$("#stat").html(invchain);
-		*/
-		//$("#stat").html("Inventory state machine: " + Object.keys(net.nodes[0].inventory.inv.root.shifts).length + " state(s)<br/>UTXO state machine: " + Object.keys(net.nodes[0].mempool.utxo.root.shifts).length + " state(s)")
-		//$("#stat").html(net.nodes[0].inventory.inv._retain)
-		$("#stat").html(net.nodes[0].blockchain.chainstate.head.h)
+		var pub = net.nodes[0].blockchain.chainstate.head.h;
+		var lol = 0;
+		if (typeof net.nodes[0].private_blockchain != "undefined")
+			lol = net.nodes[0].private_blockchain.chainstate.head.h;
+
+		if (total > 0)
+			$(".stat:last").html("height=" + pub + "/" + targetHeight + "; revenue= " + ((my/total)*100).toFixed(2) + "%")
+
+		if (pub >= targetHeight) {
+			// we're done with this trial
+			curtrial = trials.shift()
+			if (curtrial)
+				start(curtrial.percent, curtrial.sybil, curtrial.attack)
+			else
+				net = undefined;
+		}
 	}
 }, 10)
 
