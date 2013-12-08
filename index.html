@@ -56,9 +56,8 @@ var interval = 10;
 var targetHeight = 5000;
 var numNodes = 200;
 
-var trials = [{percent:0.35, sybil: true, attack: true},{percent:0.35, sybil: true, attack: true},{percent:0.35, sybil: true, attack: true}]
+var trials = []
 
-/*
 for (var i=0.1;i<0.5;i+=0.01) {
 	trials.push({percent:i, sybil: false, attack: false})
 	trials.push({percent:i, sybil: false, attack: false})
@@ -76,7 +75,6 @@ for (var i=0.1;i<0.5;i+=0.01) {
 	trials.push({percent:i, sybil: true, attack: true})
 	trials.push({percent:i, sybil: true, attack: true})
 }
-*/
 
 function start(percent, sybil, attack) {
 	$("#statchart").append('<br />(' + (attack ? "selfish," : "") + (sybil ? "sybil" : "") + ') <b>' + (percent*100) + '%</b>: <span class="stat"><span>')
