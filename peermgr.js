@@ -14,6 +14,8 @@ function PeerState(id, lastmessage) {
 	this.id = id;
 	this.lastmessage = lastmessage;
 	this.active = false;
+	this.locked = true;
+	this.msgqueue = [];
 }
 
 function PeerMgr(self) {
@@ -52,8 +54,13 @@ function PeerMgr(self) {
 	}
 
 	this.send = function(to, name, msg) {
-		if (this.peers[to].active)
-			self.send(this.peers[to].id, "__peermsg", {name:name,obj:msg})
+		if (this.peers[to].active) {
+			if (this.peers[to].locked) {
+				this.peers[to].msgqueue.push({name:name,obj:msg})
+			} else {
+				self.send(this.peers[to].id, "__peermsg", {name:name,obj:msg})
+			}
+		}
 	}
 
 	// sends a message to all active peers
@@ -97,6 +104,7 @@ function PeerMgr(self) {
 
 	// accept a remote node's connection
 	this.accept = function(p) {
+		p.locked = true; // wait for an ack
 		self.send(p.id, 'accept', {})
 	}
 
@@ -105,9 +113,23 @@ function PeerMgr(self) {
 		self.send(p.id, 'reject', this.nodearchive.slice(0, 15))
 	}
 
+	this.onAck = function(from, o) {
+		if (typeof this.peers[from] != "undefined") {
+			this.peers[from].locked = false;
+			this.peers[from].lastmessage = self.now()
+
+			if (this.peers[from].msgqueue.length > 0) {
+				var domsg = this.peers[from].msgqueue.shift();
+				this.peers[from].locked = true;
+				self.send(this.peers[from].id, "__peermsg", {name:domsg.name,obj:domsg.obj})
+			}
+		}
+	}
+
 	// processes a received message from another peer
 	this.onReceive = function(from, o) {
 		if (typeof this.peers[from] != "undefined" && this.peers[from].active) {
+			self.send(from, 'ack', {})
 			self.handle(from, o.name, o.obj)
 			this.peers[from].lastmessage = self.now();
 		}
@@ -164,6 +186,8 @@ function PeerMgr(self) {
 			// set connection active
 			this.peers[from].lastmessage = self.now();
 			this.peers[from].active = true;
+
+			self.send(from, 'ack', {})
 
 			// notify Network of connection
 			self.connect(from);
@@ -225,5 +249,6 @@ function PeerMgr(self) {
 	self.on("disconnect", this.onDisconnect, this);
 	self.on("peerlist", this.onPeerlist, this);
 	self.on("getpeers", this.onGetpeers, this);
+	self.on("ack", this.onAck, this);
 	self.on("__peermsg", this.onReceive, this);
 }

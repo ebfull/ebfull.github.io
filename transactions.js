@@ -156,6 +156,8 @@ function UTXOTransition(inputs, outputs) {
 
 UTXOTransition.prototype = StateTransition;
 
+// TODO: forcefully add a transaction by running invalidator until all conflicts are gone
+
 function Transactions(self) {
 	self.mempool = this;
 	this.utxo = self.network.shared("utxo")

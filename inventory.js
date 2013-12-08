@@ -137,6 +137,9 @@ function Inventory(self) {
 
 	this.polling = false;
 
+	this.mySubscriptions = [];
+
+	this.subscriptions = {};
 	this.peerHas = {};
 	this.tellPeer = {};
 	this.mapAskFor = {};
@@ -226,8 +229,13 @@ function Inventory(self) {
 
 			// we've added the object, but now we need to tell our peers we have it
 			for (var p in this.tellPeer) {
-				this.addTick()
-				this.tellPeer[p][o.name] = o.type;
+				if (typeof this.subscriptions[p][o.type] != "undefined") {
+					// just send the object
+					self.peers.send(p, "invobj", o)
+				} else {
+					this.addTick()
+					this.tellPeer[p][o.name] = o.type;
+				}
 			}
 			return true;
 		}
@@ -269,38 +277,46 @@ function Inventory(self) {
 	}
 
 	this.onInvobj = function(from, o) {
-
-		// stop asking other peers for it (if we are)
-		delete this.mapAskFor[o.name]
-
-		for (var p in this.mapAlreadyAskedFor) {
-			delete this.mapAlreadyAskedFor[p][o.name]
-		}
-
 		// add it
-		this.addObj(o)
+		if (this.addObj(o)) {
+			// stop asking other peers for it (if we are)
+			delete this.mapAskFor[o.name]
 
-		// tell all our peers that we have it
-		for (var p in this.tellPeer) {
-			this.tellPeer[p][o.name] = o.type;
+			for (var p in this.mapAlreadyAskedFor) {
+				delete this.mapAlreadyAskedFor[p][o.name]
+			}
 
-			// we no longer care if they have it
-			delete this.peerHas[p][o.name]
+			// we no longer care that our peers have this object
+			for (var p in this.peerHas) {
+				delete this.peerHas[p][o.name]
+			}
+
+			// now run a handler
+			self.handle(from, "inv:" + o.type, o)
 		}
-
-		// now run a handler
-		self.handle(from, "inv:" + o.type, o)
 	}
 
-	this.addTick()
+	this.subscribe = function(type) {
+		this.mySubscriptions.push(type)
+	}
+
+	this.onSubscribe = function(from, type) {
+		this.subscriptions[from][type] = true;
+	}
 
 	self.on("peermgr:connect", function(from) {
+		this.subscriptions[from] = {};
 		this.peerHas[from] = {};
 		this.tellPeer[from] = {};
 		this.mapAlreadyAskedFor[from] = {};
+
+		this.mySubscriptions.forEach(function(sub) {
+			self.peers.send(from, "subscribe", sub)
+		}, this)
 	}, this)
 
 	self.on("peermgr:disconnect", function(from) {
+		delete this.subscriptions[from]
 		delete this.peerHas[from]
 		delete this.tellPeer[from]
 		delete this.mapAlreadyAskedFor[from]
@@ -309,4 +325,7 @@ function Inventory(self) {
 	self.on("inv", this.onInv, this)
 	self.on("getdata", this.onGetdata, this)
 	self.on("invobj", this.onInvobj, this)
+	self.on("subscribe", this.onSubscribe, this)
+
+	this.addTick()
 }

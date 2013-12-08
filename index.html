@@ -38,9 +38,8 @@ goog.require("goog.structs.PriorityQueue")
 <script src="peermgr.js"></script> <!-- PeerMgr for network formation -->
 <script src="inventory.js"></script> <!-- Inventory for shared object collection -->
 <script src="transactions.js"></script> <!-- Shared UTXO state transitions, mempool, mapOrphans -->
-<!--
 <script src="blockchain.js"></script>
--->
+<script src="miner.js"></script>
 </head>
 <body>
 <div class="network"></div>
@@ -52,23 +51,25 @@ goog.require("goog.structs.PriorityQueue")
 var net;
 var btc;
 var interval = 10;
-var findtx = true;
-
-var l = 0;
+var findtx = false;
 
 function start() {
 	btc = new Node();
 
 	btc.use(PeerMgr);
 	btc.use(Inventory);
-	btc.use(Transactions);
+	//btc.use(Transactions);
+	btc.use(Blockchain);
+	btc.use(Miner);
 
+/*
 	btc.prob("txspam", (0.000003), function() {
 		if (findtx && this.peers.numpeers > 4) {
 			console.log("creating tx")
 			this.mempool.createTransaction([], ["" + Math.random()])
 		}
 	})
+*/
 
 	net = new Network(/*".network"*/)
 	net.add(200, btc)
@@ -90,8 +91,9 @@ setInterval(function() {
 		}
 		$("#stat").html(invchain);
 		*/
-		$("#stat").html("Inventory state machine: " + Object.keys(net.nodes[0].inventory.inv.root.shifts).length + " state(s)<br/>UTXO state machine: " + Object.keys(net.nodes[0].mempool.utxo.root.shifts).length + " state(s)")
+		//$("#stat").html("Inventory state machine: " + Object.keys(net.nodes[0].inventory.inv.root.shifts).length + " state(s)<br/>UTXO state machine: " + Object.keys(net.nodes[0].mempool.utxo.root.shifts).length + " state(s)")
 		//$("#stat").html(net.nodes[0].inventory.inv._retain)
+		$("#stat").html(net.nodes[0].blockchain.chainstate.head.h)
 	}
 }, 10)
 

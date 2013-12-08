@@ -304,12 +304,12 @@ function NodeProbabilisticTickEvent() {
 }
 
 NodeProbabilisticTickEvent.prototype = {
-	register: function(p, nid, f) {
+	register: function(p, nid, f, ctx) {
 		// p is the probability of the event firing at the given moment
 		if (p <= 0)
 			return false;
 
-		this.events[nid] = {p:p, f:f}; // store the event
+		this.events[nid] = {p:p, f:f, ctx:ctx}; // store the event
 		this.pnothing *= 1-p; // the probability of nothing happening decreases
 		this.ptotal += p; // the probability of an event occuring increases
 		this.numevents++; // the number of events we handle increases
@@ -332,7 +332,7 @@ NodeProbabilisticTickEvent.prototype = {
 			cur += this.events[nid].p;
 
 			if (which <= cur) {
-				this.events[nid].f.call(network.nodes[nid])
+				this.events[nid].f.call(this.events[nid].ctx)
 				break;
 			}
 		}
@@ -379,8 +379,8 @@ function NodeState(node, network, id) {
 }
 
 NodeState.prototype = {
-	prob: function(label, p, f) {
-		this.network.pregister(label, p, this.id, f)
+	prob: function(label, p, f, ctx) {
+		this.network.pregister(label, p, this.id, f, ctx)
 	},
 
 	deprob: function(label) {
@@ -531,13 +531,16 @@ Network.prototype = {
 	},
 
 	// registers probablistic event
-	pregister: function(label, p, nid, cb) {
+	pregister: function(label, p, nid, cb, ctx) {
+		if (typeof ctx == "undefined")
+			ctx = this.nodes[nid]
+
 		if (typeof this.pevents[label] == "undefined") {
 			this.pevents[label] = new NodeProbabilisticTickEvent()
 			this.exec(this.pevents[label])
 		}
 		
-		this.pevents[label].register(p, nid, cb)
+		this.pevents[label].register(p, nid, cb, ctx)
 	},
 
 	// deregisters a probablistic event
@@ -548,6 +551,7 @@ Network.prototype = {
 	},
 
 	setColor: function(id, color) {
+		if (typeof this.nodes[id] != "undefined")
 		if (this.visualizer) {
 			this.visualizer.setColor(this.nodes[id]._vid, color);
 		}
