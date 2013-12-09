@@ -33,7 +33,7 @@ goog.require('goog.asserts');
  * Override this define at build-time if you know your target supports it.
  * @define {boolean} Whether to use the classList property (DOMTokenList).
  */
-goog.dom.classlist.ALWAYS_USE_DOM_TOKEN_LIST = false;
+goog.define('goog.dom.classlist.ALWAYS_USE_DOM_TOKEN_LIST', false);
 
 
 /**
@@ -44,7 +44,8 @@ goog.dom.classlist.ALWAYS_USE_DOM_TOKEN_LIST = false;
  */
 goog.dom.classlist.NATIVE_DOM_TOKEN_LIST_ =
     goog.dom.classlist.ALWAYS_USE_DOM_TOKEN_LIST ||
-    typeof DOMTokenList != 'undefined';
+    // Whether DOMTokenList exists.
+    (!!goog.global['DOMTokenList']);
 
 
 /**

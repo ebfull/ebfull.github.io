@@ -64,6 +64,10 @@ goog.graphics.vmlGetElement_ = function() {
  *     this element.
  * @constructor
  * @extends {goog.graphics.GroupElement}
+ * @deprecated goog.graphics is deprecated. It existed to abstract over browser
+ *     differences before the canvas tag was widely supported.  See
+ *     http://en.wikipedia.org/wiki/Canvas_element for details.
+ * @final
  */
 goog.graphics.VmlGroupElement = function(element, graphics) {
   this.id_ = element.id;
@@ -105,10 +109,15 @@ goog.graphics.VmlGroupElement.prototype.setSize = function(width, height) {
   var element = this.getElement();
 
   var style = element.style;
-  style.width = goog.graphics.VmlGraphics.toSizePx(width);
-  style.height = goog.graphics.VmlGraphics.toSizePx(height);
+  style.width = /** @suppress {missingRequire} */ (
+      goog.graphics.VmlGraphics.toSizePx(width));
+  style.height = /** @suppress {missingRequire} */ (
+      goog.graphics.VmlGraphics.toSizePx(height));
 
-  element.coordsize = goog.graphics.VmlGraphics.toSizeCoord(width) + ' ' +
+  element.coordsize = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toSizeCoord(width) +
+      ' ' +
+      /** @suppress {missingRequire} */
       goog.graphics.VmlGraphics.toSizeCoord(height);
 
   // Don't overwrite the root element's origin.
@@ -135,6 +144,10 @@ goog.graphics.VmlGroupElement.prototype.setSize = function(width, height) {
  * @param {goog.graphics.Fill?} fill The fill to use for this element.
  * @constructor
  * @extends {goog.graphics.EllipseElement}
+ * @deprecated goog.graphics is deprecated. It existed to abstract over browser
+ *     differences before the canvas tag was widely supported.  See
+ *     http://en.wikipedia.org/wiki/Canvas_element for details.
+ * @final
  */
 goog.graphics.VmlEllipseElement = function(element, graphics,
     cx, cy, rx, ry, stroke, fill) {
@@ -188,6 +201,7 @@ goog.graphics.VmlEllipseElement.prototype.getElement =
 goog.graphics.VmlEllipseElement.prototype.setCenter = function(cx, cy) {
   this.cx = cx;
   this.cy = cy;
+  /** @suppress {missingRequire} */
   goog.graphics.VmlGraphics.setPositionAndSize(this.getElement(),
       cx - this.rx, cy - this.ry, this.rx * 2, this.ry * 2);
 };
@@ -202,6 +216,7 @@ goog.graphics.VmlEllipseElement.prototype.setCenter = function(cx, cy) {
 goog.graphics.VmlEllipseElement.prototype.setRadius = function(rx, ry) {
   this.rx = rx;
   this.ry = ry;
+  /** @suppress {missingRequire} */
   goog.graphics.VmlGraphics.setPositionAndSize(this.getElement(),
       this.cx - rx, this.cy - ry, rx * 2, ry * 2);
 };
@@ -220,6 +235,10 @@ goog.graphics.VmlEllipseElement.prototype.setRadius = function(rx, ry) {
  * @param {goog.graphics.Fill?} fill The fill to use for this element.
  * @constructor
  * @extends {goog.graphics.RectElement}
+ * @deprecated goog.graphics is deprecated. It existed to abstract over browser
+ *     differences before the canvas tag was widely supported.  See
+ *     http://en.wikipedia.org/wiki/Canvas_element for details.
+ * @final
  */
 goog.graphics.VmlRectElement = function(element, graphics, stroke, fill) {
   this.id_ = element.id;
@@ -241,8 +260,11 @@ goog.graphics.VmlRectElement.prototype.getElement =
  */
 goog.graphics.VmlRectElement.prototype.setPosition = function(x, y) {
   var style = this.getElement().style;
-  style.left = goog.graphics.VmlGraphics.toPosPx(x);
-  style.top = goog.graphics.VmlGraphics.toPosPx(y);
+
+  style.left = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toPosPx(x);
+  style.top = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toPosPx(y);
 };
 
 
@@ -254,8 +276,10 @@ goog.graphics.VmlRectElement.prototype.setPosition = function(x, y) {
  */
 goog.graphics.VmlRectElement.prototype.setSize = function(width, height) {
   var style = this.getElement().style;
-  style.width = goog.graphics.VmlGraphics.toSizePx(width);
-  style.height = goog.graphics.VmlGraphics.toSizePx(height);
+  style.width = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toSizePx(width);
+  style.height = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toSizePx(height);
 };
 
 
@@ -272,6 +296,10 @@ goog.graphics.VmlRectElement.prototype.setSize = function(width, height) {
  * @param {goog.graphics.Fill?} fill The fill to use for this element.
  * @constructor
  * @extends {goog.graphics.PathElement}
+ * @deprecated goog.graphics is deprecated. It existed to abstract over browser
+ *     differences before the canvas tag was widely supported.  See
+ *     http://en.wikipedia.org/wiki/Canvas_element for details.
+ * @final
  */
 goog.graphics.VmlPathElement = function(element, graphics, stroke, fill) {
   this.id_ = element.id;
@@ -291,8 +319,11 @@ goog.graphics.VmlPathElement.prototype.getElement =
  * @override
  */
 goog.graphics.VmlPathElement.prototype.setPath = function(path) {
+  /** @suppress {missingRequire} */
   goog.graphics.VmlGraphics.setAttribute(
-      this.getElement(), 'path', goog.graphics.VmlGraphics.getVmlPath(path));
+      this.getElement(), 'path',
+      /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.getVmlPath(path));
 };
 
 
@@ -309,6 +340,10 @@ goog.graphics.VmlPathElement.prototype.setPath = function(path) {
  * @param {goog.graphics.Fill?} fill The fill to use for this element.
  * @constructor
  * @extends {goog.graphics.TextElement}
+ * @deprecated goog.graphics is deprecated. It existed to abstract over browser
+ *     differences before the canvas tag was widely supported.  See
+ *     http://en.wikipedia.org/wiki/Canvas_element for details.
+ * @final
  */
 goog.graphics.VmlTextElement = function(element, graphics, stroke, fill) {
   this.id_ = element.id;
@@ -328,6 +363,7 @@ goog.graphics.VmlTextElement.prototype.getElement =
  * @override
  */
 goog.graphics.VmlTextElement.prototype.setText = function(text) {
+  /** @suppress {missingRequire} */
   goog.graphics.VmlGraphics.setAttribute(this.getElement().childNodes[1],
       'string', text);
 };
@@ -344,6 +380,10 @@ goog.graphics.VmlTextElement.prototype.setText = function(text) {
  *     this element.
  * @constructor
  * @extends {goog.graphics.ImageElement}
+ * @deprecated goog.graphics is deprecated. It existed to abstract over browser
+ *     differences before the canvas tag was widely supported.  See
+ *     http://en.wikipedia.org/wiki/Canvas_element for details.
+ * @final
  */
 goog.graphics.VmlImageElement = function(element, graphics) {
   this.id_ = element.id;
@@ -365,8 +405,11 @@ goog.graphics.VmlImageElement.prototype.getElement =
  */
 goog.graphics.VmlImageElement.prototype.setPosition = function(x, y) {
   var style = this.getElement().style;
-  style.left = goog.graphics.VmlGraphics.toPosPx(x);
-  style.top = goog.graphics.VmlGraphics.toPosPx(y);
+
+  style.left = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toPosPx(x);
+  style.top = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toPosPx(y);
 };
 
 
@@ -378,8 +421,10 @@ goog.graphics.VmlImageElement.prototype.setPosition = function(x, y) {
  */
 goog.graphics.VmlImageElement.prototype.setSize = function(width, height) {
   var style = this.getElement().style;
-  style.width = goog.graphics.VmlGraphics.toPosPx(width);
-  style.height = goog.graphics.VmlGraphics.toPosPx(height);
+  style.width = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toPosPx(width);
+  style.height = /** @suppress {missingRequire} */
+      goog.graphics.VmlGraphics.toPosPx(height);
 };
 
 
@@ -389,5 +434,6 @@ goog.graphics.VmlImageElement.prototype.setSize = function(width, height) {
  * @override
  */
 goog.graphics.VmlImageElement.prototype.setSource = function(src) {
+  /** @suppress {missingRequire} */
   goog.graphics.VmlGraphics.setAttribute(this.getElement(), 'src', src);
 };

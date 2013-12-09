@@ -62,11 +62,9 @@
 goog.provide('goog.ui.media.FlickrSet');
 goog.provide('goog.ui.media.FlickrSetModel');
 
-goog.require('goog.object');
 goog.require('goog.ui.media.FlashObject');
 goog.require('goog.ui.media.Media');
 goog.require('goog.ui.media.MediaModel');
-goog.require('goog.ui.media.MediaModel.Player');
 goog.require('goog.ui.media.MediaRenderer');
 
 
@@ -91,6 +89,7 @@ goog.require('goog.ui.media.MediaRenderer');
  *
  * @constructor
  * @extends {goog.ui.media.MediaRenderer}
+ * @final
  */
 goog.ui.media.FlickrSet = function() {
   goog.ui.media.MediaRenderer.call(this);
@@ -202,6 +201,7 @@ goog.ui.media.FlickrSet.prototype.getCssClass = function() {
  * @param {string=} opt_description An optional description of the flickr set.
  * @constructor
  * @extends {goog.ui.media.MediaModel}
+ * @final
  */
 goog.ui.media.FlickrSetModel = function(userId,
                                         setId,

@@ -29,6 +29,7 @@ goog.require('goog.ui.ActivityMonitor');
  * the unit test.
  * @constructor
  * @extends {goog.ui.ActivityMonitor}
+ * @final
  */
 goog.ui.MockActivityMonitor = function() {
   goog.base(this);
@@ -65,6 +66,7 @@ goog.ui.MockActivityMonitor.prototype.simulateEvent = function(opt_type) {
  * @override
  */
 goog.ui.MockActivityMonitor.prototype.dispatchEvent = function(e) {
-  goog.base(this, 'dispatchEvent', e);
+  var rv = goog.base(this, 'dispatchEvent', e);
   this.eventFired_ = true;
+  return rv;
 };

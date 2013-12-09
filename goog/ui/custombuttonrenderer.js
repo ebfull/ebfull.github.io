@@ -22,11 +22,10 @@
 goog.provide('goog.ui.CustomButtonRenderer');
 
 goog.require('goog.a11y.aria.Role');
-goog.require('goog.dom');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.NodeType');
+goog.require('goog.dom.classlist');
 goog.require('goog.string');
 goog.require('goog.ui.ButtonRenderer');
-goog.require('goog.ui.ControlContent');
 goog.require('goog.ui.INLINE_BLOCK_CLASSNAME');
 
 
@@ -72,12 +71,12 @@ goog.ui.CustomButtonRenderer.prototype.createDom = function(control) {
   var button = /** @type {goog.ui.Button} */ (control);
   var classNames = this.getClassNames(button);
   var attributes = {
-    'class': goog.ui.INLINE_BLOCK_CLASSNAME + ' ' + classNames.join(' '),
-    'title': button.getTooltip() || ''
+    'class': goog.ui.INLINE_BLOCK_CLASSNAME + ' ' + classNames.join(' ')
   };
   var buttonElement = button.getDomHelper().createDom('div', attributes,
       this.createButton(button.getContent(), button.getDomHelper()));
-
+  this.setTooltip(
+      buttonElement, /** @type {!string}*/ (button.getTooltip()));
   this.setAriaStates(button, buttonElement);
 
   return buttonElement;
@@ -158,11 +157,11 @@ goog.ui.CustomButtonRenderer.prototype.hasBoxStructure = function(
     button, element) {
   var outer = button.getDomHelper().getFirstElementChild(element);
   var outerClassName = goog.getCssName(this.getCssClass(), 'outer-box');
-  if (outer && goog.dom.classes.has(outer, outerClassName)) {
+  if (outer && goog.dom.classlist.contains(outer, outerClassName)) {
 
     var inner = button.getDomHelper().getFirstElementChild(outer);
     var innerClassName = goog.getCssName(this.getCssClass(), 'inner-box');
-    if (inner && goog.dom.classes.has(inner, innerClassName)) {
+    if (inner && goog.dom.classlist.contains(inner, innerClassName)) {
       // We have a proper box structure.
       return true;
     }
@@ -194,8 +193,8 @@ goog.ui.CustomButtonRenderer.prototype.decorate = function(control, element) {
         this.createButton(element.childNodes, button.getDomHelper()));
   }
 
-  goog.dom.classes.add(element,
-      goog.ui.INLINE_BLOCK_CLASSNAME, this.getCssClass());
+  goog.dom.classlist.addAll(element,
+      [goog.ui.INLINE_BLOCK_CLASSNAME, this.getCssClass()]);
   return goog.ui.CustomButtonRenderer.superClass_.decorate.call(this, button,
       element);
 };

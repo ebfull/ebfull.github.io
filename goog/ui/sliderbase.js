@@ -51,7 +51,7 @@ goog.require('goog.a11y.aria.State');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.dom');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
@@ -373,7 +373,7 @@ goog.ui.SliderBase.DISABLED_CSS_CLASS_ =
 /** @override */
 goog.ui.SliderBase.prototype.decorateInternal = function(element) {
   goog.ui.SliderBase.superClass_.decorateInternal.call(this, element);
-  goog.dom.classes.add(element, this.getCssClass(this.orientation_));
+  goog.dom.classlist.add(element, this.getCssClass(this.orientation_));
   this.createThumbs();
   this.setAriaRoles();
 };
@@ -501,9 +501,9 @@ goog.ui.SliderBase.prototype.handleBeforeDrag_ = function(e) {
  */
 goog.ui.SliderBase.prototype.handleThumbDragStartEnd_ = function(e) {
   var isDragStart = e.type == goog.fx.Dragger.EventType.START;
-  goog.dom.classes.enable(this.getElement(),
+  goog.dom.classlist.enable(this.getElement(),
       goog.ui.SliderBase.SLIDER_DRAGGING_CSS_CLASS_, isDragStart);
-  goog.dom.classes.enable(e.target.handle,
+  goog.dom.classlist.enable(goog.asserts.assertElement(e.target.handle),
       goog.ui.SliderBase.THUMB_DRAGGING_CSS_CLASS_, isDragStart);
   var isValueDragger = e.dragger == this.valueDragger_;
   if (isDragStart) {
@@ -832,42 +832,15 @@ goog.ui.SliderBase.prototype.moveThumbs = function(delta) {
  * @private
  */
 goog.ui.SliderBase.prototype.setThumbPosition_ = function(thumb, position) {
-  var intermediateExtent = null;
-  // Make sure the maxThumb stays within minThumb <= maxThumb <= maximum
-  if (thumb == this.extentThumb &&
-      position <= this.rangeModel.getMaximum() &&
-      position >= this.rangeModel.getValue() + this.minExtent_) {
-    // For the case where there is only one thumb, we don't want to set the
-    // extent twice, causing two change events, so delay setting until we know
-    // if there will be a subsequent change.
-    intermediateExtent = position - this.rangeModel.getValue();
-  }
-
-  // Make sure the minThumb stays within minimum <= minThumb <= maxThumb
-  var currentExtent = intermediateExtent || this.rangeModel.getExtent();
-  if (thumb == this.valueThumb &&
-      position >= this.getMinimum() &&
-      position <= this.rangeModel.getValue() +
-          currentExtent - this.minExtent_) {
-    var newExtent = currentExtent -
-                    (position - this.rangeModel.getValue());
-    // The range model will round the value and extent. Since we're setting
-    // both, extent and value at the same time, it can happen that the
-    // rounded sum of position and extent is not equal to the sum of the
-    // position and extent rounded individually. If this happens, we simply
-    // ignore the update to prevent inconsistent moves of the extent thumb.
-    if (this.rangeModel.roundToStepWithMin(position) +
-            this.rangeModel.roundToStepWithMin(newExtent) ==
-        this.rangeModel.roundToStepWithMin(position + newExtent)) {
-      // Atomically update the position and extent.
-      this.setValueAndExtent(position, newExtent);
-      intermediateExtent = null;
-    }
-  }
-
-  // Need to be able to set extent to 0.
-  if (intermediateExtent != null) {
-    this.rangeModel.setExtent(intermediateExtent);
+  // Round first so that all computations and checks are consistent.
+  var roundedPosition = this.rangeModel.roundToStepWithMin(position);
+  var value = thumb == this.valueThumb ? roundedPosition :
+      this.rangeModel.getValue();
+  var end = thumb == this.extentThumb ? roundedPosition :
+      this.rangeModel.getValue() + this.rangeModel.getExtent();
+  if (value >= this.getMinimum() && end >= value + this.minExtent_ &&
+      this.getMaximum() >= end) {
+    this.setValueAndExtent(value, end - value);
   }
 };
 
@@ -1266,7 +1239,7 @@ goog.ui.SliderBase.prototype.setOrientation = function(orient) {
 
     // Update the DOM
     if (this.getElement()) {
-      goog.dom.classes.swap(this.getElement(), oldCss, newCss);
+      goog.dom.classlist.swap(this.getElement(), oldCss, newCss);
       // we need to reset the left and top, plus range highlight
       var pos = (this.flipForRtl_ && this.isRightToLeft()) ? 'right' : 'left';
       this.valueThumb.style[pos] = this.valueThumb.style.top = '';
@@ -1469,7 +1442,7 @@ goog.ui.SliderBase.prototype.setExtent = function(extent) {
  * @param {boolean} visible Whether to show the slider.
  */
 goog.ui.SliderBase.prototype.setVisible = function(visible) {
-  goog.style.showElement(this.getElement(), visible);
+  goog.style.setElementShown(this.getElement(), visible);
   if (visible) {
     this.updateUi_();
   }
@@ -1573,7 +1546,7 @@ goog.ui.SliderBase.prototype.setEnabled = function(enable) {
       // handlers be appropriately unlistened.
       this.stopBlockIncrementing_();
     }
-    goog.dom.classes.enable(this.getElement(),
+    goog.dom.classlist.enable(this.getElement(),
         goog.ui.SliderBase.DISABLED_CSS_CLASS_, !enable);
   }
 };

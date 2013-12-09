@@ -32,8 +32,8 @@
 goog.provide('goog.editor.ContentEditableField');
 
 goog.require('goog.asserts');
-goog.require('goog.debug.Logger');
 goog.require('goog.editor.Field');
+goog.require('goog.log');
 
 
 
@@ -46,9 +46,10 @@ goog.require('goog.editor.Field');
  * @param {string} id An identifer for the field. This is used to find the
  *     field and the element associated with this field.
  * @param {Document=} opt_doc The document that the element with the given
- *     id can be found it.
+ *     id can be found in.
  * @constructor
  * @extends {goog.editor.Field}
+ * @final
  */
 goog.editor.ContentEditableField = function(id, opt_doc) {
   goog.editor.Field.call(this, id, opt_doc);
@@ -60,7 +61,7 @@ goog.inherits(goog.editor.ContentEditableField, goog.editor.Field);
  * @override
  */
 goog.editor.ContentEditableField.prototype.logger =
-    goog.debug.Logger.getLogger('goog.editor.ContentEditableField');
+    goog.log.getLogger('goog.editor.ContentEditableField');
 
 
 /** @override */

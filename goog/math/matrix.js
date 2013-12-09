@@ -21,6 +21,7 @@ goog.provide('goog.math.Matrix');
 goog.require('goog.array');
 goog.require('goog.math');
 goog.require('goog.math.Size');
+goog.require('goog.string');
 
 
 
@@ -49,6 +50,7 @@ goog.require('goog.math.Size');
  * @param {number=} opt_n Number of columns of the matrix (only applicable if
  *     the first argument is also numeric).
  * @constructor
+ * @final
  */
 goog.math.Matrix = function(m, opt_n) {
   if (m instanceof goog.math.Matrix) {

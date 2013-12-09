@@ -281,7 +281,7 @@ goog.ui.tree.BaseNode.prototype.addChildAt = function(child, index,
         if (prevNode) {
           prevNode.updateExpandIcon();
         } else {
-          goog.style.showElement(el, true);
+          goog.style.setElementShown(el, true);
           this.setExpanded(this.getExpanded());
         }
       }
@@ -646,7 +646,7 @@ goog.ui.tree.BaseNode.prototype.setExpanded = function(expanded) {
     if (el) {
       ce = this.getChildrenElement();
       if (ce) {
-        goog.style.showElement(ce, expanded);
+        goog.style.setElementShown(ce, expanded);
 
         // Make sure we have the HTML for the children here.
         if (expanded && this.isInDocument() && !ce.hasChildNodes()) {
@@ -665,7 +665,7 @@ goog.ui.tree.BaseNode.prototype.setExpanded = function(expanded) {
   } else {
     ce = this.getChildrenElement();
     if (ce) {
-      goog.style.showElement(ce, false);
+      goog.style.setElementShown(ce, false);
     }
   }
   if (el) {
@@ -1259,7 +1259,7 @@ goog.ui.tree.BaseNode.prototype.onMouseDown = function(e) {
  * Handles a click event.
  * @param {!goog.events.BrowserEvent} e The browser event.
  * @protected
- * @suppress {underscore}
+ * @suppress {underscore|visibility}
  */
 goog.ui.tree.BaseNode.prototype.onClick_ = goog.events.Event.preventDefault;
 
@@ -1268,7 +1268,7 @@ goog.ui.tree.BaseNode.prototype.onClick_ = goog.events.Event.preventDefault;
  * Handles a double click event.
  * @param {!goog.events.BrowserEvent} e The browser event.
  * @protected
- * @suppress {underscore}
+ * @suppress {underscore|visibility}
  */
 goog.ui.tree.BaseNode.prototype.onDoubleClick_ = function(e) {
   var el = e.target;

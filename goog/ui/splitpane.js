@@ -33,16 +33,15 @@
 goog.provide('goog.ui.SplitPane');
 goog.provide('goog.ui.SplitPane.Orientation');
 
+goog.require('goog.asserts');
 goog.require('goog.dom');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.fx.Dragger');
-goog.require('goog.fx.Dragger.EventType');
 goog.require('goog.math.Rect');
 goog.require('goog.math.Size');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
-goog.require('goog.ui.Component.EventType');
 goog.require('goog.userAgent');
 
 
@@ -88,6 +87,9 @@ goog.ui.SplitPane = function(firstComponent, secondComponent, orientation,
    */
   this.secondComponent_ = secondComponent;
   this.addChild(secondComponent);
+
+  /** @private {Element} */
+  this.splitpaneHandle_ = null;
 };
 goog.inherits(goog.ui.SplitPane, goog.ui.Component);
 
@@ -106,7 +108,12 @@ goog.ui.SplitPane.EventType = {
   /**
    * Dispatched after handle drag end.
    */
-  HANDLE_DRAG_END: 'handle_drag_end'
+  HANDLE_DRAG_END: 'handle_drag_end',
+
+  /**
+   * Dispatched after handle snap (double-click splitter).
+   */
+  HANDLE_SNAP: 'handle_snap'
 };
 
 
@@ -346,8 +353,8 @@ goog.ui.SplitPane.prototype.getElementToDecorate_ = function(rootElement,
   // Decorate the root element's children, if available.
   var childElements = goog.dom.getChildren(rootElement);
   for (var i = 0; i < childElements.length; i++) {
-    var childElement = childElements[i];
-    if (goog.dom.classes.has(childElement, className)) {
+    var childElement = goog.asserts.assertElement(childElements[i]);
+    if (goog.dom.classlist.contains(childElement, className)) {
       return childElement;
     }
   }
@@ -492,11 +499,11 @@ goog.ui.SplitPane.prototype.isVertical = function() {
 goog.ui.SplitPane.prototype.setUpHandle_ = function() {
   if (this.isVertical()) {
     this.splitpaneHandle_.style.height = this.handleSize_ + 'px';
-    goog.dom.classes.add(this.splitpaneHandle_,
+    goog.dom.classlist.add(this.splitpaneHandle_,
         goog.ui.SplitPane.HANDLE_CLASS_NAME_VERTICAL_);
   } else {
     this.splitpaneHandle_.style.width = this.handleSize_ + 'px';
-    goog.dom.classes.add(this.splitpaneHandle_,
+    goog.dom.classlist.add(this.splitpaneHandle_,
         goog.ui.SplitPane.HANDLE_CLASS_NAME_HORIZONTAL_);
   }
 };
@@ -508,13 +515,13 @@ goog.ui.SplitPane.prototype.setUpHandle_ = function() {
  */
 goog.ui.SplitPane.prototype.setOrientationClassForHandle = function() {
   if (this.isVertical()) {
-    goog.dom.classes.swap(this.splitpaneHandle_,
-                          goog.ui.SplitPane.HANDLE_CLASS_NAME_HORIZONTAL_,
-                          goog.ui.SplitPane.HANDLE_CLASS_NAME_VERTICAL_);
+    goog.dom.classlist.swap(this.splitpaneHandle_,
+        goog.ui.SplitPane.HANDLE_CLASS_NAME_HORIZONTAL_,
+        goog.ui.SplitPane.HANDLE_CLASS_NAME_VERTICAL_);
   } else {
-    goog.dom.classes.swap(this.splitpaneHandle_,
-                          goog.ui.SplitPane.HANDLE_CLASS_NAME_VERTICAL_,
-                          goog.ui.SplitPane.HANDLE_CLASS_NAME_HORIZONTAL_);
+    goog.dom.classlist.swap(this.splitpaneHandle_,
+        goog.ui.SplitPane.HANDLE_CLASS_NAME_VERTICAL_,
+        goog.ui.SplitPane.HANDLE_CLASS_NAME_HORIZONTAL_);
   }
 };
 
@@ -742,6 +749,9 @@ goog.ui.SplitPane.prototype.snapIt_ = function() {
     }
     this.setFirstComponentSize(snapSize);
   }
+
+  // Fire a SNAP event.
+  this.dispatchEvent(goog.ui.SplitPane.EventType.HANDLE_SNAP);
 };
 
 
@@ -757,7 +767,7 @@ goog.ui.SplitPane.prototype.handleDragStart_ = function(e) {
     // Create the overlay.
     var cssStyles = 'position: relative';
 
-    if (goog.userAgent.IE) {
+    if (goog.userAgent.IE && !goog.userAgent.isVersionOrHigher('10')) {
       // IE doesn't look at this div unless it has a background, so we'll
       // put one on, but make it opaque.
       cssStyles += ';background-color: #000;filter: Alpha(Opacity=0)';
@@ -882,11 +892,11 @@ goog.ui.SplitPane.prototype.handleDoubleClick_ = function(e) {
 
 /** @override */
 goog.ui.SplitPane.prototype.disposeInternal = function() {
-  goog.base(this, 'disposeInternal');
-
-  this.splitDragger_.dispose();
+  goog.dispose(this.splitDragger_);
   this.splitDragger_ = null;
 
   goog.dom.removeNode(this.iframeOverlay_);
   this.iframeOverlay_ = null;
+
+  goog.base(this, 'disposeInternal');
 };

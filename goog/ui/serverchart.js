@@ -16,6 +16,10 @@
 /**
  * @fileoverview Component for generating chart PNGs using Google Chart Server.
  *
+ * @deprecated Google Chart Images service (the server-side component of this
+ *     class) has been deprecated. See
+ *     https://developers.google.com/chart/ for alternatives.
+ *
  * @see ../demos/serverchart.html
  */
 
@@ -55,6 +59,10 @@ goog.require('goog.ui.Component');
  *     different than goog.ui.ServerChart.CHART_SERVER_SCHEME_INDEPENDENT_URI.
  * @constructor
  * @extends {goog.ui.Component}
+ *
+ * @deprecated Google Chart Server has been deprecated. See
+ *     https://developers.google.com/chart/image/ for details.
+ * @final
  */
 goog.ui.ServerChart = function(type, opt_width, opt_height, opt_domHelper,
     opt_uri) {
@@ -309,8 +317,8 @@ goog.ui.ServerChart.prototype.createDom = function() {
   var size = this.getSize();
   this.setElementInternal(this.getDomHelper().createDom(
       'img', {'src': this.getUri(),
-      'class': goog.getCssName('goog-serverchart-image'),
-      'width': size[0], 'height': size[1]}));
+        'class': goog.getCssName('goog-serverchart-image'),
+        'width': size[0], 'height': size[1]}));
 };
 
 
@@ -1428,11 +1436,8 @@ goog.ui.ServerChart.prototype.getMultiAxisRange = function(opt_axisNumber) {
  * @param {goog.ui.ServerChart.AxisDisplayType=} opt_axisDisplay The axis
  *     line and ticks.
  */
-goog.ui.ServerChart.prototype.setMultiAxisLabelStyle = function(axisNumber,
-                                                                color,
-                                                                opt_fontSize,
-                                                                opt_alignment,
-                                                             opt_axisDisplay) {
+goog.ui.ServerChart.prototype.setMultiAxisLabelStyle = function(
+    axisNumber, color, opt_fontSize, opt_alignment, opt_axisDisplay) {
   var style = [color];
   if (goog.isDef(opt_fontSize) || goog.isDef(opt_alignment)) {
     style.push(opt_fontSize || '');
@@ -1560,8 +1565,8 @@ goog.ui.ServerChart.prototype.computeDataString_ = function() {
     ok = this.computeDataStringForEncoding_(
         goog.ui.ServerChart.EncodingType.EXTENDED);
     if (!ok) {
-        ok = this.computeDataStringForEncoding_(
-            goog.ui.ServerChart.EncodingType.SIMPLE);
+      ok = this.computeDataStringForEncoding_(
+          goog.ui.ServerChart.EncodingType.SIMPLE);
     }
   }
   if (!ok) {
@@ -1820,6 +1825,7 @@ goog.ui.ServerChart.Event = {
  * @constructor
  * @param {string} uri The overly-long URI string.
  * @extends {goog.events.Event}
+ * @final
  */
 goog.ui.ServerChart.UriTooLongEvent = function(uri) {
   goog.events.Event.call(this, goog.ui.ServerChart.Event.URI_TOO_LONG);

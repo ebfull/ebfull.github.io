@@ -29,6 +29,7 @@ goog.require('goog.editor.Plugin');
 goog.require('goog.editor.node');
 goog.require('goog.editor.range');
 goog.require('goog.string');
+goog.require('goog.userAgent');
 
 
 
@@ -36,6 +37,7 @@ goog.require('goog.string');
  * A plugin to handle removing formatting from selected text.
  * @constructor
  * @extends {goog.editor.Plugin}
+ * @final
  */
 goog.editor.plugins.RemoveFormatting = function() {
   goog.editor.Plugin.call(this);
@@ -172,7 +174,8 @@ goog.editor.plugins.RemoveFormatting.prototype.removeFormatting_ = function() {
       // breaking spaces.
       // Old versions of WebKit (Safari 3, Chrome 1) incorrectly match /u00A0
       // and newer versions properly match &nbsp;.
-      var nbspRegExp = goog.userAgent.isVersion('528') ? /&nbsp;/g : /\u00A0/g;
+      var nbspRegExp =
+          goog.userAgent.isVersionOrHigher('528') ? /&nbsp;/g : /\u00A0/g;
       return text.replace(nbspRegExp, ' ');
     });
   }

@@ -64,7 +64,6 @@ goog.require('goog.string');
 goog.require('goog.ui.media.FlashObject');
 goog.require('goog.ui.media.Media');
 goog.require('goog.ui.media.MediaModel');
-goog.require('goog.ui.media.MediaModel.Player');
 goog.require('goog.ui.media.MediaRenderer');
 
 
@@ -88,6 +87,7 @@ goog.require('goog.ui.media.MediaRenderer');
  *
  * @constructor
  * @extends {goog.ui.media.MediaRenderer}
+ * @final
  */
 goog.ui.media.Vimeo = function() {
   goog.ui.media.MediaRenderer.call(this);
@@ -176,6 +176,7 @@ goog.ui.media.Vimeo.prototype.getCssClass = function() {
  * @param {boolean=} opt_autoplay Whether to autoplay video.
  * @constructor
  * @extends {goog.ui.media.MediaModel}
+ * @final
  */
 goog.ui.media.VimeoModel = function(videoId, opt_caption, opt_description,
                                     opt_autoplay) {

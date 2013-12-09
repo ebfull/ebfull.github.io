@@ -22,7 +22,7 @@
 goog.provide('goog.ui.editor.TabPane');
 
 goog.require('goog.dom.TagName');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.classlist');
 goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventType');
 goog.require('goog.style');
@@ -40,6 +40,7 @@ goog.require('goog.ui.TabBar');
  * @param {string=} opt_caption Optional caption of the tab pane.
  * @constructor
  * @extends {goog.ui.Component}
+ * @final
  */
 goog.ui.editor.TabPane = function(dom, opt_caption) {
   goog.base(this, dom);
@@ -146,7 +147,7 @@ goog.ui.editor.TabPane.prototype.addTab = function(id, caption, tooltip,
 
   content.id = id + '-tab';
   this.tabContent_.appendChild(content);
-  goog.style.showElement(content, false);
+  goog.style.setElementShown(content, false);
 };
 
 
@@ -156,7 +157,7 @@ goog.ui.editor.TabPane.prototype.enterDocument = function() {
 
   // Get the root element and add a class name to it.
   var root = this.getElement();
-  goog.dom.classes.add(root, goog.getCssName('tr-tabpane'));
+  goog.dom.classlist.add(root, goog.getCssName('tr-tabpane'));
 
   // Add the tabs.
   this.addChild(this.tabBar_, true);
@@ -183,10 +184,10 @@ goog.ui.editor.TabPane.prototype.handleTabSelect_ = function(e) {
 
   // Show the tab content.
   if (this.visibleContent_) {
-    goog.style.showElement(this.visibleContent_, false);
+    goog.style.setElementShown(this.visibleContent_, false);
   }
   this.visibleContent_ = this.dom_.getElement(tab.getId() + '-tab');
-  goog.style.showElement(this.visibleContent_, true);
+  goog.style.setElementShown(this.visibleContent_, true);
 
   // Select the appropriate radio button (and deselect the current one).
   if (this.selectedRadio_) {

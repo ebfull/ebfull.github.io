@@ -15,16 +15,9 @@ See the COPYING file for details.
   <title>Closure Unit Tests - goog.testing.events</title>
   <script src="../../base.js"></script>
   <script>
-    goog.require('goog.events.Listenable');
-  </script>
-  <script>
-    var ORIGINAL_FLAG_VALUE = goog.events.Listenable.USE_LISTENABLE_INTERFACE;
-    // Sets to true so that the new methods become available.
-    goog.events.Listenable.USE_LISTENABLE_INTERFACE = true;
-  </script>
-  <script>
     goog.require('goog.array');
     goog.require('goog.dom');
+    goog.require('goog.events.Listenable');
     goog.require('goog.math.Coordinate');
     goog.require('goog.string');
     goog.require('goog.testing.PropertyReplacer');
@@ -57,10 +50,14 @@ See the COPYING file for details.
   var eventCount;
 
   function setUp() {
-    goog.events.Listenable.USE_LISTENABLE_INTERFACE = ORIGINAL_FLAG_VALUE;
-
     stubs.reset();
-    goog.events.removeAll();
+    goog.events.removeAll(root);
+    goog.events.removeAll(log);
+    goog.events.removeAll(input);
+    goog.events.removeAll(testButton);
+    goog.events.removeAll(parentEl);
+    goog.events.removeAll(childEl);
+
     root.innerHTML = '';
     firedEventTypes = [];
     firedEventCoordinates = [];
@@ -152,6 +149,16 @@ See the COPYING file for details.
     assertCoordinates([goog.style.getClientPosition(root), coordinate]);
   }
 
+  function testFocus() {
+    goog.testing.events.fireFocusEvent(root);
+    assertEventTypes(['focus']);
+  }
+
+  function testBlur() {
+    goog.testing.events.fireBlurEvent(root);
+    assertEventTypes(['blur']);
+  }
+
   function testClickSequence() {
     assertTrue(goog.testing.events.fireClickSequence(root));
     assertEventTypes(['mousedown', 'mouseup', 'click']);
@@ -174,7 +181,7 @@ See the COPYING file for details.
 
   function testTouchMove() {
     goog.testing.events.fireTouchMoveEvent(root);
-    goog.testing.events.fireTouchMoveEvent(root, coordinate);
+    goog.testing.events.fireTouchMoveEvent(root, coordinate, {touches: []});
     assertEventTypes(['touchmove', 'touchmove']);
     assertCoordinates([goog.style.getClientPosition(root), coordinate]);
   }
@@ -351,7 +358,7 @@ See the COPYING file for details.
   function testKeySequenceWithEscapeKey() {
     assertTrue(goog.testing.events.fireKeySequence(
         root, goog.events.KeyCodes.ESC));
-    if (goog.userAgent.WEBKIT && goog.userAgent.isVersion('525')) {
+    if (goog.userAgent.WEBKIT && goog.userAgent.isVersionOrHigher('525')) {
       assertEventTypes(['keydown', 'keyup']);
     } else {
       assertEventTypes(['keydown', 'keypress', 'keyup']);
@@ -564,9 +571,7 @@ See the COPYING file for details.
     }, eventCount);
   }
 
-  function testMixinListenable(opt_legacy) {
-    goog.events.Listenable.USE_LISTENABLE_INTERFACE = !opt_legacy;
-
+  function testMixinListenable() {
     var obj = {};
     obj.doFoo = goog.testing.recordFunction();
 
@@ -591,9 +596,6 @@ See the COPYING file for details.
     assertEquals(1, handler.getCallCount());
   }
 
-  function testMixinListenableLegacy() {
-    testMixinListenable(true);
-  }
   /**
    * Assert that the list of events given was fired, in that order.
    */

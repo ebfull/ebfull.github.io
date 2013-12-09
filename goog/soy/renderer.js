@@ -95,8 +95,10 @@ goog.soy.Renderer.SavedTemplateRender;
 goog.soy.Renderer.prototype.renderAsFragment = function(template,
                                                         opt_templateData) {
   this.saveTemplateRender_(template, opt_templateData);
-  return goog.soy.renderAsFragment(template, opt_templateData,
-                                   this.getInjectedData_(), this.dom_);
+  var node = goog.soy.renderAsFragment(template, opt_templateData,
+                                       this.getInjectedData_(), this.dom_);
+  this.handleRender(node);
+  return node;
 };
 
 
@@ -113,8 +115,11 @@ goog.soy.Renderer.prototype.renderAsFragment = function(template,
  */
 goog.soy.Renderer.prototype.renderAsElement = function(template,
                                                        opt_templateData) {
-  return goog.soy.renderAsElement(template, opt_templateData,
-                                  this.getInjectedData_(), this.dom_);
+  this.saveTemplateRender_(template, opt_templateData);
+  var element = goog.soy.renderAsElement(template, opt_templateData,
+                                         this.getInjectedData_(), this.dom_);
+  this.handleRender(element);
+  return element;
 };
 
 
@@ -131,6 +136,7 @@ goog.soy.Renderer.prototype.renderElement = function(element, template,
   this.saveTemplateRender_(template, opt_templateData);
   goog.soy.renderElement(
       element, template, opt_templateData, this.getInjectedData_());
+  this.handleRender(element);
 };
 
 
@@ -152,6 +158,7 @@ goog.soy.Renderer.prototype.render = function(template, opt_templateData) {
       'render was called with a strict template of kind other than "html"' +
           ' (consider using renderText or renderStrict)');
   this.saveTemplateRender_(template, opt_templateData);
+  this.handleRender();
   return String(result);
 };
 
@@ -174,6 +181,7 @@ goog.soy.Renderer.prototype.renderText = function(template, opt_templateData) {
       result.contentKind === goog.soy.data.SanitizedContentKind.TEXT,
       'renderText was called with a template of kind other than "text"');
   this.saveTemplateRender_(template, opt_templateData);
+  this.handleRender();
   return String(result);
 };
 
@@ -203,6 +211,7 @@ goog.soy.Renderer.prototype.renderStrict = function(
           (opt_kind || goog.soy.data.SanitizedContentKind.HTML),
       'renderStrict was called with the wrong kind of template');
   this.saveTemplateRender_(template, opt_templateData);
+  this.handleRender();
   return result;
 };
 
@@ -214,6 +223,16 @@ goog.soy.Renderer.prototype.renderStrict = function(
 goog.soy.Renderer.prototype.getSavedTemplateRenders = function() {
   return this.savedTemplateRenders_;
 };
+
+
+/**
+ * Observes rendering of templates by this renderer.
+ * @param {Node=} opt_node Relevant node, if available. The node may or may
+ *     not be in the document, depending on whether Soy is creating an element
+ *     or writing into an existing one.
+ * @protected
+ */
+goog.soy.Renderer.prototype.handleRender = goog.nullFunction;
 
 
 /**
@@ -257,7 +276,7 @@ goog.soy.InjectedDataSupplier = function() {};
 
 /**
  * Gets the injected data. Implementation may assume that
-v * {@code goog.soy.Renderer} will treat the returned data as
+ * {@code goog.soy.Renderer} will treat the returned data as
  * immutable.  The renderer will call this every time one of its
  * {@code render*} methods is called.
  * @return {Object} A key-value pair representing the injected data.

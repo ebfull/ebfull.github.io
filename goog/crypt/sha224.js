@@ -33,6 +33,7 @@ goog.require('goog.crypt.Sha2');
  *
  * @constructor
  * @extends {goog.crypt.Sha2}
+ * @final
  */
 goog.crypt.Sha224 = function() {
   goog.base(this);
@@ -47,7 +48,7 @@ goog.crypt.Sha224.prototype.reset = function() {
   this.total = 0;
 
   this.hash = [
-      0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
-      0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4];
+    0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
+    0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4];
   this.numHashBlocks = 7;
 };

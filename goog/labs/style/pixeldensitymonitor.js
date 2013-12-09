@@ -22,7 +22,6 @@ goog.provide('goog.labs.style.PixelDensityMonitor');
 goog.provide('goog.labs.style.PixelDensityMonitor.Density');
 goog.provide('goog.labs.style.PixelDensityMonitor.EventType');
 
-goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.events.EventTarget');
 
@@ -45,6 +44,7 @@ goog.require('goog.events.EventTarget');
  *     which this code is executing.
  * @constructor
  * @extends {goog.events.EventTarget}
+ * @final
  */
 goog.labs.style.PixelDensityMonitor = function(opt_domHelper) {
   goog.base(this);
@@ -127,7 +127,7 @@ goog.labs.style.PixelDensityMonitor.HIGH_DENSITY_RATIO_ = 1.5;
  * @private
  */
 goog.labs.style.PixelDensityMonitor.HIGH_DENSITY_QUERY_ =
-    '(min-resolution: 144dpi), (-webkit-min-device-pixel-ratio: 1.5)';
+    '(min-resolution: 1.5dppx), (-webkit-min-device-pixel-ratio: 1.5)';
 
 
 /**

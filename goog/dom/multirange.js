@@ -23,7 +23,6 @@ goog.provide('goog.dom.MultiRange');
 goog.provide('goog.dom.MultiRangeIterator');
 
 goog.require('goog.array');
-goog.require('goog.debug.Logger');
 goog.require('goog.dom.AbstractMultiRange');
 goog.require('goog.dom.AbstractRange');
 goog.require('goog.dom.RangeIterator');
@@ -31,6 +30,7 @@ goog.require('goog.dom.RangeType');
 goog.require('goog.dom.SavedRange');
 goog.require('goog.dom.TextRange');
 goog.require('goog.iter.StopIteration');
+goog.require('goog.log');
 
 
 
@@ -39,6 +39,7 @@ goog.require('goog.iter.StopIteration');
  * constructor: use one of the goog.dom.Range.createFrom* methods instead.
  * @constructor
  * @extends {goog.dom.AbstractMultiRange}
+ * @final
  */
 goog.dom.MultiRange = function() {
   /**
@@ -118,11 +119,11 @@ goog.dom.MultiRange.createFromTextRanges = function(textRanges) {
 
 /**
  * Logging object.
- * @type {goog.debug.Logger}
+ * @type {goog.log.Logger}
  * @private
  */
 goog.dom.MultiRange.prototype.logger_ =
-    goog.debug.Logger.getLogger('goog.dom.MultiRange');
+    goog.log.getLogger('goog.dom.MultiRange');
 
 
 // Method implementations
@@ -159,7 +160,7 @@ goog.dom.MultiRange.prototype.getType = function() {
 goog.dom.MultiRange.prototype.getBrowserRangeObject = function() {
   // NOTE(robbyw): This method does not make sense for multi-ranges.
   if (this.browserRanges_.length > 1) {
-    this.logger_.warning(
+    goog.log.warning(this.logger_,
         'getBrowserRangeObject called on MultiRange with more than 1 range');
   }
   return this.browserRanges_[0];
@@ -418,6 +419,7 @@ goog.dom.DomSavedMultiRange_.prototype.disposeInternal = function() {
  * @param {goog.dom.MultiRange} range The range to traverse.
  * @constructor
  * @extends {goog.dom.RangeIterator}
+ * @final
  */
 goog.dom.MultiRangeIterator = function(range) {
   if (range) {

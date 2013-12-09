@@ -25,10 +25,11 @@
 goog.provide('goog.editor.Field');
 goog.provide('goog.editor.Field.EventType');
 
+goog.require('goog.a11y.aria');
+goog.require('goog.a11y.aria.Role');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.async.Delay');
-goog.require('goog.debug.Logger');
 goog.require('goog.dom');
 goog.require('goog.dom.Range');
 goog.require('goog.dom.TagName');
@@ -46,6 +47,7 @@ goog.require('goog.events.EventTarget');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
 goog.require('goog.functions');
+goog.require('goog.log');
 goog.require('goog.string');
 goog.require('goog.string.Unicode');
 goog.require('goog.style');
@@ -200,11 +202,11 @@ goog.editor.Field.prototype.originalElement = null;
 
 /**
  * Logging object.
- * @type {goog.debug.Logger}
+ * @type {goog.log.Logger}
  * @protected
  */
 goog.editor.Field.prototype.logger =
-    goog.debug.Logger.getLogger('goog.editor.Field');
+    goog.log.getLogger('goog.editor.Field');
 
 
 /**
@@ -457,7 +459,12 @@ goog.editor.Field.prototype.addListener = function(type, listener, opt_capture,
       this.usesIframe()) {
     elem = elem.ownerDocument;
   }
-  this.eventRegister.listen(elem, type, listener, opt_capture, opt_handler);
+  if (opt_handler) {
+    this.eventRegister.listenWithScope(
+        elem, type, listener, opt_capture, opt_handler);
+  } else {
+    this.eventRegister.listen(elem, type, listener, opt_capture);
+  }
 };
 
 
@@ -478,7 +485,8 @@ goog.editor.Field.prototype.getPluginByClassId = function(classId) {
 goog.editor.Field.prototype.registerPlugin = function(plugin) {
   var classId = plugin.getTrogClassId();
   if (this.plugins_[classId]) {
-    this.logger.severe('Cannot register the same class of plugin twice.');
+    goog.log.error(this.logger,
+        'Cannot register the same class of plugin twice.');
   }
   this.plugins_[classId] = plugin;
 
@@ -507,7 +515,8 @@ goog.editor.Field.prototype.registerPlugin = function(plugin) {
 goog.editor.Field.prototype.unregisterPlugin = function(plugin) {
   var classId = plugin.getTrogClassId();
   if (!this.plugins_[classId]) {
-    this.logger.severe('Cannot unregister a plugin that isn\'t registered.');
+    goog.log.error(this.logger,
+        'Cannot unregister a plugin that isn\'t registered.');
   }
   delete this.plugins_[classId];
 
@@ -541,6 +550,7 @@ goog.editor.Field.prototype.resetOriginalElemProperties = function() {
   var field = this.getOriginalElement();
   field.removeAttribute('contentEditable');
   field.removeAttribute('g_editable');
+  field.removeAttribute('role');
 
   if (!this.id) {
     field.removeAttribute('id');
@@ -644,9 +654,9 @@ goog.editor.Field.CTRL_KEYS_CAUSING_CHANGES_ = {
   88: true // X
 };
 
-if (goog.userAgent.IE) {
-  // In IE input from IME (Input Method Editor) does not generate keypress
-  // event so we have to rely on the keydown event. This way we have
+if (goog.userAgent.WINDOWS && !goog.userAgent.GECKO) {
+  // In IE and Webkit, input from IME (Input Method Editor) does not generate a
+  // keypress event so we have to rely on the keydown event. This way we have
   // false positives while the user is using keyboard to select the
   // character to input, but it is still better than the false negatives
   // that ignores user's final input at all.
@@ -747,6 +757,7 @@ goog.editor.Field.prototype.setupFieldObject = function(field) {
   this.isModified_ = false;
   this.isEverModified_ = false;
   field.setAttribute('g_editable', 'true');
+  goog.a11y.aria.setRole(field, goog.a11y.aria.Role.TEXTBOX);
 };
 
 
@@ -943,7 +954,7 @@ goog.editor.Field.prototype.clearListeners = function() {
 /** @override */
 goog.editor.Field.prototype.disposeInternal = function() {
   if (this.isLoading() || this.isLoaded()) {
-    this.logger.warning('Disposing a field that is in use.');
+    goog.log.warning(this.logger, 'Disposing a field that is in use.');
   }
 
   if (this.getOriginalElement()) {
@@ -2042,7 +2053,8 @@ goog.editor.Field.prototype.getCleanContents = function() {
     // The field is uneditable, so it's ok to read contents directly.
     var elem = this.getOriginalElement();
     if (!elem) {
-      this.logger.shout("Couldn't get the field element to read the contents");
+      goog.log.log(this.logger, goog.log.Level.SHOUT,
+          "Couldn't get the field element to read the contents");
     }
     return elem.innerHTML;
   }
@@ -2092,7 +2104,7 @@ goog.editor.Field.prototype.getFieldCopy = function() {
 goog.editor.Field.prototype.setHtml = function(
     addParas, html, opt_dontFireDelayedChange, opt_applyLorem) {
   if (this.isLoading()) {
-    this.logger.severe("Can't set html while loading Trogedit");
+    goog.log.error(this.logger, "Can't set html while loading Trogedit");
     return;
   }
 
@@ -2213,7 +2225,7 @@ goog.editor.Field.prototype.dispatchLoadEvent_ = function() {
 
   this.installStyles();
   this.startChangeEvents();
-  this.logger.info('Dispatching load ' + this.id);
+  goog.log.info(this.logger, 'Dispatching load ' + this.id);
   this.dispatchEvent(goog.editor.Field.EventType.LOAD);
 };
 

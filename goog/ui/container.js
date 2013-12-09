@@ -35,13 +35,9 @@ goog.require('goog.dom');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
 goog.require('goog.events.KeyHandler');
-goog.require('goog.events.KeyHandler.EventType');
 goog.require('goog.object');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
-goog.require('goog.ui.Component.Error');
-goog.require('goog.ui.Component.EventType');
-goog.require('goog.ui.Component.State');
 goog.require('goog.ui.ContainerRenderer');
 goog.require('goog.ui.Control');
 
@@ -547,9 +543,9 @@ goog.ui.Container.prototype.handleUnHighlightItem = function(e) {
   var element = this.getElement();
   goog.asserts.assert(element,
       'The DOM element for the container cannot be null.');
-  goog.a11y.aria.setState(element,
-      goog.a11y.aria.State.ACTIVEDESCENDANT,
-      '');
+  // Setting certain ARIA attributes to empty strings is problematic.
+  // Just remove the attribute instead.
+  goog.a11y.aria.removeState(element, goog.a11y.aria.State.ACTIVEDESCENDANT);
 };
 
 
@@ -931,6 +927,7 @@ goog.ui.Container.prototype.removeChild = function(control, opt_unrender) {
     if (index != -1) {
       if (index == this.highlightedIndex_) {
         control.setHighlighted(false);
+        this.highlightedIndex_ = -1;
       } else if (index < this.highlightedIndex_) {
         this.highlightedIndex_--;
       }
@@ -1010,7 +1007,7 @@ goog.ui.Container.prototype.setVisible = function(visible, opt_force) {
 
     var elem = this.getElement();
     if (elem) {
-      goog.style.showElement(elem, visible);
+      goog.style.setElementShown(elem, visible);
       if (this.isFocusable()) {
         // Enable keyboard access only for enabled & visible containers.
         this.renderer_.enableTabIndex(this.getKeyEventTarget(),

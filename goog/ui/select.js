@@ -23,14 +23,11 @@
 
 goog.provide('goog.ui.Select');
 
-goog.require('goog.a11y.aria');
 goog.require('goog.a11y.aria.Role');
-goog.require('goog.a11y.aria.State');
-goog.require('goog.asserts');
 goog.require('goog.events.EventType');
-goog.require('goog.ui.Component.EventType');
-goog.require('goog.ui.ControlContent');
+goog.require('goog.ui.Component');
 goog.require('goog.ui.MenuButton');
+goog.require('goog.ui.MenuItem');
 goog.require('goog.ui.SelectionModel');
 goog.require('goog.ui.registry');
 
@@ -44,8 +41,9 @@ goog.require('goog.ui.registry');
  * Select fires the following events:
  *   CHANGE - after selection changes.
  *
- * @param {goog.ui.ControlContent} caption Default caption or existing DOM
+ * @param {goog.ui.ControlContent=} opt_caption Default caption or existing DOM
  *     structure to display as the button's caption when nothing is selected.
+ *     Defaults to no caption.
  * @param {goog.ui.Menu=} opt_menu Menu containing selection options.
  * @param {goog.ui.ButtonRenderer=} opt_renderer Renderer used to render or
  *     decorate the control; defaults to {@link goog.ui.MenuButtonRenderer}.
@@ -54,10 +52,13 @@ goog.require('goog.ui.registry');
  * @constructor
  * @extends {goog.ui.MenuButton}
  */
-goog.ui.Select = function(caption, opt_menu, opt_renderer, opt_domHelper) {
-  goog.ui.MenuButton.call(this, caption, opt_menu, opt_renderer, opt_domHelper);
-  this.setDefaultCaption(caption);
-  this.setPreferredAriaRole(goog.a11y.aria.Role.LISTBOX);
+goog.ui.Select = function(opt_caption, opt_menu, opt_renderer, opt_domHelper) {
+  goog.base(this, opt_caption, opt_menu, opt_renderer, opt_domHelper);
+  /**
+   * Default caption to show when no option is selected.
+   * @private {goog.ui.ControlContent}
+   */
+  this.defaultCaption_ = this.getContent();
 };
 goog.inherits(goog.ui.Select, goog.ui.MenuButton);
 
@@ -70,25 +71,11 @@ goog.inherits(goog.ui.Select, goog.ui.MenuButton);
 goog.ui.Select.prototype.selectionModel_ = null;
 
 
-/**
- * Default caption to be shown when no option is selected.
- * @type {goog.ui.ControlContent}
- * @private
- */
-goog.ui.Select.prototype.defaultCaption_ = null;
-
-
 /** @override */
 goog.ui.Select.prototype.enterDocument = function() {
   goog.ui.Select.superClass_.enterDocument.call(this);
   this.updateCaption();
   this.listenToSelectionModelEvents_();
-  var selectElement = this.getElement();
-  goog.asserts.assert(selectElement,
-      'The select DOM element cannot be null.');
-  // Need to set HASPOPUP to false since it's set to true in the parent class.
-  goog.a11y.aria.setState(selectElement, goog.a11y.aria.State.HASPOPUP,
-      'false');
 };
 
 

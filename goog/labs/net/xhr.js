@@ -179,7 +179,7 @@ _.send = function(method, url, data, opt_options) {
   // again.  Thus the slight ugliness here.  If results were pushed into
   // makeRequest, this could become a lot cleaner but we want an option for
   // people not to include goog.result.Result.
-  goog.result.waitOnError(result, function(result) {
+  goog.result.waitOnError(result, function(error, result) {
     if (result.isCanceled()) {
       xhr.abort();
       xhr.onreadystatechange = goog.nullFunction;
@@ -411,6 +411,7 @@ _.Error.prototype.name = 'XhrError';
  * @param {!XMLHttpRequest} xhr The XMLHttpRequest that failed.
  * @extends {_.Error}
  * @constructor
+ * @final
  */
 _.HttpError = function(status, url, xhr) {
   goog.base(this, 'Request Failed, status=' + status, url, xhr);
@@ -436,6 +437,7 @@ _.HttpError.prototype.name = 'XhrHttpError';
  * @param {!XMLHttpRequest} xhr The XMLHttpRequest that failed.
  * @extends {_.Error}
  * @constructor
+ * @final
  */
 _.TimeoutError = function(url, xhr) {
   goog.base(this, 'Request timed out', url, xhr);

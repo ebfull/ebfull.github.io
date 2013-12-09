@@ -39,6 +39,18 @@ goog.require('goog.structs.Node');
  */
 goog.structs.TreeNode = function(key, value) {
   goog.structs.Node.call(this, key, value);
+
+  /**
+   * Reference to the parent node or null if it has no parent.
+   * @private {goog.structs.TreeNode}
+   */
+  this.parent_ = null;
+
+  /**
+   * Child nodes or null in case of leaf node.
+   * @private {Array.<!goog.structs.TreeNode>}
+   */
+  this.children_ = null;
 };
 goog.inherits(goog.structs.TreeNode, goog.structs.Node);
 
@@ -48,22 +60,6 @@ goog.inherits(goog.structs.TreeNode, goog.structs.Node);
  * @private
  */
 goog.structs.TreeNode.EMPTY_ARRAY_ = [];
-
-
-/**
- * Reference to the parent node or null if it has no parent.
- * @type {goog.structs.TreeNode}
- * @private
- */
-goog.structs.TreeNode.prototype.parent_ = null;
-
-
-/**
- * Child nodes or null in case of leaf node.
- * @type {Array.<!goog.structs.TreeNode>}
- * @private
- */
-goog.structs.TreeNode.prototype.children_ = null;
 
 
 /**
@@ -266,6 +262,28 @@ goog.structs.TreeNode.findCommonAncestor = function(var_args) {
   }
 
   return ret;
+};
+
+
+/**
+ * Returns a node whose key matches the given one in the hierarchy rooted at
+ * this node. The hierarchy is searched using an in-order traversal.
+ * @param {*} key The key to search for.
+ * @return {goog.structs.TreeNode} The node with the given key, or null if no
+ *     node with the given key exists in the hierarchy.
+ */
+goog.structs.TreeNode.prototype.getNodeByKey = function(key) {
+  if (this.getKey() == key) {
+    return this;
+  }
+  var children = this.getChildren();
+  for (var i = 0; i < children.length; i++) {
+    var descendant = children[i].getNodeByKey(key);
+    if (descendant) {
+      return descendant;
+    }
+  }
+  return null;
 };
 
 

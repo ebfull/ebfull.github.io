@@ -65,11 +65,9 @@
 goog.provide('goog.ui.media.PicasaAlbum');
 goog.provide('goog.ui.media.PicasaAlbumModel');
 
-goog.require('goog.object');
 goog.require('goog.ui.media.FlashObject');
 goog.require('goog.ui.media.Media');
 goog.require('goog.ui.media.MediaModel');
-goog.require('goog.ui.media.MediaModel.Player');
 goog.require('goog.ui.media.MediaRenderer');
 
 
@@ -98,6 +96,7 @@ goog.require('goog.ui.media.MediaRenderer');
  *
  * @constructor
  * @extends {goog.ui.media.MediaRenderer}
+ * @final
  */
 goog.ui.media.PicasaAlbum = function() {
   goog.ui.media.MediaRenderer.call(this);
@@ -191,6 +190,7 @@ goog.ui.media.PicasaAlbum.prototype.getCssClass = function() {
  * @param {boolean=} opt_autoplay Whether to autoplay the slideshow.
  * @constructor
  * @extends {goog.ui.media.MediaModel}
+ * @final
  */
 goog.ui.media.PicasaAlbumModel = function(userId,
                                           albumId,

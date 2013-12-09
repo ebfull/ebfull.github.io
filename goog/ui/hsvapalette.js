@@ -24,10 +24,13 @@
 goog.provide('goog.ui.HsvaPalette');
 
 goog.require('goog.array');
-goog.require('goog.color');
 goog.require('goog.color.alpha');
+goog.require('goog.dom');
+goog.require('goog.dom.TagName');
+goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('goog.ui.Component.EventType');
+goog.require('goog.style');
+goog.require('goog.ui.Component');
 goog.require('goog.ui.HsvPalette');
 
 
@@ -43,6 +46,7 @@ goog.require('goog.ui.HsvPalette');
  *     'goog-hsva-palette').
  * @extends {goog.ui.HsvPalette}
  * @constructor
+ * @final
  */
 goog.ui.HsvaPalette = function(opt_domHelper, opt_color, opt_alpha, opt_class) {
   goog.base(this, opt_domHelper, opt_color, opt_class);

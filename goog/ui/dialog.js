@@ -37,13 +37,14 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.NodeType');
 goog.require('goog.dom.TagName');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.Event');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
 goog.require('goog.fx.Dragger');
 goog.require('goog.math.Rect');
+goog.require('goog.string');
 goog.require('goog.structs');
 goog.require('goog.structs.Map');
 goog.require('goog.style');
@@ -76,6 +77,7 @@ goog.require('goog.userAgent');
  * @constructor
  * @param {string=} opt_class CSS class name for the dialog element, also used
  *     as a class name prefix for related elements; defaults to modal-dialog.
+ *     This should be a single, valid CSS class name.
  * @param {boolean=} opt_useIframeMask Work around windowed controls z-index
  *     issue by using an iframe instead of a div for bg element.
  * @param {goog.dom.DomHelper=} opt_domHelper Optional DOM helper; see {@link
@@ -275,6 +277,12 @@ goog.ui.Dialog.prototype.setContent = function(html) {
 
 /**
  * Gets the content HTML of the content element.
+ *
+ * Note that this method returns the HTML markup that was previously set via
+ * setContent(). In particular, the HTML returned by this method does not
+ * reflect any changes to the content element's DOM that were made my means
+ * other than setContent().
+ *
  * @return {string} Content HTML.
  */
 goog.ui.Dialog.prototype.getContent = function() {
@@ -516,15 +524,24 @@ goog.ui.Dialog.prototype.getDraggable = function() {
  * @private.
  */
 goog.ui.Dialog.prototype.setDraggingEnabled_ = function(enabled) {
+  // This isn't ideal, but the quickest and easiest way to append
+  // title-draggable to the last class in the class_ string, then trim and
+  // split the string into an array (in case the dialog was set up with
+  // multiple, space-separated class names).
+  var classNames = goog.string.trim(goog.getCssName(this.class_,
+      'title-draggable')).split(' ');
+
   if (this.getElement()) {
-    goog.dom.classes.enable(this.titleEl_,
-        goog.getCssName(this.class_, 'title-draggable'), enabled);
+    if (enabled) {
+      goog.dom.classlist.addAll(this.titleEl_, classNames);
+    } else {
+      goog.dom.classlist.removeAll(this.titleEl_, classNames);
+    }
   }
 
   if (enabled && !this.dragger_) {
     this.dragger_ = this.createDragger();
-    goog.dom.classes.add(this.titleEl_,
-        goog.getCssName(this.class_, 'title-draggable'));
+    goog.dom.classlist.addAll(this.titleEl_, classNames);
     goog.events.listen(this.dragger_, goog.fx.Dragger.EventType.START,
         this.setDraggerLimits_, false, this);
   } else if (!enabled && this.dragger_) {
@@ -562,13 +579,13 @@ goog.ui.Dialog.prototype.createDom = function() {
   if (this.content_) {
     this.contentEl_.innerHTML = this.content_;
   }
-  goog.style.showElement(this.titleCloseEl_, this.hasTitleCloseButton_);
+  goog.style.setElementShown(this.titleCloseEl_, this.hasTitleCloseButton_);
 
   // Render the buttons.
   if (this.buttons_) {
     this.buttons_.attachToElement(this.buttonEl_);
   }
-  goog.style.showElement(this.buttonEl_, !!this.buttons_);
+  goog.style.setElementShown(this.buttonEl_, !!this.buttons_);
   this.setBackgroundElementOpacity(this.backgroundElementOpacity_);
 };
 
@@ -583,9 +600,7 @@ goog.ui.Dialog.prototype.decorateInternal = function(element) {
   var contentClass = goog.getCssName(this.class_, 'content');
   this.contentEl_ = goog.dom.getElementsByTagNameAndClass(
       null, contentClass, dialogElement)[0];
-  if (this.contentEl_) {
-    this.content_ = this.contentEl_.innerHTML;
-  } else {
+  if (!this.contentEl_) {
     this.contentEl_ = this.getDomHelper().createDom('div', contentClass);
     if (this.content_) {
       this.contentEl_.innerHTML = this.content_;
@@ -635,7 +650,7 @@ goog.ui.Dialog.prototype.decorateInternal = function(element) {
     this.titleCloseEl_ = this.getDomHelper().createDom('span', titleCloseClass);
     this.titleEl_.appendChild(this.titleCloseEl_);
   }
-  goog.style.showElement(this.titleCloseEl_, this.hasTitleCloseButton_);
+  goog.style.setElementShown(this.titleCloseEl_, this.hasTitleCloseButton_);
 
   // Decorate or create the button container element.
   var buttonsClass = goog.getCssName(this.class_, 'buttons');
@@ -653,7 +668,7 @@ goog.ui.Dialog.prototype.decorateInternal = function(element) {
     if (this.buttons_) {
       this.buttons_.attachToElement(this.buttonEl_);
     }
-    goog.style.showElement(this.buttonEl_, !!this.buttons_);
+    goog.style.setElementShown(this.buttonEl_, !!this.buttons_);
   }
   this.setBackgroundElementOpacity(this.backgroundElementOpacity_);
 };
@@ -862,7 +877,7 @@ goog.ui.Dialog.prototype.getHasTitleCloseButton = function() {
 goog.ui.Dialog.prototype.setHasTitleCloseButton = function(b) {
   this.hasTitleCloseButton_ = b;
   if (this.titleCloseEl_) {
-    goog.style.showElement(this.titleCloseEl_, this.hasTitleCloseButton_);
+    goog.style.setElementShown(this.titleCloseEl_, this.hasTitleCloseButton_);
   }
 };
 
@@ -923,7 +938,7 @@ goog.ui.Dialog.prototype.setButtonSet = function(buttons) {
     } else {
       this.buttonEl_.innerHTML = '';
     }
-    goog.style.showElement(this.buttonEl_, !!this.buttons_);
+    goog.style.setElementShown(this.buttonEl_, !!this.buttons_);
   }
 };
 
@@ -1017,9 +1032,9 @@ goog.ui.Dialog.prototype.onKey_ = function(e) {
     // Only handle ENTER in keypress events, in case the action opens a
     // popup window.
     var key;
-    if (target.tagName == 'BUTTON') {
-      // If focus was on a button, it must have been enabled, so we can fire
-      // that button's handler.
+    if (target.tagName == 'BUTTON' && !target.disabled) {
+      // If the target is a button and it's enabled, we can fire that button's
+      // handler.
       key = target.name;
     } else if (buttonSet) {
       // Try to fire the default button's handler (if one exists), but only if
@@ -1257,7 +1272,7 @@ goog.ui.Dialog.ButtonSet.prototype.decorate = function(element) {
       var isCancel = button.name == goog.ui.Dialog.DefaultButtonKeys.CANCEL;
       this.set(key, caption, isDefault, isCancel);
       if (isDefault) {
-        goog.dom.classes.add(button, goog.getCssName(this.class_,
+        goog.dom.classlist.add(button, goog.getCssName(this.class_,
             'default'));
       }
     }

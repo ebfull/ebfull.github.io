@@ -25,11 +25,12 @@ goog.provide('goog.ui.RoundedPanel');
 goog.provide('goog.ui.RoundedPanel.Corner');
 
 goog.require('goog.dom');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.classlist');
 goog.require('goog.graphics');
 goog.require('goog.graphics.Path');
 goog.require('goog.graphics.SolidFill');
 goog.require('goog.graphics.Stroke');
+goog.require('goog.math');
 goog.require('goog.math.Coordinate');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
@@ -58,8 +59,9 @@ goog.ui.RoundedPanel.create = function(radius,
                                        opt_domHelper) {
   // This variable checks for the presence of Safari 3.0+ or Gecko 1.9+,
   // which can leverage special CSS styles to create rounded corners.
-  var isCssReady = goog.userAgent.WEBKIT && goog.userAgent.isVersion('500') ||
-      goog.userAgent.GECKO && goog.userAgent.isVersion('1.9a');
+  var isCssReady = goog.userAgent.WEBKIT &&
+      goog.userAgent.isVersionOrHigher('500') ||
+      goog.userAgent.GECKO && goog.userAgent.isVersionOrHigher('1.9a');
 
   if (isCssReady) {
     // Safari 3.0+ and Firefox 3.0+ support this instance.
@@ -207,7 +209,8 @@ goog.ui.BaseRoundedPanel.prototype.contentElement_;
  */
 goog.ui.BaseRoundedPanel.prototype.decorateInternal = function(element) {
   goog.ui.BaseRoundedPanel.superClass_.decorateInternal.call(this, element);
-  goog.dom.classes.add(this.getElement(), goog.ui.RoundedPanel.Classes_.PANEL);
+  goog.dom.classlist.add(this.getElement(),
+      goog.ui.RoundedPanel.Classes_.PANEL);
 
   // Create backgroundElement_, and add it to the DOM.
   this.backgroundElement_ = this.getDomHelper().createElement('div');
@@ -263,6 +266,7 @@ goog.ui.BaseRoundedPanel.prototype.getContentElement = function() {
  *     document we want to render in.
  * @extends {goog.ui.BaseRoundedPanel}
  * @constructor
+ * @final
  */
 goog.ui.CssRoundedPanel = function(radius,
                                    borderWidth,
@@ -388,6 +392,7 @@ goog.ui.CssRoundedPanel.prototype.getStyle_ = function(corner) {
  *     document we want to render in.
  * @extends {goog.ui.BaseRoundedPanel}
  * @constructor
+ * @final
  */
 goog.ui.GraphicsRoundedPanel = function(radius,
                                         borderWidth,

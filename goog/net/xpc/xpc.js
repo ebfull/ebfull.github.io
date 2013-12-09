@@ -46,7 +46,7 @@ goog.provide('goog.net.xpc.TransportNames');
 goog.provide('goog.net.xpc.TransportTypes');
 goog.provide('goog.net.xpc.UriCfgFields');
 
-goog.require('goog.debug.Logger');
+goog.require('goog.log');
 
 
 /**
@@ -59,7 +59,8 @@ goog.net.xpc.TransportTypes = {
   IFRAME_RELAY: 3,
   IFRAME_POLLING: 4,
   FLASH: 5,
-  NIX: 6
+  NIX: 6,
+  DIRECT: 7
 };
 
 
@@ -74,7 +75,8 @@ goog.net.xpc.TransportNames = {
   '3': 'IframeRelayTransport',
   '4': 'IframePollingTransport',
   '5': 'FlashTransport',
-  '6': 'NixTransport'
+  '6': 'NixTransport',
+  '7': 'DirectTransport'
 };
 
 
@@ -216,7 +218,7 @@ goog.net.xpc.ChannelStates = {
 /**
  * The name of the transport service (used for internal signalling).
  * @type {string}
- * @suppress {underscore}
+ * @suppress {underscore|visibility}
  */
 goog.net.xpc.TRANSPORT_SERVICE_ = 'tp';
 
@@ -238,7 +240,7 @@ goog.net.xpc.SETUP_NTPV2 = 'SETUP_NTPV2';
 /**
  * Transport signaling message: setup acknowledgement.
  * @type {string}
- * @suppress {underscore}
+ * @suppress {underscore|visibility}
  */
 goog.net.xpc.SETUP_ACK_ = 'SETUP_ACK';
 
@@ -287,6 +289,6 @@ goog.net.xpc.randomStringCharacters_ =
 
 /**
  * The logger.
- * @type {goog.debug.Logger}
+ * @type {goog.log.Logger}
  */
-goog.net.xpc.logger = goog.debug.Logger.getLogger('goog.net.xpc');
+goog.net.xpc.logger = goog.log.getLogger('goog.net.xpc');

@@ -21,13 +21,12 @@
 goog.provide('goog.ui.ContainerRenderer');
 
 goog.require('goog.a11y.aria');
-goog.require('goog.asserts');
 goog.require('goog.array');
-goog.require('goog.dom');
-goog.require('goog.dom.classes');
+goog.require('goog.asserts');
+goog.require('goog.dom.NodeType');
+goog.require('goog.dom.classlist');
 goog.require('goog.string');
 goog.require('goog.style');
-goog.require('goog.ui.Separator');
 goog.require('goog.ui.registry');
 goog.require('goog.userAgent');
 
@@ -177,7 +176,7 @@ goog.ui.ContainerRenderer.prototype.decorate = function(container, element) {
   // Configure the container's state based on the CSS class names it has.
   var baseClass = this.getCssClass();
   var hasBaseClass = false;
-  var classNames = goog.dom.classes.get(element);
+  var classNames = goog.dom.classlist.get(element);
   if (classNames) {
     goog.array.forEach(classNames, function(className) {
       if (className == baseClass) {
@@ -190,7 +189,7 @@ goog.ui.ContainerRenderer.prototype.decorate = function(container, element) {
 
   if (!hasBaseClass) {
     // Make sure the container's root element has the renderer's own CSS class.
-    goog.dom.classes.add(element, baseClass);
+    goog.dom.classlist.add(element, baseClass);
   }
 
   // Decorate the element's children, if applicable.  This should happen after
@@ -234,7 +233,6 @@ goog.ui.ContainerRenderer.prototype.setStateFromClassName = function(container,
  *     discovered.
  * @param {Element} element Element whose children are to be decorated.
  * @param {Element=} opt_firstChild the first child to be decorated.
- * @suppress {visibility} setElementInternal
  */
 goog.ui.ContainerRenderer.prototype.decorateChildren = function(container,
     element, opt_firstChild) {

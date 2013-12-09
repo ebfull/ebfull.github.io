@@ -34,9 +34,9 @@ goog.provide('goog.i18n.uChar.RemoteNameFetcher');
 
 goog.require('goog.Disposable');
 goog.require('goog.Uri');
-goog.require('goog.debug.Logger');
 goog.require('goog.i18n.uChar');
 goog.require('goog.i18n.uChar.NameFetcher');
+goog.require('goog.log');
 goog.require('goog.net.XhrIo');
 goog.require('goog.structs.Map');
 
@@ -50,6 +50,7 @@ goog.require('goog.structs.Map');
  * @constructor
  * @implements {goog.i18n.uChar.NameFetcher}
  * @extends {goog.Disposable}
+ * @final
  */
 goog.i18n.uChar.RemoteNameFetcher = function(dataSourceUri) {
   goog.base(this);
@@ -110,11 +111,11 @@ goog.i18n.uChar.RemoteNameFetcher.prototype.getNameLastListenerKey_;
 /**
  * A reference to the RemoteNameFetcher logger.
  *
- * @type {!goog.debug.Logger}
+ * @type {goog.log.Logger}
  * @private
  */
 goog.i18n.uChar.RemoteNameFetcher.logger_ =
-    goog.debug.Logger.getLogger('goog.i18n.uChar.RemoteNameFetcher');
+    goog.log.getLogger('goog.i18n.uChar.RemoteNameFetcher');
 
 
 
@@ -217,7 +218,7 @@ goog.i18n.uChar.RemoteNameFetcher.prototype.getNameCallback_ = function(
  */
 goog.i18n.uChar.RemoteNameFetcher.prototype.processResponse_ = function(xhrIo) {
   if (!xhrIo.isSuccess()) {
-    goog.i18n.uChar.RemoteNameFetcher.logger_.severe(
+    goog.log.error(goog.i18n.uChar.RemoteNameFetcher.logger_,
         'Problem with data source: ' + xhrIo.getLastError());
     return;
   }
@@ -268,7 +269,7 @@ goog.i18n.uChar.RemoteNameFetcher.prototype.fetch_ = function(requestType,
   var url = new goog.Uri(this.dataSourceUri_);
   url.setParameterValue(requestType, requestInput);
   url.setParameterValue('p', 'name');
-  goog.i18n.uChar.RemoteNameFetcher.logger_.info('Request: ' +
+  goog.log.info(goog.i18n.uChar.RemoteNameFetcher.logger_, 'Request: ' +
       url.toString());
   xhrIo.send(url);
 };

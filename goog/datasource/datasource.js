@@ -32,7 +32,7 @@ goog.provide('goog.ds.Util');
 goog.provide('goog.ds.logger');
 
 goog.require('goog.array');
-goog.require('goog.debug.Logger');
+goog.require('goog.log');
 
 
 
@@ -460,6 +460,7 @@ goog.ds.BasicNodeList.prototype.indexOf = function(name) {
  * Immulatable empty node list
  * @extends {goog.ds.BasicNodeList}
  * @constructor
+ * @final
  */
 
 goog.ds.EmptyNodeList = function() {
@@ -627,9 +628,9 @@ goog.ds.STR_ARRAY_START = '[';
 
 /**
  * Shared logger instance for data package
- * @type {goog.debug.Logger}
+ * @type {goog.log.Logger}
  */
-goog.ds.logger = goog.debug.Logger.getLogger('goog.ds');
+goog.ds.logger = goog.log.getLogger('goog.ds');
 
 
 /**
@@ -645,6 +646,7 @@ goog.ds.Util.makeReferenceNode = function(node, name) {
   /**
    * @constructor
    * @extends {goog.ds.DataNode}
+   * @final
    */
   var nodeCreator = function() {};
   nodeCreator.prototype = node;

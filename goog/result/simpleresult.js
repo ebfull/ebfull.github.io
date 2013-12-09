@@ -45,7 +45,7 @@ goog.result.SimpleResult = function() {
 
   /**
    * The list of handlers to call when this Result is resolved.
-   * @type {!Array.<!function(goog.result.SimpleResult)>}
+   * @type {!Array.<!goog.result.SimpleResult.HandlerEntry_>}
    * @private
    */
   this.handlers_ = [];
@@ -70,6 +70,17 @@ goog.result.SimpleResult = function() {
 };
 
 
+/**
+ * A waiting handler entry.
+ * @typedef {{
+ *   callback: !function(goog.result.SimpleResult),
+ *   scope: Object
+ * }}
+ * @private
+ */
+goog.result.SimpleResult.HandlerEntry_;
+
+
 
 /**
  * Error thrown if there is an attempt to set the value or error for this result
@@ -77,6 +88,7 @@ goog.result.SimpleResult = function() {
  *
  * @constructor
  * @extends {goog.debug.Error}
+ * @final
  */
 goog.result.SimpleResult.StateError = function() {
   goog.base(this, 'Multiple attempts to set the state of this Result');
@@ -105,16 +117,21 @@ goog.result.SimpleResult.prototype.getError = function() {
 /**
  * Attaches handlers to be called when the value of this Result is available.
  *
- * @param {!function(!goog.result.SimpleResult)} handler The function
+ * @param {!function(this:T, !goog.result.SimpleResult)} handler The function
  *     called when the value is available. The function is passed the Result
  *     object as the only argument.
+ * @param {T=} opt_scope Optional scope for the handler.
+ * @template T
  * @override
  */
-goog.result.SimpleResult.prototype.wait = function(handler) {
+goog.result.SimpleResult.prototype.wait = function(handler, opt_scope) {
   if (this.isPending_()) {
-    this.handlers_.push(handler);
+    this.handlers_.push({
+      callback: handler,
+      scope: opt_scope || null
+    });
   } else {
-    handler(this);
+    handler.call(opt_scope, this);
   }
 };
 
@@ -159,9 +176,11 @@ goog.result.SimpleResult.prototype.setError = function(opt_error) {
  * @private
  */
 goog.result.SimpleResult.prototype.callHandlers_ = function() {
-  while (this.handlers_.length) {
-    var callback = this.handlers_.shift();
-    callback(this);
+  var handlers = this.handlers_;
+  this.handlers_ = [];
+  for (var n = 0; n < handlers.length; n++) {
+    var handlerEntry = handlers[n];
+    handlerEntry.callback.call(handlerEntry.scope, this);
   }
 };
 

@@ -19,7 +19,7 @@
  */
 
 
-/** @suppress {extraRequire} */
+/** @suppress {extraProvide} */
 goog.provide('goog.labs.net.imageTest');
 
 goog.require('goog.events');
@@ -40,7 +40,6 @@ function testValidImage() {
 
   asyncTestCase.waitForAsync('image load');
 
-  assertEquals(0, goog.events.getTotalListenerCount());
 
   var result = goog.labs.net.image.load(url);
 
@@ -65,7 +64,6 @@ function testInvalidImage() {
 
   asyncTestCase.waitForAsync('image load');
 
-  assertEquals(0, goog.events.getTotalListenerCount());
 
   var result = goog.labs.net.image.load(url);
 
@@ -86,13 +84,12 @@ function testImageFactory() {
   var returnedImage = new Image();
   var factory = function() {
     return returnedImage;
-  }
+  };
   var countedFactory = goog.testing.recordFunction(factory);
 
   var url = 'testdata/cleardot.gif';
 
   asyncTestCase.waitForAsync('image load');
-  assertEquals(0, goog.events.getTotalListenerCount());
   var result = goog.labs.net.image.load(url, countedFactory);
 
   goog.result.waitOnSuccess(result, function(value) {
@@ -113,7 +110,6 @@ function testExistingImage() {
   var url = 'testdata/cleardot.gif';
 
   asyncTestCase.waitForAsync('image load');
-  assertEquals(0, goog.events.getTotalListenerCount());
   var result = goog.labs.net.image.load(url, image);
 
   goog.result.waitOnSuccess(result, function(value) {
