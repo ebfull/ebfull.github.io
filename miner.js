@@ -25,23 +25,12 @@ function Miner(self) {
 						self.log("attacker: adopting public chain at h=" + b.h)
 						oldOnBlock.call(this, b)
 					}
-					else if (b.work == this.chainstate.head.work && this.chainstate.head != b) {
-						// publish our block
+					else if (((b.h+1) >= this.chainstate.head.h) && b != this.chainstate.head) {
+						// new block, public chain will (probably) catch up now
+						// publish our private chain in its entirety
+
 						self.blockchain.onMine.call(self.blockchain, this.chainstate.head, true)
 						self.log("attacker: published full private chain h=" + this.chainstate.head.h)
-					} else if (b != this.chainstate.head) {
-						var release = this.chainstate.head;
-						var lead = 0;
-
-						while (release.h > (b.h+1)) {
-							// if we can, don't publish anything more than one height above the public chain
-							lead++;
-							release = release._prev()
-						}
-
-						// now let's publish this block
-						self.blockchain.onMine.call(self.blockchain, release, true)
-						self.log("attacker: published partial private chain up to h=" + (release.h) + " (new lead=" + lead + ")")
 					}
 				}
 				self.private_blockchain.onMine = function(b) {
