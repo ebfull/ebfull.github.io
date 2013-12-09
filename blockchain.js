@@ -41,7 +41,7 @@ function Block(prev, time, miner) {
 }
 
 Block.prototype = {
-	target_avg_between_blocks: 2.5 * 60 * 1000, // 2.5 minutes = litecoin
+	target_avg_between_blocks: 10 * 60 * 1000, // 2.5 minutes = litecoin
 	difficulty_adjustment_period: 2016,
 
 	difficultyAdjustment: function() {
