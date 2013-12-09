@@ -4,7 +4,7 @@
 require('./goog/bootstrap/nodejs')
 goog.require("goog.structs.PriorityQueue")
 
-// these can be replaced with node prep.js
+// these can be replaced with `node prep.js sim.js`
 'include network.js';
 'include peermgr.js';
 'include inventory.js';

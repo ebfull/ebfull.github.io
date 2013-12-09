@@ -1,6 +1,6 @@
 fs = require('fs')
 
-var sim = 'test'
+var sim = process.argv[2]
 
 fs.readFile(sim, 'utf8', function(err, gg) {
         if(err)return console.log(err)
