@@ -42,6 +42,8 @@ parse = function(err, data) {
                 }
         })
 
+        mode.push([parseFloat(cur.percent), parseFloat(last)])
+
         retain--;
 
         mode = false
@@ -56,10 +58,14 @@ parse = function(err, data) {
         }
 }
 
-for (var i=10;i<50;i++) {
+for (var i=5;i<50;i+=5) {
         retain++;
 }
 
-for (var i=10;i<50;i++) {
-        fs.readFile('sim'+i, 'utf8', parse)
+retain++;
+
+for (var i=5;i<50;i+=5) {
+        fs.readFile('/home/ubuntu/sim'+i, 'utf8', parse)
 }
+
+fs.readFile('/home/ubuntu/sim'+49, 'utf8', parse)
