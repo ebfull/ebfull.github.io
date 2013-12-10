@@ -46,7 +46,7 @@ parse = function(err, data) {
 
                                 cur = p;
                         } else if (typeof p.revenuePercent != "undefined") {
-                                var revnow = Math.floor(parseFloat(p.revenuePercent)/100 * p.height)
+                                var revnow = Math.round(parseFloat(p.revenuePercent)/100 * p.height)
                                 mode.push([p.time, revnow])
                         }
                 }
