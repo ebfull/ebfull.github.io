@@ -42,7 +42,7 @@ parse = function(err, data) {
                 }
         })
 
-        mode.push([parseFloat(cur.percent), parseFloat(last)])
+        mode.push([Math.round(parseFloat(cur.percent)), parseFloat(last)])
 
         retain--;
 
