@@ -69,8 +69,6 @@ function doStuff() {
 var workers = async.queue(function(arg, cb) {
         var server = arg.server;
 
-        console.log(server[0] + " can support " + server[1] + " concurrency")
-
         var q = async.queue(function(nope, doneWithTasks) {
                 var task;
 
@@ -100,13 +98,15 @@ hosts.forEach(function(host) {
 var provision = async.queue(function(host, cb) {
         console.log("(" + host + ") provisioning")
 
-        runRemoteCommand(host, "ps aux | grep -ie sim.js | awk '{print \\$2}' | xargs kill -9", false, function() {
-                runRemoteCommand(host, "rm -rf ebfull.github.io; git clone https://github.com/ebfull/ebfull.github.io.git", false, function() {
-                        runRemoteCommand(host, "cd ebfull.github.io; node prep.js sim.js", false, function() {
-                                console.log("(" + host + ") done provisioning");
-                                cb();
+        runRemoteCommand(host, "echo -e 'MaxSessions 1000\\nMaxStartups 1000\\n' | sudo tee -a /etc/ssh/sshd_config; sudo service sshd restart", false, function() {
+                runRemoteCommand(host, "ps aux | grep -ie sim.js | awk '{print \\$2}' | xargs kill -9", false, function() {
+                        runRemoteCommand(host, "rm -rf ebfull.github.io; git clone https://github.com/ebfull/ebfull.github.io.git", false, function() {
+                                runRemoteCommand(host, "cd ebfull.github.io; node prep.js sim.js", false, function() {
+                                        console.log("(" + host + ") done provisioning");
+                                        cb();
+                                })
                         })
-                })
+                });
         });
 }, hosts.length);
 
