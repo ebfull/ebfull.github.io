@@ -69,6 +69,8 @@ function doStuff() {
 var workers = async.queue(function(arg, cb) {
         var server = arg.server;
 
+        console.log(server[0] + " can support " + server[1] + " concurrency")
+
         var q = async.queue(function(nope, doneWithTasks) {
                 var task;
 
@@ -99,12 +101,12 @@ var provision = async.queue(function(host, cb) {
         console.log("(" + host + ") provisioning")
 
         runRemoteCommand(host, "ps aux | grep -ie sim.js | awk '{print \\$2}' | xargs kill -9", false, function() {
-        runRemoteCommand(host, "rm -rf ebfull.github.io; git clone https://github.com/ebfull/ebfull.github.io.git", false, function() {
-                runRemoteCommand(host, "cd ebfull.github.io; node prep.js sim.js", false, function() {
-                        console.log("(" + host + ") done provisioning");
-                        cb();
+                runRemoteCommand(host, "rm -rf ebfull.github.io; git clone https://github.com/ebfull/ebfull.github.io.git", false, function() {
+                        runRemoteCommand(host, "cd ebfull.github.io; node prep.js sim.js", false, function() {
+                                console.log("(" + host + ") done provisioning");
+                                cb();
+                        })
                 })
-        })
         });
 }, hosts.length);
 
