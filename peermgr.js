@@ -32,6 +32,8 @@ function PeerMgr(self) {
 
 	var peerTick = function() {
 		if (this.numpeers < this.maxpeers) {
+			if (this.now() > 1000 * 1000) // after 1000 seconds, let's not bother trying to form new connections and assume the network is in a steady state
+				return false;
 			// we need more peers
 
 			// let's try connecting to a peer in our nodearchive, if there are any
