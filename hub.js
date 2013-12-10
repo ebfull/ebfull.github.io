@@ -27,25 +27,7 @@ function runRemoteCommand(host, cmd, out, cb) {
 /////////////////////////////////////////////////////////////
 
 hosts = [
-        ["ec2-23-20-236-89.compute-1.amazonaws.com", 55],
-        ["ec2-54-211-122-145.compute-1.amazonaws.com", 55],
-        ["ec2-54-196-124-111.compute-1.amazonaws.com", 55],
-        ["ec2-54-204-193-78.compute-1.amazonaws.com", 55],
-        ["ec2-107-22-127-24.compute-1.amazonaws.com", 28],
-        ["ec2-54-234-223-206.compute-1.amazonaws.com", 28],
-        ["ec2-54-196-12-230.compute-1.amazonaws.com", 14],
-        ["ec2-54-196-118-231.compute-1.amazonaws.com", 14],
-        ["ec2-54-196-102-209.compute-1.amazonaws.com", 14],
-        ["ec2-54-196-164-68.compute-1.amazonaws.com", 14],
-        ["ec2-54-196-42-132.compute-1.amazonaws.com", 20],
-        ["ec2-23-20-159-119.compute-1.amazonaws.com", 20],
-        ["ec2-50-17-121-194.compute-1.amazonaws.com", 20],
-        ["ec2-54-227-147-32.compute-1.amazonaws.com", 20],
-        ["ec2-54-224-7-20.compute-1.amazonaws.com", 20],
-        ["ec2-54-196-173-50.compute-1.amazonaws.com", 20],
-        ["ec2-54-224-166-178.compute-1.amazonaws.com", 20],
-        ["ec2-50-17-65-148.compute-1.amazonaws.com", 20],
-        ["ec2-54-196-99-140.compute-1.amazonaws.com", 20]
+        ["ec2-54-211-225-96.compute-1.amazonaws.com", 20]
 ]
 
 
@@ -98,7 +80,7 @@ hosts.forEach(function(host) {
 var provision = async.queue(function(host, cb) {
         console.log("(" + host + ") provisioning")
 
-        runRemoteCommand(host, "echo -e 'MaxSessions 1000\\nMaxStartups 1000:3000:6000\\n' | sudo tee -a /etc/ssh/sshd_config; sudo service ssh restart", false, function() {
+        runRemoteCommand(host, "echo -e '\\nMaxSessions 1000\\nMaxStartups 1000\\n' | sudo tee -a /etc/ssh/sshd_config; sudo service ssh restart", false, function() {
                 runRemoteCommand(host, "ps aux | grep -ie sim.js | awk '{print \\$2}' | xargs kill -9", false, function() {
                         runRemoteCommand(host, "rm -rf ebfull.github.io; git clone https://github.com/ebfull/ebfull.github.io.git", false, function() {
                                 runRemoteCommand(host, "cd ebfull.github.io; node prep.js sim.js", false, function() {
