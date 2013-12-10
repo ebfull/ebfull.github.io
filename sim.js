@@ -48,7 +48,7 @@ function start(percent, sybil, attack) {
                         if (attack)
                                 this.attack()
                         if (sybil)
-                                this.peers.maxpeers = numNodes - 20;
+                                this.peers.maxpeers = numNodes - 1;
                 }
                 else {
                         var thispercent = Math.random() * (allpercent * 0.3)
