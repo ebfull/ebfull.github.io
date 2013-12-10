@@ -158,7 +158,7 @@ function PeerMgr(self) {
 		if (this.peers[from] != "undefined") {
 			// add these peers to our nodearchive
 			// if we don't have them already
-			console.log(self.id + " received getpeers from " + from + ": " + JSON.stringify(obj))
+			
 			for (var i=0;i<obj.length;i++) {
 				var candidate = obj[i];
 
