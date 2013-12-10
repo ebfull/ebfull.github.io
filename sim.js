@@ -16,7 +16,7 @@ var btc;
 var interval = 1000 * 60 * 60; // 1 hour
 
 var targetHeight = 10000;
-var numNodes = 200;
+var numNodes = 1000;
 
 var trials = []
 
