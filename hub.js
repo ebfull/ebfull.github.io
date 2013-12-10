@@ -10,7 +10,7 @@ var escapeshell = function(cmd) {
         return '"'+cmd+'"';
 };
 
-function runRemoteCommand(host, cmd, out, cb) {
+function runRemoteCommand(host, cmd, out, cb, pr) {
         var r = Math.floor(Math.random() * 100000000)
         var f;
         if (out)
@@ -19,6 +19,12 @@ function runRemoteCommand(host, cmd, out, cb) {
                 f = "ssh -o \"StrictHostKeyChecking no\" ubuntu@" + host + " " + escapeshell(cmd);
 
         exec(f, function(err, stdout, stderr) {
+                if (err)
+                        console.log(err)
+
+                if (typeof pr != "undefined")
+                        process.stderr.write(stdout + "\n")
+
                 cb(null, null)
         })
 }
@@ -66,31 +72,41 @@ for (var i=0;i<50;i++) {
 
 function doStuff() {
 
-var workers = async.queue(function(arg, cb) {
-        var server = arg.server;
+        var workers = async.queue(function(arg, cb) {
+                var server = arg.server;
 
-        var q = async.queue(function(nope, doneWithTasks) {
-                var task;
+                var q = async.queue(function(nope, doneWithTasks) {
+                        var task;
 
-                async.whilst(function() {return task = tasks.shift();}, function(taskDone) {
-                        console.log("dispatch (" + server[0] + "): " + task[0])
-                        runRemoteCommand(server[0], task[0], task[1], taskDone);
-                }, doneWithTasks);
-        }, server[1])
+                        async.whilst(function() {return task = tasks.shift();}, function(taskDone) {
+                                console.log("dispatch (" + server[0] + "): " + task[0])
+                                runRemoteCommand(server[0], task[0], task[1], function() {
+                                        console.log("completed (" + server[0] + "): " + task[0])
+                                        taskDone()
+                                });
+                        }, doneWithTasks);
+                }, server[1])
 
-        q.drain = function() {
-                cb();
-        }
+                q.drain = function() {
+                        cb();
+                }
 
-        for (var i=0;i<server[1];i++) {
-                q.push("nope")
-        }
-}, hosts.length)
+                for (var i=0;i<server[1];i++) {
+                        q.push("nope")
+                }
+        }, hosts.length)
 
-hosts.forEach(function(host) {
-        workers.push({server:host})
-})
+        hosts.forEach(function(host) {
+                workers.push({server:host})
+        })
 
+        setInterval(function() {
+                // get stats for our workers
+                process.stderr.write("-----------------------")
+                hosts.forEach(function(host) {
+                        runRemoteCommand(host[0], "top -b -n 1 |grep ^Cpu", false, function() {}, true)
+                })
+        }, 30 * 1000)
 }
 
 /////////////////////////////////////////////////////////////
