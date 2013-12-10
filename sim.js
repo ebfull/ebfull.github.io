@@ -77,14 +77,14 @@ while (curtrial = trials.shift()) {
                         cur = cur._prev();
                 }
                 var pub = net.nodes[0].blockchain.chainstate.head.h;
-                var lol = 0;
+                var lol = pub;
                 if (typeof net.nodes[0].private_blockchain != "undefined")
                         lol = net.nodes[0].private_blockchain.chainstate.head.h;
 
                 var revPerHour = ((my / (net.now/(1000*60*60)))).toFixed(2)
 
                 if (total > 0)
-                        console.log(JSON.stringify({time:net.now,height:pub,revenuePercent:((my/total)*100).toFixed(2),averageRevPerHour:revPerHour}));
+                        console.log(JSON.stringify({time:net.now,height:pub,revenuePercent:((my/total)*100).toFixed(2),averageRevPerHour:revPerHour,attackerLead:lol-pub}));
 
                 if (pub >= targetHeight) {
                         break;
