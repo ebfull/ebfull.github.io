@@ -1,6 +1,7 @@
 fs = require('fs')
 
-// i use this to parse results from sim.js and place it into scatter.html
+var peek = 35;
+
 
 var retain = 0
 
@@ -8,6 +9,8 @@ var normal = []
 var sybil = []
 var selfish = []
 var both = []
+
+var dump = []
 
                 var last = -1
                 var cur = false
@@ -22,27 +25,32 @@ parse = function(err, data) {
                 if (line[0] == "{") {
                         var p = JSON.parse(line)
                         if (typeof p.percent != "undefined") {
-                                if (last >= 0) {
-                                       mode.push([parseFloat(cur.percent), parseFloat(last)])
+                                if (parseInt(Math.floor(parseFloat(p.percent))) != peek) {
+                                        mode = dump;
+                                        return;
                                 }
 
-                                if (p.attack && p.sybil)
-                                        mode = both
-                                if (p.attack && !p.sybil)
-                                        mode = selfish
-                                if (!p.attack && !p.sybil)
-                                        mode = normal
-                                if (!p.attack && p.sybil)
-                                        mode = sybil
+                                if (p.attack && p.sybil) {
+                                        mode = []
+                                        both.push(mode)
+                                } if (p.attack && !p.sybil) {
+                                        mode = []
+                                        selfish.push(mode)
+                                } if (!p.attack && !p.sybil) {
+                                        mode = []
+                                        normal.push(mode)
+                                } if (!p.attack && p.sybil) {
+                                        mode = []
+                                        sybil.push(mode)
+                                }
 
                                 cur = p;
-                        } else {
-                                last = p.averageRevPerHour;
+                        } else if (typeof p.revenuePercent != "undefined") {
+                                var revnow = Math.floor(parseFloat(p.revenuePercent)/100 * p.height)
+                                mode.push([p.time, revnow])
                         }
                 }
         })
-
-        mode.push([parseFloat(cur.percent), parseFloat(last)])
 
         retain--;
 
