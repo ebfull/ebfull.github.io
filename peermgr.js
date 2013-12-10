@@ -25,7 +25,10 @@ function PeerMgr(self) {
 	this.peers = {}; // current established or attempted connections
 	this.numpeers = 0; // the number of peers we have
 	this.maxpeers = 8; // the max number of peers we can have
-	this.nodearchive = [new PeerState(0, self.now())]; // a node archived, initialized with a bootstrap node
+	if (self.id != 0)
+		this.nodearchive = [new PeerState(0, self.now())]; // a node archived, initialized with a bootstrap node
+	else
+		this.nodearchive = []
 
 	var peerTick = function() {
 		if (this.numpeers < this.maxpeers) {
@@ -81,7 +84,7 @@ function PeerMgr(self) {
 		if (someNodes.length == 0) {
 			var randomPeer = this.peers[Object.keys(this.peers)[Math.floor(Math.random() * Object.keys(this.peers).length)]]
 			if (randomPeer.active)
-				someNodes = [this.randomPeer]
+				someNodes = [randomPeer]
 		}
 
 		self.send(p, 'peerlist', someNodes);
@@ -155,7 +158,7 @@ function PeerMgr(self) {
 		if (this.peers[from] != "undefined") {
 			// add these peers to our nodearchive
 			// if we don't have them already
-
+			console.log(self.id + " received getpeers from " + from + ": " + JSON.stringify(obj))
 			for (var i=0;i<obj.length;i++) {
 				var candidate = obj[i];
 
