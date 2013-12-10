@@ -66,10 +66,16 @@ parse = function(err, data) {
         }
 }
 
-for (var i=1;i<50;i+=1) {
-        retain++;
-}
+var sims = fs.readdirSync("/home/ubuntu/")
 
-for (var i=1;i<50;i+=1) {
-        fs.readFile('/home/ubuntu/sim'+i, 'utf8', parse)
-}
+sims.forEach(function(f) {
+    if (f.match(/^sim/)) {
+        retain++;
+    }
+})
+
+sims.forEach(function(f) {
+    if (f.match(/^sim/)) {
+        fs.readFile('/home/ubuntu/'+f, 'utf8', parse)
+    }
+})
