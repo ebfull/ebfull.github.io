@@ -35,13 +35,13 @@ function Block(prev, time, miner) {
 	else {
 		this.h = 0;
 		this.prev = false;
-		this.difficulty = 110000;
+		this.difficulty = 600000;
 		this.work = 0;
 	}
 }
 
 Block.prototype = {
-	target_avg_between_blocks: 10 * 60 * 1000, // 2.5 minutes = litecoin
+	target_avg_between_blocks: 10 * 60 * 1000,
 	difficulty_adjustment_period: 2016,
 
 	difficultyAdjustment: function() {
