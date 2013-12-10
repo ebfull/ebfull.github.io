@@ -27,7 +27,25 @@ function runRemoteCommand(host, cmd, out, cb) {
 /////////////////////////////////////////////////////////////
 
 hosts = [
-        ["ec2-54-211-225-96.compute-1.amazonaws.com", 20]
+        ["ec2-54-211-225-96.compute-1.amazonaws.com", 20],
+        ["ec2-54-211-27-200.compute-1.amazonaws.com", 20],
+        ["ec2-54-204-233-65.compute-1.amazonaws.com", 20],
+        ["ec2-23-20-252-194.compute-1.amazonaws.com", 20],
+        ["ec2-54-242-121-7.compute-1.amazonaws.com", 20],
+        ["ec2-54-196-64-189.compute-1.amazonaws.com", 20],
+        ["ec2-54-205-166-174.compute-1.amazonaws.com", 20],
+        ["ec2-50-16-87-43.compute-1.amazonaws.com", 20],
+        ["ec2-54-204-62-49.compute-1.amazonaws.com", 20],
+        ["ec2-54-237-6-34.compute-1.amazonaws.com", 20],
+        ["ec2-54-227-70-8.compute-1.amazonaws.com", 20],
+        ["ec2-54-221-140-196.compute-1.amazonaws.com", 20],
+        ["ec2-54-196-186-112.compute-1.amazonaws.com", 20],
+        ["ec2-54-205-216-166.compute-1.amazonaws.com", 20],
+        ["ec2-23-20-245-38.compute-1.amazonaws.com", 20],
+        ["ec2-107-20-122-92.compute-1.amazonaws.com", 20],
+        ["ec2-54-237-2-170.compute-1.amazonaws.com", 20],
+        ["ec2-107-20-94-82.compute-1.amazonaws.com", 20],
+        ["ec2-54-196-92-51.compute-1.amazonaws.com", 20],
 ]
 
 
