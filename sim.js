@@ -22,23 +22,14 @@ var trials = []
 
 var p = parseFloat(process.argv[2])
 
-//for (var i=0.1;i<0.5;i+=0.01) {
+if (process.argv[3] == "normal")
         trials.push({percent:p, sybil: false, attack: false})
-        trials.push({percent:p, sybil: false, attack: false})
-        trials.push({percent:p, sybil: false, attack: false})
-
+if (process.argv[3] == "sybil")
         trials.push({percent:p, sybil: true, attack: false})
-        trials.push({percent:p, sybil: true, attack: false})
-        trials.push({percent:p, sybil: true, attack: false})
-
+if (process.argv[3] == "selfish")
         trials.push({percent:p, sybil: false, attack: true})
-        trials.push({percent:p, sybil: false, attack: true})
-        trials.push({percent:p, sybil: false, attack: true})
-
+if (process.argv[3] == "both")
         trials.push({percent:p, sybil: true, attack: true})
-        trials.push({percent:p, sybil: true, attack: true})
-        trials.push({percent:p, sybil: true, attack: true})
-//}
 
 function start(percent, sybil, attack) {
         console.log(JSON.stringify({percent:percent*100,sybil:sybil,attack:attack}))
