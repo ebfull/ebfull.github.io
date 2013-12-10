@@ -9,9 +9,10 @@ Array.prototype.remove = function() {
     return this;
 };
 
+var latencySeed = Math.floor(Math.random() * 1000000000);
+
 function latency(a, b) {
-	var seed = 239847234;
-	var min = 10 + Math.abs(((a*seed)^(b*seed)) % 300);
+	var min = 10 + Math.abs(((a*latencySeed)^(b*latencySeed)) % 300);
 	var avgVariance = 15;
 
 	return Math.floor((Math.log(1-Math.random())/-1) * (avgVariance)) + min
