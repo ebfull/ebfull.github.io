@@ -311,14 +311,12 @@ NodeProbabilisticTickEvent.prototype = {
 			return false;
 
 		this.events[nid] = {p:p, f:f, ctx:ctx}; // store the event
-		this.pnothing *= 1-p; // the probability of nothing happening decreases
 		this.ptotal += p; // the probability of an event occuring increases
 		this.numevents++; // the number of events we handle increases
 	},
 
 	deregister: function(nid) {
 		if (typeof this.events[nid] != "undefined") {
-			this.pnothing /= 1-(this.events[nid].p);
 			this.ptotal -= this.events[nid].p;
 			delete this.events[nid];
 			this.numevents--;
@@ -348,7 +346,7 @@ NodeProbabilisticTickEvent.prototype = {
 
 		// when should the next event occur?
 		if (this.numevents) {
-			this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (1-this.pnothing)));
+			this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (this.ptotal)));
 		}
 		else
 			this.delay = 100; // shouldn't happen but whatever
