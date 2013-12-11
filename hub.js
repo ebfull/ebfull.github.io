@@ -23,7 +23,7 @@ function runRemoteCommand(host, cmd, out, cb, pr) {
                         console.log(err)
 
                 if (typeof pr != "undefined")
-                        process.stderr.write(stdout.replace(/\s+$/))
+                        process.stderr.write(stdout.replace(/\s+$/, ""))
 
                 cb(null, null)
         })
