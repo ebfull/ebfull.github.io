@@ -105,7 +105,7 @@ function doStuff() {
                 process.stderr.write("-----------------------\n")
                 hosts.forEach(function(host) {
                         process.stderr.write("(" + host[0] + ") ")
-                        runRemoteCommand(host[0], "top -b -n 1 |grep ^Cpu", false, function() {}, true)
+                        runRemoteCommand(host[0], "uptime", false, function() {}, true)
                 })
         }, 30 * 1000)
 }
