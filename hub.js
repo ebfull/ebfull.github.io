@@ -23,7 +23,7 @@ function runRemoteCommand(host, cmd, out, cb, pr) {
                         console.log(err)
 
                 if (typeof pr != "undefined")
-                        process.stderr.write(stdout + "\n")
+                        process.stderr.write(stdout)
 
                 cb(null, null)
         })
@@ -102,8 +102,9 @@ function doStuff() {
 
         setInterval(function() {
                 // get stats for our workers
-                process.stderr.write("-----------------------")
+                process.stderr.write("-----------------------\n")
                 hosts.forEach(function(host) {
+                        process.stderr.write("(" + host[0] + ") ")
                         runRemoteCommand(host[0], "top -b -n 1 |grep ^Cpu", false, function() {}, true)
                 })
         }, 30 * 1000)
