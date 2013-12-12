@@ -228,7 +228,7 @@ Visualizer.prototype = {
 	for a priority queue.
 */
 function Events() {
-	this.heapBucket = {
+	this.heapBuckets = {
 		"default":new goog.structs.PriorityQueue(),
 		"probs":new goog.structs.PriorityQueue()
 	};
@@ -239,15 +239,15 @@ Events.prototype = {
 		if (typeof bucket == "undefined")
 			bucket = "default"
 
-		this.heapBucket[bucket].insert(time, event);
+		this.heapBuckets[bucket].insert(time, event);
 	},
 
 	next: function(maxtime) {
 		var best = Number.POSITIVE_INFINITY;
 		var best_bucket = false;
 
-		for (var b in this.heapBucket) {
-			var time = this.heapBucket[b].peekKey();
+		for (var b in this.heapBuckets) {
+			var time = this.heapBuckets[b].peekKey();
 
 			if (typeof time == "undefined")
 				continue; // bucket is empty
@@ -264,7 +264,7 @@ Events.prototype = {
 		if (best > maxtime)
 			return false;
 
-		return {time:best, event:this.heapBucket[best_bucket].dequeue()};
+		return {time:best, event:this.heapBuckets[best_bucket].dequeue()};
 	}
 }
 
