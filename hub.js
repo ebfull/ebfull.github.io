@@ -96,6 +96,10 @@ function doStuff() {
                 }
         }, hosts.length)
 
+        hosts.drain = function() {
+                process.exit(1)
+        }
+
         hosts.forEach(function(host) {
                 workers.push({server:host})
         })
