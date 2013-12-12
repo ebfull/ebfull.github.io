@@ -296,7 +296,11 @@ function NodeMessageEvent(from, nid, name, obj) {
 	this.delay = latency(from, nid);
 
 	this.run = function(network) {
+		network.tempEdge(from, nid)
 		network.nodes[nid].handle(from, name, obj)
+		network.exec(new NodeEvent(1000,undefined,function() {
+			network.removeTempEdge(from, nid)
+		}, false))
 	}
 }
 
@@ -502,6 +506,8 @@ function Network(visualizerDiv) {
 	this.nindex = 0;
 
 	this._shared = {};
+
+	this.tempConnections = {};
 }
 
 Network.prototype = {
@@ -544,14 +550,50 @@ Network.prototype = {
 		this.events.add(e.delay+this.now, e, bucket)
 	},
 
+	tempEdge: function(from, to) {
+		if (typeof this.tempConnections[from + "-" + to] == "undefined") {
+			this.tempConnections[from + "-" + to] = 0;
+			this.tempConnections[to + "-" + from] = 0;
+		}
+
+		if (this.tempConnections[from + "-" + to] == 0) {
+			this.visualizer.connect(this.nodes[from]._vid, this.nodes[to]._vid);
+		}
+
+		if (this.tempConnections[from + "-" + to] >= 0) {
+			this.tempConnections[from + "-" + to]++;
+			this.tempConnections[to + "-" + from]++;
+		}
+	},
+
+	removeTempEdge: function(from, to) {
+		if (typeof this.tempConnections[from + "-" + to] == "undefined") {
+			this.tempConnections[from + "-" + to] = 1;
+			this.tempConnections[to + "-" + from] = 1;
+		}
+
+		this.tempConnections[from + "-" + to]--;
+		this.tempConnections[to + "-" + from]--;
+
+		if (this.tempConnections[from + "-" + to] == 0) {
+			this.visualizer.disconnect(this.nodes[from]._vid, this.nodes[to]._vid);
+		}
+	},
+
 	connect: function (a, b) {
 		if (this.visualizer) {
+			this.tempConnections[a + "-" + b] = -1;
+			this.tempConnections[b + "-" + a] = -1;
+
 			this.visualizer.connect(this.nodes[a]._vid, this.nodes[b]._vid);
 		}
 	},
 
 	disconnect: function (a, b) {
 		if (this.visualizer) {
+			this.tempConnections[a + "-" + b] = 0;
+			this.tempConnections[b + "-" + a] = 0;
+
 			this.visualizer.disconnect(this.nodes[a]._vid, this.nodes[b]._vid);
 		}
 	},
