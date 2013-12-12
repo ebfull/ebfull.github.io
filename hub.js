@@ -88,6 +88,7 @@ function doStuff() {
                 }, server[1])
 
                 q.drain = function() {
+                        host[3] = true;
                         cb();
                 }
 
@@ -108,9 +109,13 @@ function doStuff() {
                 // get stats for our workers
                 process.stderr.write("-----------------------\n")
                 hosts.forEach(function(host) {
-                        runRemoteCommand(host[0], "uptime", false, function() {
-                                process.stderr.write(" (" + host[0] + ", concurrency=" + host[1] + ")\n")
-                        }, true)
+                        if (typeof host[3] == "undefined") {
+                                runRemoteCommand(host[0], "uptime", false, function() {
+                                        process.stderr.write(" (" + host[0] + ", concurrency=" + host[1] + ")\n")
+                                }, true)
+                        } else {
+                                process.stderr.write("DONE (" + host[0] + ", concurrency=" + host[1] + ")\n")
+                        }
                 })
         }, 60 * 1000)
 }
