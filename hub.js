@@ -33,25 +33,33 @@ function runRemoteCommand(host, cmd, out, cb, pr) {
 /////////////////////////////////////////////////////////////
 
 hosts = [
-        ["ec2-54-226-224-129.compute-1.amazonaws.com", 8],
-        ["ec2-54-227-103-24.compute-1.amazonaws.com", 8],
-        ["ec2-23-23-65-27.compute-1.amazonaws.com", 8],
-        ["ec2-54-224-158-202.compute-1.amazonaws.com", 8],
-        ["ec2-54-196-179-242.compute-1.amazonaws.com", 8],
-        ["ec2-50-17-156-96.compute-1.amazonaws.com", 8],
-        ["ec2-23-23-9-43.compute-1.amazonaws.com", 8],
-        ["ec2-54-227-14-8.compute-1.amazonaws.com", 8],
-        ["ec2-54-221-119-24.compute-1.amazonaws.com", 8],
-        ["ec2-54-237-101-235.compute-1.amazonaws.com", 8]
+        ["ec2-23-20-147-173.compute-1.amazonaws.com", 8],
+        ["ec2-54-205-85-161.compute-1.amazonaws.com", 8],
+        ["ec2-54-204-121-80.compute-1.amazonaws.com", 8],
+        ["ec2-54-227-3-199.compute-1.amazonaws.com", 8],
+        ["ec2-54-205-28-168.compute-1.amazonaws.com", 8],
+        ["ec2-54-204-252-104.compute-1.amazonaws.com", 8],
+        ["ec2-54-221-142-38.compute-1.amazonaws.com", 8],
+        ["ec2-54-196-176-198.compute-1.amazonaws.com", 8],
+        ["ec2-54-196-157-128.compute-1.amazonaws.com", 8],
+        ["ec2-54-242-127-177.compute-1.amazonaws.com", 8],
+        ["ec2-54-227-221-158.compute-1.amazonaws.com", 8],
+        ["ec2-54-196-48-111.compute-1.amazonaws.com", 8],
+        ["ec2-67-202-55-118.compute-1.amazonaws.com", 8],
+        ["ec2-54-204-73-120.compute-1.amazonaws.com", 8],
+        ["ec2-23-20-85-175.compute-1.amazonaws.com", 8],
+        ["ec2-54-196-173-2.compute-1.amazonaws.com", 8],
+        ["ec2-54-211-248-182.compute-1.amazonaws.com", 8],
+        ["ec2-54-196-136-116.compute-1.amazonaws.com", 8],
+        ["ec2-54-234-230-115.compute-1.amazonaws.com", 8]
 ]
 
 
 tasks = []
 
-//for (var i=0;i<50;i++) {
-        var i = 20;
-        // every percent less than 50
-        for (var t=0;t<80;t++) {
+for (var i=0;i<50;i++) {
+        // every percent less than 50 but > 20
+        for (var t=0;t<3;t++) {
                 // 3 trials of each
                 tasks.push(["cd ebfull.github.io && node sim.js " + (i/100).toFixed(2) + " normal", "/home/ubuntu/sim"+i])
                 tasks.push(["cd ebfull.github.io && node sim.js " + (i/100).toFixed(2) + " sybil", "/home/ubuntu/sim"+i])
