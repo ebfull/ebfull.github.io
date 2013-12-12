@@ -66,7 +66,7 @@ for (var i=0;i<50;i++) {
                 tasks.push(["cd ebfull.github.io && node sim.js " + (i/100).toFixed(2) + " selfish", "/home/ubuntu/sim"+i])
                 tasks.push(["cd ebfull.github.io && node sim.js " + (i/100).toFixed(2) + " both", "/home/ubuntu/sim"+i])
         }
-//}
+}
 
 /////////////////////////////////////////////////////////////
 
