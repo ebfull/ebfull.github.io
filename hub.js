@@ -97,7 +97,7 @@ function doStuff() {
                 }
         }, hosts.length)
 
-        hosts.drain = function() {
+        workers.drain = function() {
                 process.exit(1)
         }
 
