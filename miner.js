@@ -1,9 +1,46 @@
 function Miner(self) {
 	var miner = this;
+	self.miner = this;
 
 	self.mprob = 0;
 
+	this.difficulty = self.blockchain.chainstate.head.difficulty; // genesis block difficulty
 	this.attacker_status = false;
+	this.enabled = false;
+
+	var updateDifficulty = function () {
+		if (self.miner.attacker_status) {
+			// we're the attacker
+
+			if (self.miner.difficulty != self.private_blockchain.chainstate.head.difficulty) {
+				self.miner.difficulty = self.private_blockchain.chainstate.head.difficulty;
+
+				if (self.miner.enabled) {
+					self.miner.stopMining()
+					self.miner.startMining()
+				}
+			}
+		} else {
+			// we're just an honest miner
+
+			if (self.miner.difficulty != self.blockchain.chainstate.head.difficulty) {
+				self.miner.difficulty = self.blockchain.chainstate.head.difficulty;
+
+				if (self.miner.enabled) {
+					self.miner.stopMining()
+					self.miner.startMining()
+				}
+			}
+		}
+	}
+
+	// Hook the onBlock routine for the public blockchain
+	var oldNormalOnBlock = self.blockchain.onBlock;
+	self.blockchain.onBlock = function(b) {
+		oldNormalOnBlock.call(self.blockchain, b)
+
+		updateDifficulty();
+	}
 
 	self.mine = function(amt) {
 		this.mprob = amt;
@@ -24,16 +61,9 @@ function Miner(self) {
 						// we're defeated. adopt this block
 						self.log("attacker: adopting public chain at h=" + b.h)
 						oldOnBlock.call(this, b)
-					}
-					/*
-					else if (((b.h+1) >= this.chainstate.head.h) && b != this.chainstate.head) {
-						// new block, public chain will (probably) catch up now
-						// publish our private chain in its entirety
 
-						self.blockchain.onMine.call(self.blockchain, this.chainstate.head, true)
-						self.log("attacker: published full private chain h=" + this.chainstate.head.h)
+						updateDifficulty();
 					}
-					*/
 					else if (b.work == this.chainstate.head.work && this.chainstate.head != b) {
 						self.blockchain.onMine.call(self.blockchain, this.chainstate.head, true)
 						self.log("attacker: published full private chain h=" + this.chainstate.head.h)
@@ -60,18 +90,32 @@ function Miner(self) {
 				}
 			}
 			self.private_blockchain.onBlock(self.blockchain.chainstate.head)
+
+			updateDifficulty()
+
 			miner.startMining()
 		} else {
 			miner.attacker_status = false;
 			delete self.private_blockchain;
+
+			updateDifficulty()
 		}
 	}
 
 	this.stopMining = function() {
+		if (!this.enabled)
+			return;
+
+		this.enabled = false;
 		self.deprob("mining")
 	}
 
 	this.startMining = function() {
+		if (this.enabled)
+			return;
+
+		this.enabled = true;
+
 		if (self.mprob) {
 			var cur;
 			if (this.attacker_status)
@@ -82,8 +126,8 @@ function Miner(self) {
 			self.prob("mining", self.mprob / cur.chainstate.head.difficulty, function() {
 				cur.mineBlock()
 
-				this.stopMining()
-				this.startMining()
+				updateDifficulty()
+
 				if (this.attacker_status)
 					self.log("attacker: mined private block h=" + cur.chainstate.head.h + ", new lead " + (cur.chainstate.head.h - self.blockchain.chainstate.head.h))
 				//else

@@ -228,24 +228,54 @@ Visualizer.prototype = {
 	for a priority queue.
 */
 function Events() {
-	this.heap = new goog.structs.PriorityQueue();
+	this.heapBucket = {
+		"default":{
+			heap: new goog.structs.PriorityQueue(),
+			cache: false
+		},
+		"probs":{
+			heap: new goog.structs.PriorityQueue(),
+			cache: false
+		}
+	};
 }
 
 Events.prototype = {
-	add: function(time, event) {
-		this.heap.insert(time, event);
+	add: function(time, event, bucket) {
+		if (typeof bucket == "undefined")
+			bucket = "default"
+
+		this.heapBucket[bucket].heap.insert(time, event);
+		this.heapBucket[bucket].cache = false;
 	},
 
 	next: function(maxtime) {
-		var time = this.heap.peekKey();
+		var best = Number.POSITIVE_INFINITY;
+		var best_bucket = false;
 
-		if (typeof time == "undefined")
+		for (var b in this.heapBucket) {
+			if (this.heapBucket[b].cache == false) {
+				this.heapBucket[b].cache = this.heapBucket[b].heap.peekKey();
+			}
+
+			if (typeof this.heapBucket[b].cache == "undefined")
+				continue; // bucket is empty
+
+			if (this.heapBucket[b].cache < best) {
+				best = this.heapBucket[b].cache;
+				best_bucket = b;
+			}
+		}
+
+		if (!best_bucket)
 			return false;
 
-		if (time > maxtime)
+		if (best > maxtime)
 			return false;
 
-		return {time:time, event:this.heap.dequeue()};
+		this.heapBucket[best_bucket].cache = false;
+
+		return {time:best, event:this.heapBucket[best_bucket].heap.dequeue()};
 	}
 }
 
@@ -295,71 +325,31 @@ function NodeTickEvent(delay, nid, f, ctx) {
 	}
 }
 
-function NodeProbabilisticTickEvent() {
-	this.delay = 100;
-	this.events = {}
-	this.pnothing = 1;
-	this.ptotal = 0;
-	this.numevents = 0;
-	this.init = false;
-}
+/****
+@probability: used to describe probability of event firing every msec
+@event: function called
+@ctx: function context
 
-NodeProbabilisticTickEvent.prototype = {
-	register: function(p, nid, f, ctx) {
-		// p is the probability of the event firing at the given moment
-		if (p <= 0)
+NodeProbabilisticTickEvent.ignore is used to disable an event if it's
+never going to occur again.
+****/
+function NodeProbabilisticTickEvent(probability, event, ctx) {
+	// The event will occur in this.delay msec
+	this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (probability)));
+	this.ignore = false;
+
+	this.run = function(network) {
+		if (this.ignore)
 			return false;
 
-		this.events[nid] = {p:p, f:f, ctx:ctx}; // store the event
-		this.ptotal += p; // the probability of an event occuring increases
-		this.numevents++; // the number of events we handle increases
-	},
+		// fire event
+		event.call(ctx)
 
-	deregister: function(nid) {
-		if (typeof this.events[nid] != "undefined") {
-			this.ptotal -= this.events[nid].p;
-			delete this.events[nid];
-			this.numevents--;
-		}
-	},
+		// new delay
+		this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (probability)));
 
-	runevent: function(network) {
-		var which = Math.random() * this.ptotal;
-
-		var cur = 0;
-		for (var nid in this.events) {
-			cur += this.events[nid].p;
-
-			if (which <= cur) {
-				this.events[nid].f.call(this.events[nid].ctx)
-				break;
-			}
-		}
-	},
-
-	run: function(network) {
-		if (!this.init) {
-			this.init = true;
-		} else {
-			this.runevent(network)
-		}
-
-		// when should the next event occur?
-		if (this.numevents) {
-			this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (this.ptotal)));
-		}
-		else
-			this.delay = 100; // shouldn't happen but whatever
-
-		if (this.delay == 0) {
-			// run again :\
-			this.run(network)
-		} else {
-			if (!this.numevents)
-				this.init = false;
-
-			network.exec(this); // register ourselves again! we still have events that could occur again
-		}
+		// create next event
+		network.exec(this, "probs")
 	}
 }
 
@@ -540,18 +530,17 @@ Network.prototype = {
 		if (typeof ctx == "undefined")
 			ctx = this.nodes[nid]
 
-		if (typeof this.pevents[label] == "undefined") {
-			this.pevents[label] = new NodeProbabilisticTickEvent()
-			this.exec(this.pevents[label])
+		if (typeof this.pevents[nid + "-" + label] == "undefined") {
+			this.pevents[nid + "-" + label] = new NodeProbabilisticTickEvent(p, cb, ctx)
+			this.exec(this.pevents[nid + "-" + label], "probs")
 		}
-		
-		this.pevents[label].register(p, nid, cb, ctx)
 	},
 
 	// deregisters a probablistic event
 	depregister: function(label, nid) {
-		if (typeof this.pevents[label] != "undefined") {
-			this.pevents[label].deregister(nid)
+		if (typeof this.pevents[nid + "-" + label] != "undefined") {
+			this.pevents[nid + "-" + label].ignore = true;
+			delete this.pevents[nid + "-" + label];
 		}
 	},
 
@@ -562,8 +551,8 @@ Network.prototype = {
 		}
 	},
 
-	exec: function(e) {
-		this.events.add(e.delay+this.now, e)
+	exec: function(e, bucket) {
+		this.events.add(e.delay+this.now, e, bucket)
 	},
 
 	connect: function (a, b) {
