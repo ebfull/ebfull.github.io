@@ -229,14 +229,8 @@ Visualizer.prototype = {
 */
 function Events() {
 	this.heapBucket = {
-		"default":{
-			heap: new goog.structs.PriorityQueue(),
-			cache: false
-		},
-		"probs":{
-			heap: new goog.structs.PriorityQueue(),
-			cache: false
-		}
+		"default":new goog.structs.PriorityQueue(),
+		"probs":new goog.structs.PriorityQueue()
 	};
 }
 
@@ -245,8 +239,7 @@ Events.prototype = {
 		if (typeof bucket == "undefined")
 			bucket = "default"
 
-		this.heapBucket[bucket].heap.insert(time, event);
-		this.heapBucket[bucket].cache = false;
+		this.heapBucket[bucket].insert(time, event);
 	},
 
 	next: function(maxtime) {
@@ -254,15 +247,13 @@ Events.prototype = {
 		var best_bucket = false;
 
 		for (var b in this.heapBucket) {
-			if (this.heapBucket[b].cache == false) {
-				this.heapBucket[b].cache = this.heapBucket[b].heap.peekKey();
-			}
+			var time = this.heapBucket[b].peekKey();
 
-			if (typeof this.heapBucket[b].cache == "undefined")
+			if (typeof time == "undefined")
 				continue; // bucket is empty
 
-			if (this.heapBucket[b].cache < best) {
-				best = this.heapBucket[b].cache;
+			if (time < best) {
+				best = time;
 				best_bucket = b;
 			}
 		}
@@ -273,9 +264,7 @@ Events.prototype = {
 		if (best > maxtime)
 			return false;
 
-		this.heapBucket[best_bucket].cache = false;
-
-		return {time:best, event:this.heapBucket[best_bucket].heap.dequeue()};
+		return {time:best, event:this.heapBucket[best_bucket].dequeue()};
 	}
 }
 
