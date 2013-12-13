@@ -61,6 +61,9 @@ Visualizer.prototype = {
 	colormap:{},
 	colormap_u:false,
 
+	link_colormap:{},
+	link_colormap_last:0,
+
 	init: function() {
 		// init the network layout/svg
 		$(this.divname).css('width', this.width);
@@ -89,12 +92,17 @@ Visualizer.prototype = {
 		this.force = this.force.on("tick", this.tick());
 
 		this.updated = true;
-		this.rehash();
+		this.rehash(0);
 	},
 
 	setColor: function(p, color) {
 		this.colormap_u = true;
 		this.colormap[p] = color;
+	},
+
+	setLinkActivity: function(p, now) {
+		this.link_colormap[p] = now;
+		this.link_colormap_last = 0;
 	},
 
 	getRandomLink: function() {
@@ -185,20 +193,35 @@ Visualizer.prototype = {
 			svg.selectAll(".link").attr("x1", function(d) { return d.source.x; })
 				.attr("y1", function(d) { return d.source.y; })
 				.attr("x2", function(d) { return d.target.x; })
-				.attr("y2", function(d) { return d.target.y; });
+				.attr("y2", function(d) { return d.target.y; })
+				.attr("id", function(d) {return "l-" + d.source.id + "-" + d.target.id;});
 
 			svg.selectAll(".node").attr("cx", function(d) { return d.x; })
 				.attr("cy", function(d) { return d.y; });
 		}
 	},
 
-	rehash: function() {
+	rehash: function(now) {
 		/***** COLORMAP *****/
 		if (this.colormap_u) {
 			for (var p in this.colormap) {
 				$(".n" + p).css('fill', this.colormap[p]);
 			}
 			this.colormap_u = false;
+		}
+
+		if (this.link_colormap_last < (now-100)) {
+			this.link_colormap_last = now;
+			for (var p in this.link_colormap) {
+				if (this.link_colormap[p] + 100 > now) {
+					//console.log("setting #l-" + p + " to red")
+					$("#l-" + p).css('stroke', "red")
+				} else {
+					//console.log("setting #l-" + p + " to black")
+					$("#l-" + p).css('stroke', "#999")
+					delete this.link_colormap[p];
+				}
+			}
 		}
 
 		if (!this.updated)
@@ -296,11 +319,9 @@ function NodeMessageEvent(from, nid, name, obj) {
 	this.delay = latency(from, nid);
 
 	this.run = function(network) {
-		network.tempEdge(from, nid)
+		network.setLinkActivity(from, nid)
+
 		network.nodes[nid].handle(from, name, obj)
-		network.exec(new NodeEvent(1000,undefined,function() {
-			network.removeTempEdge(from, nid)
-		}, false))
 	}
 }
 
@@ -506,8 +527,6 @@ function Network(visualizerDiv) {
 	this.nindex = 0;
 
 	this._shared = {};
-
-	this.tempConnections = {};
 }
 
 Network.prototype = {
@@ -546,54 +565,27 @@ Network.prototype = {
 		}
 	},
 
+	setLinkActivity: function(from, to) {
+		if (typeof this.nodes[to] != "undefined")
+		if (typeof this.nodes[from] != "undefined")
+		if (this.visualizer) {
+			this.visualizer.setLinkActivity("n" + this.nodes[from]._vid + "-n" + this.nodes[to]._vid, this.now);
+			this.visualizer.setLinkActivity("n" + this.nodes[to]._vid + "-n" + this.nodes[from]._vid, this.now);
+		}
+	},
+
 	exec: function(e, bucket) {
 		this.events.add(e.delay+this.now, e, bucket)
 	},
 
-	tempEdge: function(from, to) {
-		if (typeof this.tempConnections[from + "-" + to] == "undefined") {
-			this.tempConnections[from + "-" + to] = 0;
-			this.tempConnections[to + "-" + from] = 0;
-		}
-
-		if (this.tempConnections[from + "-" + to] == 0) {
-			this.visualizer.connect(this.nodes[from]._vid, this.nodes[to]._vid);
-		}
-
-		if (this.tempConnections[from + "-" + to] >= 0) {
-			this.tempConnections[from + "-" + to]++;
-			this.tempConnections[to + "-" + from]++;
-		}
-	},
-
-	removeTempEdge: function(from, to) {
-		if (typeof this.tempConnections[from + "-" + to] == "undefined") {
-			this.tempConnections[from + "-" + to] = 1;
-			this.tempConnections[to + "-" + from] = 1;
-		}
-
-		this.tempConnections[from + "-" + to]--;
-		this.tempConnections[to + "-" + from]--;
-
-		if (this.tempConnections[from + "-" + to] == 0) {
-			this.visualizer.disconnect(this.nodes[from]._vid, this.nodes[to]._vid);
-		}
-	},
-
 	connect: function (a, b) {
 		if (this.visualizer) {
-			this.tempConnections[a + "-" + b] = -1;
-			this.tempConnections[b + "-" + a] = -1;
-
 			this.visualizer.connect(this.nodes[a]._vid, this.nodes[b]._vid);
 		}
 	},
 
 	disconnect: function (a, b) {
 		if (this.visualizer) {
-			this.tempConnections[a + "-" + b] = 0;
-			this.tempConnections[b + "-" + a] = 0;
-
 			this.visualizer.disconnect(this.nodes[a]._vid, this.nodes[b]._vid);
 		}
 	},
@@ -621,7 +613,7 @@ Network.prototype = {
 		this.now += buffer;
 
 		if (this.visualizer) {
-			this.visualizer.rehash();
+			this.visualizer.rehash(this.now);
 		}
 	}
 }
