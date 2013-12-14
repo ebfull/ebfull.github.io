@@ -1,4 +1,4 @@
-var colors = ["red", "green", "orange", "blue", "purple", "pink"]
+var colors = ["red", "green", "orange", "blue", "purple", "pink", "brown", "steelblue"]
 var color_i = 0;
 
 function Block(prev, time, miner) {
@@ -36,6 +36,7 @@ function Block(prev, time, miner) {
 		this.h = 0;
 		this.prev = false;
 		this.difficulty = 600000;
+		//this.difficulty = 3000;
 		this.work = 0;
 	}
 }
@@ -67,6 +68,11 @@ var GenesisBlock = new Block(false, 0);
 
 function Chainstate(head, self) {
 	this.self = self;
+
+	this.prevs = [];
+	this.mapOrphansByPrev = {};
+	this.mapOrphans = {};
+
 	this.forward(head)
 }
 
@@ -74,17 +80,101 @@ Chainstate.prototype = {
 	forward: function(b) {
 		this.self.setColor(b.color)
 		this.head = b
-		// TODO: run transactions here
+		
+		this.prevs.push(b.id)
+
+		delete this.mapOrphans[this.head.id];
+		
+		if (typeof this.mapOrphansByPrev[this.head._prev().id] != "undefined") {
+			var i = this.mapOrphansByPrev[this.head._prev().id].indexOf(this.head)
+			if (i != -1) {
+				this.mapOrphansByPrev[this.head._prev().id].splice(i, 1)
+			}
+		}
+
 	},
 	reverse: function() {
+		this.mapOrphans[this.head.id] = this.head;
+		if (typeof this.mapOrphansByPrev[this.head._prev().id] == "undefined") {
+			this.mapOrphansByPrev[this.head._prev().id] = []
+		}
+		this.mapOrphansByPrev[this.head._prev().id].push(this.head)
+
 		this.head = this.head._prev()
+
+		this.prevs.pop()
 	},
-	/*
-		This function attempts to enter the block into the chainstate.
-	*/
-	enter: function(block, force) {
+	getOrphanWorkPath: function(block) {
+		var works = [];
+
+		if (typeof this.mapOrphansByPrev[block.id] != "undefined") {
+			this.mapOrphansByPrev[block.id].forEach(function(sub) {
+				works.push(this.getOrphanWorkPath(sub))
+			}, this)
+		}
+
+		if (works.length == 0) {
+			// there aren't any subworks
+			return {end:block,work:block.work}
+		} else {
+			// pick the largest one
+			var largestWork = {end:false,work:Number.NEGATIVE_INFINITY};
+
+			works.forEach(function(subwork) {
+				if (subwork.work > largestWork.work) {
+					largestWork = subwork;
+				}
+			})
+
+			// return it
+			return largestWork;
+		}
+	},
+	reorg: function(block, numorphan) {
+		var ourorphans = 0;
+		if (numorphan == -1) {
+			// This block couldn't be entered into the chainstate, so it's an orphan.
+			if (typeof this.mapOrphans[block.id] == "undefined") {
+				this.mapOrphans[block.id] = block;
+				if (typeof this.mapOrphansByPrev[block._prev().id] == "undefined") {
+					this.mapOrphansByPrev[block._prev().id] = [];
+				}
+				this.mapOrphansByPrev[block._prev().id].push(block)
+			} else {
+				return numorphan;
+			}
+		}
+
+		// maybe it completes a chain though
+		var cur = block;
+
+		while(true) {
+			if (this.prevs.indexOf(cur.id) != -1) {
+				var bestOrphanPath = this.getOrphanWorkPath(cur)
+				if (bestOrphanPath.work > this.head.work) {
+					//console.log(this.self.id + ": adopting orphan chain of (w=" + bestOrphanPath.work + " vs. local " + this.head.work + ")")
+					this.enter(bestOrphanPath.end, true, true)
+				}
+
+				break;
+			} else {
+				cur = cur._prev();
+			}
+		}
+		if (numorphan == -1)
+			return ourorphans;
+		else
+			return numorphan + ourorphans;
+	},
+	enter: function(block, force, doingReorg) {
+		this.self.log("entering new block at height " + block.h)
 		if (block == this.head)
 			return -1
+
+		if (this.prevs.indexOf(block._prev().id) == -1) {
+			if (!doingReorg)
+				return this.reorg(block, -1)
+		}
 
 		if (typeof force == "undefined")
 			force = false;
@@ -122,6 +212,9 @@ Chainstate.prototype = {
 			this.self.log("\tblock rejected; already seen one at this chainlength")
 		}
 
+		if (!doingReorg)
+			numorphan = this.reorg(block, numorphan)
+
 		return numorphan
 	}
 }
@@ -151,7 +244,9 @@ function Blockchain(self, instance) {
 	}
 
 	self.on("inv:block", function(from, o) {
-		this.onBlock(o.obj.block)
+		self.delay(Math.floor(Math.random()*3000)+10, function() {
+			this.onBlock(o.obj.block)
+		}, this)
 	}, this)
 
 	self.inventory.subscribe("block")

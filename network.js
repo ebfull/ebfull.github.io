@@ -215,7 +215,7 @@ Visualizer.prototype = {
 			for (var p in this.link_colormap) {
 				if (this.link_colormap[p] + 100 > now) {
 					//console.log("setting #l-" + p + " to red")
-					$("#l-" + p).css('stroke', "red")
+					$("#l-" + p).css('stroke', "black")
 				} else {
 					//console.log("setting #l-" + p + " to black")
 					$("#l-" + p).css('stroke', "#999")
@@ -241,6 +241,48 @@ Visualizer.prototype = {
 		this.force.start();
 
 		this.updated = false;
+
+		// let's update this.force to adjust the graph linkDistance
+		var smallestY = Number.POSITIVE_INFINITY;
+		var largestY = Number.NEGATIVE_INFINITY;
+		$(".node").each(function() {
+			var thisY = $(this).attr("cy")
+			if (thisY < smallestY)
+				smallestY = thisY;
+
+			if (thisY > largestY)
+				largestY = thisY;
+		})
+
+		if (smallestY != Number.POSITIVE_INFINITY) {
+			if (smallestY > (.2 * this.height)) {
+				this.charge *= 1.01;
+				this.force = this.force.charge(this.charge)
+
+				//this.updated = true;
+				return
+			} else if (smallestY < (.1 * this.height)) {
+				this.charge *= 0.99;
+				this.force = this.force.charge(this.charge)
+
+				//this.updated = true;
+				return
+			}
+		} 
+
+		if (largestY != Number.POSITIVE_INFINITY) {
+			if (largestY < (.8 * this.height)) {
+				this.charge *= 0.99;
+				this.force = this.force.charge(this.charge)
+
+				//this.updated = true;
+			} else if (largestY > (.9 * this.height)) {
+				this.charge *= 1.01;
+				this.force = this.force.charge(this.charge)
+
+				//this.updated = true;
+			}
+		}
 	}
 };
 
@@ -305,12 +347,12 @@ Events.prototype = {
 */
 
 function NodeEvent(delay, nid, f, ctx) {
-	if (typeof ctx == "undefined")
-		ctx = network.nodes[nid]
-
 	this.delay = delay;
 
 	this.run = function(network) {
+		if (typeof ctx == "undefined")
+			ctx = network.nodes[nid]
+
 		f.call(ctx);
 	}
 }
@@ -347,7 +389,7 @@ function NodeTickEvent(delay, nid, f, ctx) {
 NodeProbabilisticTickEvent.ignore is used to disable an event if it's
 never going to occur again.
 ****/
-function NodeProbabilisticTickEvent(probability, event, ctx) {
+function NodeProbabilisticTickEvent(probability, event, nid, ctx) {
 	// The event will occur in this.delay msec
 	this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (probability)));
 	this.ignore = false;
@@ -355,6 +397,9 @@ function NodeProbabilisticTickEvent(probability, event, ctx) {
 	this.run = function(network) {
 		if (this.ignore)
 			return false;
+
+		if (typeof ctx == "undefined")
+			ctx = network.nodes[nid]
 
 		// fire event
 		event.call(ctx)
@@ -541,11 +586,8 @@ Network.prototype = {
 
 	// registers probablistic event
 	pregister: function(label, p, nid, cb, ctx) {
-		if (typeof ctx == "undefined")
-			ctx = this.nodes[nid]
-
 		if (typeof this.pevents[nid + "-" + label] == "undefined") {
-			this.pevents[nid + "-" + label] = new NodeProbabilisticTickEvent(p, cb, ctx)
+			this.pevents[nid + "-" + label] = new NodeProbabilisticTickEvent(p, cb, nid, ctx)
 			this.exec(this.pevents[nid + "-" + label], "probs")
 		}
 	},

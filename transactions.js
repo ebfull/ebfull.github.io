@@ -1,14 +1,6 @@
 function UTXOTransition(inputs, outputs) {
+	console.log("creating new UTXO " + JSON.stringify(inputs) + "  " + JSON.stringify(outputs))
 	this.id = this.rand();
-
-	this.init = function(state) {
-		if (typeof state.spents == "undefined") {
-			state.spents = {};
-			state.unspents = {};
-			state.ignorespents = {};
-			state.ignoreunspents = {};
-		}
-	}
 
 	this.apply = function(state) {
 		this.init(state)
@@ -154,24 +146,132 @@ function UTXOTransition(inputs, outputs) {
 	}
 }
 
-UTXOTransition.prototype = StateTransition;
+UTXOTransition.prototype = {
+	init: function(state) {
+		if (typeof state.spents == "undefined") {
+			state.spents = {};
+			state.unspents = {};
+			state.ignorespents = {};
+			state.ignoreunspents = {};
+		}
+	}
+}
 
-// TODO: forcefully add a transaction by running invalidator until all conflicts are gone
+UTXOTransition.prototype.__proto__ = StateTransition;
+
+function UTXOCollapse() {
+	this.ignoreSpents = {};
+	this.ignoreUnspents = {};
+
+	this.spentInputs = {};
+
+	this.unspentOutputs = {};
+}
+
+UTXOCollapse.prototype = {
+
+	// return false when
+	handle: function(state) {
+		UTXOTransition.prototype.init(state)
+
+		if (state.ignoreunspents) {
+			for (var sp in state.ignoreunspents) {
+				this.ignoreUnspents[sp] = state.ignoreunspents[sp]
+			}
+		}
+
+		if (state.ignorespents) {
+			for (var usp in state.ignorespents) {
+				this.ignoreSpents[usp] = state.ignorespents[usp]
+			}
+		}
+
+		for (var input in state.spents) {
+			if (typeof this.ignoreSpents[input] != "undefined") {
+				delete this.ignoreSpents[input];
+			} else {
+				this.spentInputs[input] = true;
+			}
+		}
+
+		for (var output in state.unspents) {
+			if (typeof this.ignoreUnspents[output] != "undefined") {
+				delete this.ignoreUnspents[output];
+			} else {
+				// make sure it wasn't already spent
+
+				if (typeof this.spentInputs[output] == "undefined") {
+					this.unspentOutputs[output] = true;
+				}
+			}
+		}
+
+		if (!state.parent) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+}
 
 function Transactions(self) {
 	self.mempool = this;
 	this.utxo = self.network.shared("utxo")
 	this.utxo.retain()
 
-	this.addTransaction = function(tx) {
+	this.addTransaction = function(tx, force) {
 		var val = this.utxo.validate(tx)
 
 		if (val.state == val.VALID) {
 			this.utxo = this.utxo.shift(tx, val)
+			return true;
+		} else if (val.state == val.CONFLICT) {
+			if (force) {
+				var inval = this.utxo.invalidate(val.conflictTx)
+				this.utxo.unshift(val.conflictTx, inval)
+
+				return this.addTransaction(tx, force) // try adding again, recursively until it works
+			}
+			return true;
 		}
+
+		return false;
 	}
 
-	this.createTransaction = function(inputs, outputs) {
+	this.createRandomOutputs = function(amt) {
+		var results = [];
+
+		while (results.length < amt) {
+			results.push(UTXOTransition.prototype.rand());
+		}
+
+		return results;
+	}
+
+	this.getRandomInputs = function(amt) {
+		// collapse the UTXO
+		var collapse = this.utxo.fetch(new UTXOCollapse())
+
+		var results = [];
+
+		while (results.length < amt) {
+			if (!Object.keys(collapse.unspentOutputs).length)
+				break;
+
+			var r = Object.keys(collapse.unspentOutputs)[Math.floor(Math.random() * Object.keys(collapse.unspentOutputs).length)]
+
+			results.push(r)
+			delete collapse.unspentOutputs[r]
+		}
+
+		return results;
+	}
+
+	// TODO: ???
+	this.createTransaction = function() {
+		var inputs = this.getRandomInputs(Math.floor(Math.random() * 3) + 1)
+		var outputs = this.createRandomOutputs(Math.floor(Math.random() * 3) + 1)
+
 		var tx = new UTXOTransition(inputs, outputs)
 
 		this.addTransaction(tx)

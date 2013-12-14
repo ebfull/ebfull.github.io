@@ -103,7 +103,13 @@ function start(percent, sybil, attack) {
 			this.mine(thispercent)
 		}
 	})
-
+	
+/*
+	btc.prob("txnoise", 0.000001, function() {
+		if (doTx)
+		this.mempool.createTransaction();
+	})
+*/
 	net = new Network(".network")
 	net.add(numNodes, btc)
 }
