@@ -241,7 +241,7 @@ Visualizer.prototype = {
 		this.force.start();
 
 		this.updated = false;
-
+/*
 		// let's update this.force to adjust the graph linkDistance
 		var smallestY = Number.POSITIVE_INFINITY;
 		var largestY = Number.NEGATIVE_INFINITY;
@@ -283,6 +283,7 @@ Visualizer.prototype = {
 				//this.updated = true;
 			}
 		}
+*/
 	}
 };
 
@@ -450,7 +451,7 @@ NodeState.prototype = {
 	log: function(msg) {
 		return;
 		if (this.id == 0)
-			console.log(this.id + ": " + msg)
+			console.log("[" + this.now() + "]: " + this.id + ": " + msg)
 	},
 
 	now: function() {

@@ -6,6 +6,7 @@ function Miner(self) {
 
 	this.difficulty = self.blockchain.chainstate.head.difficulty; // genesis block difficulty
 	this.attacker_status = false;
+	this.attacker_inv = {};
 	this.enabled = false;
 
 	var updateDifficulty = function () {
@@ -57,36 +58,62 @@ function Miner(self) {
 				new Blockchain(self, "private_blockchain")
 				var oldOnBlock = self.private_blockchain.onBlock
 				self.private_blockchain.onBlock = function(b) {
-					if (b.work > this.chainstate.head.work) {
-						// we're defeated. adopt this block
-						self.log("attacker: adopting public chain at h=" + b.h)
-						oldOnBlock.call(this, b)
+					self.log("attacker: onBlock")
+					var no = this.chainstate.enter(b)
+					updateDifficulty();
 
-						updateDifficulty();
+					if (no >= 0) {
+						// the new block defeated our chain
+						self.log("attacker: adopted public chain at h=" + self.blockchain.chainstate.head.h)
+						self.miner.attacker_inv = {};
 					}
-					else if (b.work == this.chainstate.head.work && this.chainstate.head != b) {
-						self.blockchain.onMine.call(self.blockchain, this.chainstate.head, true)
-						self.log("attacker: published full private chain h=" + this.chainstate.head.h)
-					} else if (b != this.chainstate.head) {
+
+					if (/*self.blockchain.chainstate.head.work >= this.chainstate.head.work && */self.blockchain.chainstate.head != this.chainstate.head) {
+						var offset = 0;
+						if (self.blockchain.chainstate.head.h == this.chainstate.head.h-1) {
+							offset = 1;
+						}
+
 			            var release = this.chainstate.head;
 			            var lead = 0;
 
-			            while (release.h > (b.h+1)) {
+			            while (release.h > (self.blockchain.chainstate.head.h+offset)) {
 			              // if we can, don't publish anything more than one height above the public chain
 			              lead++;
 			              release = release._prev()
 			            }
 
-			            // now let's publish this block
-			            self.blockchain.onMine.call(self.blockchain, release, true)
-			            self.log("attacker: published partial private chain up to h=" + (release.h) + " (new lead=" + lead + ")")
+			            var releaseStack = [];
+
+			            while (true) {
+			            	if (typeof self.miner.attacker_inv[release.id] != "undefined") {
+			            		delete self.miner.attacker_inv[release.id];
+			            		releaseStack.push(release)
+			            		release = release._prev()
+			            	} else {
+			            		break;
+			            	}
+			            }
+
+			            var dorelease;
+			            self.log("attacker: doing a release of " + releaseStack.length + " blocks")
+			            while (dorelease = releaseStack.pop()) {
+			            	self.log("attacker: \treleasing h=" + dorelease.h)
+			            	self.blockchain.onMine.call(self.blockchain, dorelease, true)
+			            }
+
+			            self.log("attacker: published partial private chain up to h=" + (self.blockchain.chainstate.head.h) + " (new lead=" + lead + ")")
 		           }
 
 				}
 				self.private_blockchain.onMine = function(b) {
+					self.log("attacker: onMine")
 					// don't publish blocks
 					// just update chainstate
 					this.chainstate.enter(b)
+
+					// save it for later
+					self.miner.attacker_inv[b.id] = true;
 				}
 			}
 			self.private_blockchain.onBlock(self.blockchain.chainstate.head)
@@ -128,10 +155,10 @@ function Miner(self) {
 
 				updateDifficulty()
 
+				//console.log("[" + self.now() + "]: " + self.id + ": mined block at h=" + cur.chainstate.head.h)
 				if (this.attacker_status)
 					self.log("attacker: mined private block h=" + cur.chainstate.head.h + ", new lead " + (cur.chainstate.head.h - self.blockchain.chainstate.head.h))
-				//else
-				//	console.log(self.id + ": mined block at h=" + cur.chainstate.head.h)
+
 			}, this)
 		}
 	}

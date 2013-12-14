@@ -1,4 +1,4 @@
-var colors = ["red", "green", "orange", "blue", "purple", "pink", "brown", "steelblue"]
+var colors = ["green", "orange", "blue", "purple", "brown", "steelblue"]
 var color_i = 0;
 
 function Block(prev, time, miner) {
@@ -20,7 +20,7 @@ function Block(prev, time, miner) {
 	} else {
 		color_i++;
 	}
-
+	
 	if (prev) {
 		this.h = prev.h + 1;
 		this.prev = prev.id;
@@ -130,7 +130,7 @@ Chainstate.prototype = {
 			return largestWork;
 		}
 	},
-	reorg: function(block, numorphan) {
+	reorg: function(block, numorphan, force) {
 		var ourorphans = 0;
 		if (numorphan == -1) {
 			// This block couldn't be entered into the chainstate, so it's an orphan.
@@ -151,9 +151,9 @@ Chainstate.prototype = {
 		while(true) {
 			if (this.prevs.indexOf(cur.id) != -1) {
 				var bestOrphanPath = this.getOrphanWorkPath(cur)
-				if (bestOrphanPath.work > this.head.work) {
+				if ((force && bestOrphanPath.work >= this.head.work) || bestOrphanPath.work > this.head.work) {
 					//console.log(this.self.id + ": adopting orphan chain of (w=" + bestOrphanPath.work + " vs. local " + this.head.work + ")")
-					this.enter(bestOrphanPath.end, true, true)
+					ourorphans += this.enter(bestOrphanPath.end, true, true)
 				}
 
 				break;
@@ -161,19 +161,23 @@ Chainstate.prototype = {
 				cur = cur._prev();
 			}
 		}
-		if (numorphan == -1)
-			return ourorphans;
+		if (numorphan == -1) {
+			if (ourorphans == 0)
+				return numorphan;
+			else
+				return ourorphans
+		}
 		else
 			return numorphan + ourorphans;
 	},
 	enter: function(block, force, doingReorg) {
-		this.self.log("entering new block at height " + block.h)
+		this.self.log((doingReorg ? "(reorg) " : "") + "entering new block at height " + block.h)
 		if (block == this.head)
 			return -1
 
 		if (this.prevs.indexOf(block._prev().id) == -1) {
 			if (!doingReorg)
-				return this.reorg(block, -1)
+				return this.reorg(block, -1, force)
 		}
 
 		if (typeof force == "undefined")
@@ -244,9 +248,10 @@ function Blockchain(self, instance) {
 	}
 
 	self.on("inv:block", function(from, o) {
-		self.delay(Math.floor(Math.random()*3000)+10, function() {
+	// TODO: block validation time
+	//	self.delay(Math.floor(Math.random()*3000)+10, function() {
 			this.onBlock(o.obj.block)
-		}, this)
+	//	}, this)
 	}, this)
 
 	self.inventory.subscribe("block")
