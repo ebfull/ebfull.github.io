@@ -104,7 +104,7 @@ function Inventory(self) {
 
 	// do we have this object?
 	this.getObj = function(name) {
-		return this.inv.fetch(new FetchDo(name)).result;
+		return this.inv.fetch(new FetchDo(name), name).result;
 	}
 
 	// add this object

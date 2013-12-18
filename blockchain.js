@@ -64,12 +64,28 @@ Block.prototype = {
 	}
 }
 
+function PrevTransition(bid) {
+	this.id = bid;
+
+	this.validate = function(v) {
+		v.isnot(bid)
+		v.applies.push(this)
+	}
+	this.apply = function(s) {
+		s.do(bid, this)
+	}
+}
+
+PrevTransition.prototype = ConsensusTransitionPrototype;
+
 var GenesisBlock = new Block(false, 0);
 
 function Chainstate(head, self) {
 	this.self = self;
 
-	this.prevs = [];
+	this.prevs = self.network.shared("chainstate_prevs");
+	this.prevs.retain();
+
 	this.mapOrphansByPrev = {};
 	this.mapOrphans = {};
 
@@ -81,7 +97,7 @@ Chainstate.prototype = {
 		this.self.setColor(b.color)
 		this.head = b
 		
-		this.prevs.push(b.id)
+		this.prevs = this.prevs.shift(this.prevs.validate(new PrevTransition(b.id)))
 
 		delete this.mapOrphans[this.head.id];
 		
@@ -100,9 +116,11 @@ Chainstate.prototype = {
 		}
 		this.mapOrphansByPrev[this.head._prev().id].push(this.head)
 
-		this.head = this.head._prev()
+		var fetch = this.prevs.fetch(new FetchDo(this.head.id), this.head.id).result
 
-		this.prevs.pop()
+		this.prevs = this.prevs.shift(this.prevs.invalidate(fetch))
+
+		this.head = this.head._prev()
 	},
 	getOrphanWorkPath: function(block) {
 		var works = [];
@@ -149,7 +167,7 @@ Chainstate.prototype = {
 		var cur = block;
 
 		while(true) {
-			if (this.prevs.indexOf(cur.id) != -1) {
+			if (this.prevs.fetch(new FetchDo(cur.id)).result) {
 				var bestOrphanPath = this.getOrphanWorkPath(cur)
 				if ((force && bestOrphanPath.work >= this.head.work) || bestOrphanPath.work > this.head.work) {
 					//console.log(this.self.id + ": adopting orphan chain of (w=" + bestOrphanPath.work + " vs. local " + this.head.work + ")")
@@ -175,7 +193,7 @@ Chainstate.prototype = {
 		if (block == this.head)
 			return -1
 
-		if (this.prevs.indexOf(block._prev().id) == -1) {
+		if (!this.prevs.fetch(new FetchDo(block._prev().id)).result) {
 			if (!doingReorg)
 				return this.reorg(block, -1, force)
 		}

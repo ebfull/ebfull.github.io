@@ -690,6 +690,8 @@ function ConsensusState(parent) {
 
 	this.validatorCache = {}; // map transitions id to validator
 	this.invalidatorCache = {}; // map transition id to validator
+
+	this.fetchCache = {}; // cache of fetch() result objects
 }
 
 ConsensusState.prototype = {
@@ -760,6 +762,11 @@ ConsensusState.prototype = {
 
 			// garbage collect defunct branches
 			this.children = [];
+
+			// garbage collect other stuff
+			this.fetchCache = {};
+			this.validatorCache = {};
+			this.invalidatorCache = {};
 		}
 	},
 	rand: function() {
@@ -863,7 +870,15 @@ ConsensusState.prototype = {
 
 		return n;
 	},
-	fetch: function(f) {
+	fetch: function(f, key) {
+		if (typeof key != "undefined") {
+			if (key in this.fetchCache) {
+				return this.fetchCache[key]
+			} else {
+				this.fetchCache[key] = f;
+			}
+		}
+
 		var cur = this;
 
 		while (cur) {

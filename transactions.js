@@ -108,7 +108,7 @@ function Transactions(self) {
 
 	this.getRandomInputs = function(amt) {
 		// collapse the UTXO
-		var collapse = Object.keys(this.utxo.fetch(new FetchCollapse()).unspent);
+		var collapse = Object.keys(this.utxo.fetch(new FetchCollapse(), "collapse").unspent);
 
 		var results = [];
 
