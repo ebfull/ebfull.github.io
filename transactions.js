@@ -1,216 +1,75 @@
-function UTXOTransition(inputs, outputs) {
-	console.log("creating new UTXO " + JSON.stringify(inputs) + "  " + JSON.stringify(outputs))
-	this.id = this.rand();
+function Transaction(inputs, outputs) {
+	this.inputs = [];
+	this.outputs = [];
 
-	this.apply = function(state) {
-		this.init(state)
+	inputs.forEach(function(input) {
+		this.inputs.push({id:input})
+	}, this)
 
-		if (state.untransitions.indexOf(this) != -1) {
-			// remove this transition from untransitions
-			state.untransitions.splice(state.untransitions.indexOf(this), 1)
+	outputs.forEach(function(output) {
+		this.outputs.push({id:output})
+	}, this)
 
-			// remove this transitions' untransitions oh god what the fuck is happening
-			inputs.forEach(function(input) {
-				delete state.ignorespents[input];
-			}, this)
+	this.id = ConsensusState.prototype.rand();
+}
 
-			outputs.forEach(function(output) {
-				delete state.ignoreunspents[output];
-			}, this)
-		} else {
-			inputs.forEach(function(input) {
-				state.spents[input] = this;
-			}, this)
+Transaction.prototype = {
+	validate: function(v) {
+		v.applies.push(this)
 
-			outputs.forEach(function(output) {
-				state.unspents[output] = this;
-			}, this)
-
-			state.transitions.unshift(this)
-		}
-	}
-
-	this.unapply = function(state) {
-		if (state.untransitions.indexOf(this) != -1)
-			return; // don't unapply twice (happens in long reorgs)
-
-		this.init(state)
-
-		// set ignoreunspents and ignorespents
-		inputs.forEach(function(input) {
-			state.ignorespents[input] = this;
-		}, this)
-
-		outputs.forEach(function(output) {
-			state.ignoreunspents[output] = this;
-		}, this)
-
-		state.id = this.xor(state.id)
-
-		state.untransitions.unshift(this)
-	}
-
-	this.validate = function(state, validation) {
-		if (!validation) {
-			validation = new StateTransitionValidation(this)
-			validation.inputsMissing = inputs.slice(0); // keep track of inputs we're missing
-			validation.ignoreSpents = {};
-			validation.ignoreUnspents = {};
-			validation.untransitions = [];
-		}
-
-		validation.untransitions = validation.untransitions.concat(state.untransitions);
-
-		if (state.ignoreunspents) {
-			for (var sp in state.ignoreunspents) {
-				validation.ignoreUnspents[sp] = state.ignoreunspents[sp]
-			}
-		}
-
-		if (state.ignorespents) {
-			for (var usp in state.ignorespents) {
-				validation.ignoreSpents[usp] = state.ignorespents[usp]
-			}
-		}
-
-		if (state.transitions.indexOf(this) != -1) {
-			if (validation.untransitions.indexOf(this) != -1) {
-				// remove untransition
-				validation.untransitions.splice(validation.untransitions.indexOf(this), 1)
-			} else {
-				// this state already performs our transition
-				validation.state = validation.DUPLICATE;
-
-				return validation;
-			}
-		} else {
-			inputs.forEach(function(input) {
-				// we shouldn't find our input being spent by another transition
-				if (typeof state.spents[input] != "undefined") {
-					if (typeof validation.ignoreSpents[input] != "undefined") {
-						delete validation.ignoreSpents[input]
-					} else {
-						// someone spent this!
-						validation.state = validation.CONFLICT;
-						validation.conflictTx = state.spents[input];
-
-						return validation;
-					}
-				}
-			})
-
-			validation.inputsMissing.forEach(function(missingInput) {
-				if (typeof state.unspents[missingInput] != "undefined") {
-					if (typeof validation.ignoreUnspents[missingInput] != "undefined") {
-						delete validation.ignoreUnspents[missingInput]
-					} else {
-						validation.inputsMissing.splice(validation.inputsMissing.indexOf(missingInput), 1) // remove the missingInput, we found it
-					}
-				}
-			})
-		}
-
-		if (validation.inputsMissing.length == 0) {
-			validation.state = validation.VALID;
-		}
-
-		return validation;
-	}
-
-	this.invalidate = function(state, validation) {
-		if (!validation) {
-			validation = new StateTransitionValidation(this)
-			validation.base = state;
-			validation.untransitions = [this]; // array of transitions we intend to remove
-			validation.outputsSeeking = outputs.slice(0)
-		}
-
-		if (state.transitions.indexOf(this) != -1) {
-			// found the transition
-			validation.state = validation.VALID;
-		}
-
-		validation.outputsSeeking.forEach(function(output) {
-			if (typeof state.spents[output] != "undefined") {
-				validation.outputsSeeking.splice(validation.outputsSeeking.indexOf(output), 1) // we're no longer worried about this output being spent
-
-				// validate the removal of this
-				var sub = state.spents[output].invalidate(validation.base, false)
-
-				// merge its untransitions with ours
-				validation.untransitions = validation.untransitions.concat(sub.untransitions)
-			}
+		// ensure that all inputs are unspent
+		this.inputs.forEach(function(input) {
+			v.is(input.id, function(prev) {return true;})
 		})
+	},
+	apply: function(s) {
+		// remove our inputs from the UTXO
+		this.inputs.forEach(function(input) {
+			s.undo(input.id, this)
+		}, this)
 
-		return validation;
+		// add our outputs to the UTXO
+		this.outputs.forEach(function(output) {
+			s.do(output.id, this)
+		}, this)
 	}
 }
 
-UTXOTransition.prototype = {
-	init: function(state) {
-		if (typeof state.spents == "undefined") {
-			state.spents = {};
-			state.unspents = {};
-			state.ignorespents = {};
-			state.ignoreunspents = {};
-		}
-	}
-}
+Transaction.prototype.__proto__ = ConsensusTransitionPrototype;
 
-UTXOTransition.prototype.__proto__ = StateTransition;
+function FetchCollapse() {
+	this.spent = {};
+	this.unspent = {};
 
-function UTXOCollapse() {
-	this.ignoreSpents = {};
-	this.ignoreUnspents = {};
+	var ignoreDo = {};
+	var ignoreUndo = {};
 
-	this.spentInputs = {};
-
-	this.unspentOutputs = {};
-}
-
-UTXOCollapse.prototype = {
-
-	// return false when
-	handle: function(state) {
-		UTXOTransition.prototype.init(state)
-
-		if (state.ignoreunspents) {
-			for (var sp in state.ignoreunspents) {
-				this.ignoreUnspents[sp] = state.ignoreunspents[sp]
-			}
-		}
-
-		if (state.ignorespents) {
-			for (var usp in state.ignorespents) {
-				this.ignoreSpents[usp] = state.ignorespents[usp]
-			}
-		}
-
-		for (var input in state.spents) {
-			if (typeof this.ignoreSpents[input] != "undefined") {
-				delete this.ignoreSpents[input];
+	this.handle = function(state) {
+		for (var name in state.domap) {
+			if (!state.domap[name]) {
+				ignoreDo[name] = true;
 			} else {
-				this.spentInputs[input] = true;
-			}
-		}
-
-		for (var output in state.unspents) {
-			if (typeof this.ignoreUnspents[output] != "undefined") {
-				delete this.ignoreUnspents[output];
-			} else {
-				// make sure it wasn't already spent
-
-				if (typeof this.spentInputs[output] == "undefined") {
-					this.unspentOutputs[output] = true;
+				if (ignoreDo[name]) {
+					delete ignoreDo[name];
+				} else {
+					this.unspent[name] = state.domap[name]
 				}
 			}
 		}
 
-		if (!state.parent) {
-			return false;
-		} else {
-			return true;
+		for (var name in state.undomap) {
+			if (!state.undomap[name]) {
+				ignoreUndo[name] = true;
+			} else {
+				if (ignoreUndo[name]) {
+					delete ignoreUndo[name];
+				} else {
+					this.spent[name] = state.undomap[name]
+				}
+			}
 		}
+
+		return false;
 	}
 }
 
@@ -221,14 +80,13 @@ function Transactions(self) {
 
 	this.addTransaction = function(tx, force) {
 		var val = this.utxo.validate(tx)
-
 		if (val.state == val.VALID) {
-			this.utxo = this.utxo.shift(tx, val)
+			this.utxo = this.utxo.shift(val)
 			return true;
 		} else if (val.state == val.CONFLICT) {
 			if (force) {
-				var inval = this.utxo.invalidate(val.conflictTx)
-				this.utxo.unshift(val.conflictTx, inval)
+				var inval = this.utxo.invalidate(val.conflict)
+				this.utxo.shift(inval)
 
 				return this.addTransaction(tx, force) // try adding again, recursively until it works
 			}
@@ -242,7 +100,7 @@ function Transactions(self) {
 		var results = [];
 
 		while (results.length < amt) {
-			results.push(UTXOTransition.prototype.rand());
+			results.push(ConsensusState.prototype.rand());
 		}
 
 		return results;
@@ -250,18 +108,18 @@ function Transactions(self) {
 
 	this.getRandomInputs = function(amt) {
 		// collapse the UTXO
-		var collapse = this.utxo.fetch(new UTXOCollapse())
+		var collapse = Object.keys(this.utxo.fetch(new FetchCollapse()).unspent);
 
 		var results = [];
 
 		while (results.length < amt) {
-			if (!Object.keys(collapse.unspentOutputs).length)
+			if (!collapse.length)
 				break;
 
-			var r = Object.keys(collapse.unspentOutputs)[Math.floor(Math.random() * Object.keys(collapse.unspentOutputs).length)]
+			var r = collapse[Math.floor(Math.random() * collapse.length)]
 
 			results.push(r)
-			delete collapse.unspentOutputs[r]
+			collapse.splice(collapse.indexOf(r), 1)
 		}
 
 		return results;
@@ -272,7 +130,7 @@ function Transactions(self) {
 		var inputs = this.getRandomInputs(Math.floor(Math.random() * 3) + 1)
 		var outputs = this.createRandomOutputs(Math.floor(Math.random() * 3) + 1)
 
-		var tx = new UTXOTransition(inputs, outputs)
+		var tx = new Transaction(inputs, outputs)
 
 		this.addTransaction(tx)
 

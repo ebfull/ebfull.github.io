@@ -38,7 +38,7 @@ goog.require("goog.structs.PriorityQueue")
 <script src="network.js"></script> <!-- core of simulator -->
 <script src="peermgr.js"></script> <!-- PeerMgr for network formation -->
 <script src="inventory.js"></script> <!-- Inventory for shared object collection -->
-<!--<script src="transactions.js"></script>--> <!-- Shared UTXO state transitions, mempool, mapOrphans -->
+<script src="transactions.js"></script> <!-- Shared UTXO state transitions, mempool, mapOrphans -->
 <script src="blockchain.js"></script>
 <script src="miner.js"></script>
 </head>
@@ -84,7 +84,7 @@ function start(percent, sybil, attack) {
 
 	btc.use(PeerMgr);
 	btc.use(Inventory);
-	//btc.use(Transactions);
+	btc.use(Transactions);
 	btc.use(Blockchain);
 	btc.use(Miner);
 
@@ -106,7 +106,6 @@ function start(percent, sybil, attack) {
 	
 /*
 	btc.prob("txnoise", 0.000001, function() {
-		if (doTx)
 		this.mempool.createTransaction();
 	})
 */

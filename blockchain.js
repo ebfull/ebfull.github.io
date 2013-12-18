@@ -11,7 +11,7 @@ function Block(prev, time, miner) {
 	else
 		this.credit = false;
 
-	this.id = StateTransition.rand();
+	this.id = ConsensusState.prototype.rand();
 	this.time = time;
 	this.color = colors[color_i]
 	if (typeof this.color == "undefined") {
@@ -20,7 +20,7 @@ function Block(prev, time, miner) {
 	} else {
 		color_i++;
 	}
-	
+
 	if (prev) {
 		this.h = prev.h + 1;
 		this.prev = prev.id;

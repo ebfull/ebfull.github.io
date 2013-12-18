@@ -1,134 +1,20 @@
 function InventoryTransition(type, name, obj) {
-	this.id = this.rand();
+	this.id = name;
 	this.name = name;
 	this.type = type;
 	this.obj = obj;
 }
 
 InventoryTransition.prototype = {
-	init: function(state) {
-		if (typeof state.objs == "undefined") {
-			state.objs = {};
-			state.ignoreobjs = {};
-		}
+	validate: function(v) {
+		v.applies.push(this)
 	},
-
-	apply: function(state) {
-		this.init(state)
-
-		if (state.untransitions.indexOf(this) != -1) {
-			state.untransitions.splice(state.untransitions.indexOf(this), 1)
-
-			delete state.ignoreobjs[this.name]
-		} else {
-			state.objs[this.name] = this;
-
-			state.transitions.unshift(this)
-		}
-	},
-
-	unapply: function(state) {
-		if (state.untransitions.indexOf(this) != -1)
-			return; // don't unapply twice (happens in complex reorgs)
-
-		this.init(state)
-
-		state.ignoreobjs[this.name] = true;
-
-		state.id = this.xor(state.id)
-
-		state.untransitions.unshift(this)
-	},
-
-	validate: function(state, validation) {
-		if (!validation) {
-			validation = new StateTransitionValidation(this)
-			validation.ignoreObjs = {};
-			validation.untransitions = [];
-		}
-
-		validation.untransitions = validation.untransitions.concat(state.untransitions);
-
-		for (var i in state.ignoreobjs) {
-			validation.ignoreObjs[i] = state.ignoreobjs[i];
-		}
-
-		if (state.transitions.indexOf(this) != -1) {
-			if (validation.untransitions.indexOf(this) != -1) {
-				// remove untransition
-				validation.untransitions.splice(validation.untransitions.indexOf(this), 1)
-			} else {
-				validation.state = validation.DUPLICATE;
-
-				return validation;
-			}
-		} else {
-			if (typeof validation.ignoreObjs[this.name] != "undefined") {
-				delete validation.ignoreObjs[this.name]
-			} else {
-				
-			}
-		}
-
-		if (state.parent == false) {
-			if (validation.state == validation.PARTIAL) {
-				validation.state = validation.VALID;
-			}
-		}
-
-		return validation;
-	},
-
-	invalidate: function(state, validation) {
-		if (!validation) {
-			validation = new StateTransitionValidation(this)
-			validation.untransitions = [this];
-		}
-
-		if (state.untransitions.indexOf(this) != -1) {
-			validation.state = validation.DUPLICATE;
-		} else {
-			if (state.transitions.indexOf(this) != 1) {
-				validation.state = validation.VALID;
-			} else {
-				// otherwise, remain PARTIAL
-			}
-		}
-
-		return validation;
+	apply: function(s) {
+		s.do(this.id, this)
 	}
 }
 
-InventoryTransition.prototype.__proto__ = StateTransition;
-
-function FetchObject(name) {
-	this.ignore = false;
-	this.name = name;
-	this.result = false;
-}
-
-FetchObject.prototype = {
-	handle: function(state) {
-		InventoryTransition.prototype.init(state)
-
-		if (typeof state.ignoreobjs[this.name] != "undefined")
-			this.ignore = true;
-
-		if (typeof state.objs[this.name] != "undefined") {
-			// we found it, but do we need to ignore
-			if (this.ignore) {
-				this.ignore = false;
-			} else {
-				this.result = state.objs[this.name]
-				return false;
-			}
-		}
-
-		return true;
-	}
-}
-
-// TODO: No 'relay set', arbitrary transaction index is exposed to all nodes.
+InventoryTransition.prototype.__proto__ = ConsensusTransitionPrototype;
 
 function Inventory(self) {
 	self.inventory = this;
@@ -218,14 +104,14 @@ function Inventory(self) {
 
 	// do we have this object?
 	this.getObj = function(name) {
-		return this.inv.fetch(new FetchObject(name)).result;
+		return this.inv.fetch(new FetchDo(name)).result;
 	}
 
 	// add this object
 	this.addObj = function(o) {
 		var val = this.inv.validate(o)
 		if (val.state == val.VALID) {
-			this.inv = this.inv.shift(o, val)
+			this.inv = this.inv.shift(val)
 
 			// we've added the object, but now we need to tell our peers we have it
 			for (var p in this.tellPeer) {
@@ -246,7 +132,6 @@ function Inventory(self) {
 	// create a new inventory object from an existing object
 	this.createObj = function(type, obj) {
 		var o = new InventoryTransition(type, obj.name, obj)
-
 		return this.addObj(o)
 	}
 
