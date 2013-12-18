@@ -59,8 +59,8 @@ var numNodes = 200;
 var trials = []
 
 for (var i=0.4;i<0.5;i+=0.01) {
-	trials.push({percent:i, sybil: false, attack: false})
 	trials.push({percent:i, sybil: true, attack: true})
+	trials.push({percent:i, sybil: false, attack: false})
 }
 
 function start(percent, sybil, attack) {

@@ -78,6 +78,52 @@ function PrevTransition(bid) {
 
 PrevTransition.prototype = ConsensusTransitionPrototype;
 
+function MapOrphans() {
+	this.mapOrphansByPrev = {};
+	this.mapOrphans = {};
+}
+
+MapOrphans.prototype = {
+	add: function(b) {
+		this.mapOrphans[b.id] = b;
+		if (typeof this.mapOrphansByPrev[b._prev().id] == "undefined") {
+			this.mapOrphansByPrev[b._prev().id] = []
+		}
+		this.mapOrphansByPrev[b._prev().id].push(b)
+	},
+	delete: function(b) {
+		delete this.mapOrphans[b.id];
+		
+		if (typeof this.mapOrphansByPrev[b._prev().id] != "undefined") {
+			var i = this.mapOrphansByPrev[b._prev().id].indexOf(b)
+			if (i != -1) {
+				this.mapOrphansByPrev[b._prev().id].splice(i, 1)
+
+				if (this.mapOrphansByPrev[b._prev().id].length == 0) {
+					delete this.mapOrphansByPrev[b._prev().id];
+				}
+			}
+		}
+	},
+	is: function(b) {
+		return (typeof this.mapOrphans[b.id] != "undefined")
+	},
+	getForPrev: function(prev) {
+		if (typeof this.mapOrphansByPrev[prev.id] == "undefined") {
+			return []
+		} else {
+			return this.mapOrphansByPrev[prev.id]
+		}
+	},
+	cleanOrphans: function(h) {
+		for (var id in this.mapOrphans) {
+			if (this.mapOrphans[id].h < h) {
+				this.delete(this.mapOrphans[id])
+			}
+		}
+	}
+}
+
 var GenesisBlock = new Block(false, 0);
 
 function Chainstate(head, self) {
@@ -86,35 +132,26 @@ function Chainstate(head, self) {
 	this.prevs = self.network.shared("chainstate_prevs");
 	this.prevs.retain();
 
-	this.mapOrphansByPrev = {};
-	this.mapOrphans = {};
+	this.mapOrphans = new MapOrphans();
 
 	this.forward(head)
 }
 
 Chainstate.prototype = {
+	cleanOrphans: function() {
+		this.mapOrphans.cleanOrphans(this.head.h - 20)
+	},
 	forward: function(b) {
 		this.self.setColor(b.color)
 		this.head = b
 		
 		this.prevs = this.prevs.shift(this.prevs.validate(new PrevTransition(b.id)))
 
-		delete this.mapOrphans[this.head.id];
-		
-		if (typeof this.mapOrphansByPrev[this.head._prev().id] != "undefined") {
-			var i = this.mapOrphansByPrev[this.head._prev().id].indexOf(this.head)
-			if (i != -1) {
-				this.mapOrphansByPrev[this.head._prev().id].splice(i, 1)
-			}
-		}
-
+		this.mapOrphans.delete(this.head)
+		this.cleanOrphans();
 	},
 	reverse: function() {
-		this.mapOrphans[this.head.id] = this.head;
-		if (typeof this.mapOrphansByPrev[this.head._prev().id] == "undefined") {
-			this.mapOrphansByPrev[this.head._prev().id] = []
-		}
-		this.mapOrphansByPrev[this.head._prev().id].push(this.head)
+		this.mapOrphans.add(this.head)
 
 		var fetch = this.prevs.fetch(new FetchDo(this.head.id), this.head.id).result
 
@@ -125,11 +162,9 @@ Chainstate.prototype = {
 	getOrphanWorkPath: function(block) {
 		var works = [];
 
-		if (typeof this.mapOrphansByPrev[block.id] != "undefined") {
-			this.mapOrphansByPrev[block.id].forEach(function(sub) {
-				works.push(this.getOrphanWorkPath(sub))
-			}, this)
-		}
+		this.mapOrphans.getForPrev(block).forEach(function(sub) {
+			works.push(this.getOrphanWorkPath(sub))
+		}, this)
 
 		if (works.length == 0) {
 			// there aren't any subworks
@@ -152,12 +187,8 @@ Chainstate.prototype = {
 		var ourorphans = 0;
 		if (numorphan == -1) {
 			// This block couldn't be entered into the chainstate, so it's an orphan.
-			if (typeof this.mapOrphans[block.id] == "undefined") {
-				this.mapOrphans[block.id] = block;
-				if (typeof this.mapOrphansByPrev[block._prev().id] == "undefined") {
-					this.mapOrphansByPrev[block._prev().id] = [];
-				}
-				this.mapOrphansByPrev[block._prev().id].push(block)
+			if (!this.mapOrphans.is(block)) {
+				this.mapOrphans.add(block)
 			} else {
 				return numorphan;
 			}
