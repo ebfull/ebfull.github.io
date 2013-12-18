@@ -27,7 +27,6 @@ function Block(prev, time, miner) {
 		this.difficulty = prev.difficulty;
 		this.work = prev.work + prev.difficulty;
 
-		// TODO: difficulty adjustment
 		if (!(this.h % this.difficulty_adjustment_period)) {
 			this.difficultyAdjustment()
 		}
