@@ -127,8 +127,8 @@ function Transactions(self) {
 
 	// TODO: ???
 	this.createTransaction = function() {
-		var inputs = this.getRandomInputs(Math.floor(Math.random() * 3) + 1)
-		var outputs = this.createRandomOutputs(Math.floor(Math.random() * 3) + 1)
+		var inputs = this.getRandomInputs(Math.floor(Math.random() * 2) + 1)
+		var outputs = this.createRandomOutputs(Math.floor(Math.random() * 2) + 1)
 
 		var tx = new Transaction(inputs, outputs)
 
