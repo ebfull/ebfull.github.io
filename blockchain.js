@@ -86,7 +86,7 @@ function MapOrphans() {
 MapOrphans.prototype = {
 	add: function(b) {
 		this.mapOrphans[b.id] = b;
-		if (typeof this.mapOrphansByPrev[b._prev().id] == "undefined") {
+		if (!(b._prev().id in this.mapOrphansByPrev)) {
 			this.mapOrphansByPrev[b._prev().id] = []
 		}
 		this.mapOrphansByPrev[b._prev().id].push(b)
@@ -94,7 +94,7 @@ MapOrphans.prototype = {
 	delete: function(b) {
 		delete this.mapOrphans[b.id];
 		
-		if (typeof this.mapOrphansByPrev[b._prev().id] != "undefined") {
+		if (b._prev().id in this.mapOrphansByPrev) {
 			var i = this.mapOrphansByPrev[b._prev().id].indexOf(b)
 			if (i != -1) {
 				this.mapOrphansByPrev[b._prev().id].splice(i, 1)
@@ -109,7 +109,7 @@ MapOrphans.prototype = {
 		return (typeof this.mapOrphans[b.id] != "undefined")
 	},
 	getForPrev: function(prev) {
-		if (typeof this.mapOrphansByPrev[prev.id] == "undefined") {
+		if (!(prev.id in this.mapOrphansByPrev)) {
 			return []
 		} else {
 			return this.mapOrphansByPrev[prev.id]
