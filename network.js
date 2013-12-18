@@ -150,7 +150,6 @@ Visualizer.prototype = {
 		if (a==b)
 			return false; // can't connect to ourself silly!
 
-		//console.log('CONNECTING EDGES ' + a + ' AND ' + b);
 		this.edges[a + '-' + b] = {source:this.nodes[this.getKeyForID(a)],target:this.nodes[this.getKeyForID(b)]};
 		this.links.push(this.edges[a + '-' + b]);
 
@@ -214,10 +213,8 @@ Visualizer.prototype = {
 			this.link_colormap_last = now;
 			for (var p in this.link_colormap) {
 				if (this.link_colormap[p] + 100 > now) {
-					//console.log("setting #l-" + p + " to red")
 					$("#l-" + p).css('stroke', "black")
 				} else {
-					//console.log("setting #l-" + p + " to black")
 					$("#l-" + p).css('stroke', "#999")
 					delete this.link_colormap[p];
 				}
@@ -466,7 +463,6 @@ NodeState.prototype = {
 	},
 
 	send: function(nid, name, obj) {
-		//console.log(this.id + " -> " + nid + ": " + name + ": " + JSON.stringify(obj))
 		this.network.exec(new NodeMessageEvent(this.id, nid, name, obj))
 	},
 
