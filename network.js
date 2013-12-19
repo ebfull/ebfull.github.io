@@ -359,7 +359,7 @@ function NodeMessageEvent(from, nid, name, obj) {
 	this.delay = latency(from, nid);
 
 	this.run = function(network) {
-		network.setLinkActivity(from, nid)
+		//network.setLinkActivity(from, nid)
 
 		network.nodes[nid].handle(from, name, obj)
 	}

@@ -117,7 +117,8 @@ MapOrphans.prototype = {
 	cleanOrphans: function(h) {
 		for (var id in this.mapOrphans) {
 			if (this.mapOrphans[id].h < h) {
-				this.delete(this.mapOrphans[id])
+			// TODO: figure out how often/what we should clear
+			//	this.delete(this.mapOrphans[id])
 			}
 		}
 	}

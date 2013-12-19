@@ -44,6 +44,7 @@ goog.require("goog.structs.PriorityQueue")
 </head>
 <body>
 <div class="network"></div>
+<a href="#" id="stopvis">disable visualizer (faster but less cool)</a>
 <hr>
 <b><a id="pause" href="#">(pause)</a></b> <b><a id="default" href="#">(default)</a></b> <b><a id="faster" href="#">+</a></b>/<b><a id="slower" href="#">-</a></b> <span id="timenow"></span><br /><br />
 <!--<a id="restart" href="#">Restart</a><br />-->
@@ -52,6 +53,7 @@ goog.require("goog.structs.PriorityQueue")
 var net;
 var btc;
 var interval = 10;
+var visualize = true;
 
 var targetHeight = 5000;
 var numNodes = 200;
@@ -95,7 +97,7 @@ function start(percent, sybil, attack) {
 		this.mempool.createTransaction();
 	})
 */
-	net = new Network(".network")
+	net = new Network(visualize ? ".network" : undefined)
 	net.add(numNodes, btc)
 }
 
@@ -160,6 +162,15 @@ $("#pause").click(function() {
 $("#slower").click(function() {
 	interval /= 2;
 	interval = Math.floor(interval);
+	return false;
+})
+
+$("#stopvis").click(function() {
+	visualize = false;
+	net.visualizer = false;
+	$(".network").html("")
+	$(".network").css("display", "none")
+	$(this).remove();
 	return false;
 })
 </script>
