@@ -14,64 +14,76 @@ function Transaction(inputs, outputs) {
 }
 
 Transaction.prototype = {
-	validate: function(v) {
-		v.applies.push(this)
+	neverspent: function(tr, v, bucket) {
+		if (!tr)
+			return true; // return true to tell the validator that we didn't see this output spent anywhere else, which is good
 
-		// ensure that all inputs are unspent
-		this.inputs.forEach(function(input) {
-			v.is(input.id, function(prev) {return true;})
+		return tr.inputs.some(function(input) {
+			if (input.id == bucket) {
+				v.state = v.CONFLICT;
+				v.conflict = tr;
+				return true;
+			}
+		}, this)
+	},
+	unspent: function(tr, v, bucket) {
+		if (!tr)
+			return false; // return false to tell the validator that we needed to see this unspent output, and we didn't
+
+		return tr.outputs.some(function(output) {
+			if (output.id == bucket) {
+				return true;
+			}
 		})
 	},
-	apply: function(s) {
-		// remove our inputs from the UTXO
+	dontspend: function(tr, v, bucket) {
+		if (!tr)
+			return true; // good, it wasn't spent by anything
+
+		tr.inputs.some(function(input) {
+			if (input.id == bucket) {
+				tr.invalidate(v)
+			}
+		})
+	},
+	invalidate: function(v) {
+		if (v.unapplies.indexOf(this) != -1)
+			return;
+
+		v.unapplies.push(this)
+
+		// anything which spends our outputs should be removed
+		this.outputs.forEach(function(output) {
+			v.check(output.id, this.dontspend)
+		}, this)
+	},
+	validate: function(v) {
+		if (v.applies.indexOf(this) != -1)
+			return;
+
+		v.applies.push(this)
+
 		this.inputs.forEach(function(input) {
-			s.undo(input.id, this)
+			v.check(input.id, this.unspent)
+			v.check(input.id, this.neverspent)
+		}, this)
+	},
+	apply: function(s) {
+		// attach this transition to all buckets which it influences
+
+		this.inputs.forEach(function(input) {
+			s.attach(input.id, this)
 		}, this)
 
-		// add our outputs to the UTXO
 		this.outputs.forEach(function(output) {
-			s.do(output.id, this)
+			s.attach(output.id, this)
 		}, this)
 	}
 }
 
 Transaction.prototype.__proto__ = ConsensusTransitionPrototype;
 
-function FetchCollapse() {
-	this.spent = {};
-	this.unspent = {};
-
-	var ignoreDo = {};
-	var ignoreUndo = {};
-
-	this.handle = function(state) {
-		for (var name in state.domap) {
-			if (!state.domap[name]) {
-				ignoreDo[name] = true;
-			} else {
-				if (ignoreDo[name]) {
-					delete ignoreDo[name];
-				} else {
-					this.unspent[name] = state.domap[name]
-				}
-			}
-		}
-
-		for (var name in state.undomap) {
-			if (!state.undomap[name]) {
-				ignoreUndo[name] = true;
-			} else {
-				if (ignoreUndo[name]) {
-					delete ignoreUndo[name];
-				} else {
-					this.spent[name] = state.undomap[name]
-				}
-			}
-		}
-
-		return false;
-	}
-}
+// no more fetch collapse
 
 function Transactions(self) {
 	self.mempool = this;
@@ -127,7 +139,8 @@ function Transactions(self) {
 
 	// TODO: ???
 	this.createTransaction = function() {
-		var inputs = this.getRandomInputs(Math.floor(Math.random() * 2) + 1)
+		//var inputs = this.getRandomInputs(Math.floor(Math.random() * 2) + 1)
+		var inputs = [];
 		var outputs = this.createRandomOutputs(Math.floor(Math.random() * 2) + 1)
 
 		var tx = new Transaction(inputs, outputs)

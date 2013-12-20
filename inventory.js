@@ -5,16 +5,7 @@ function InventoryTransition(type, name, obj) {
 	this.obj = obj;
 }
 
-InventoryTransition.prototype = {
-	validate: function(v) {
-		v.applies.push(this)
-	},
-	apply: function(s) {
-		s.do(this.id, this)
-	}
-}
-
-InventoryTransition.prototype.__proto__ = ConsensusTransitionPrototype;
+InventoryTransition.prototype = ConsensusMapObject
 
 function Inventory(self) {
 	self.inventory = this;
@@ -104,7 +95,7 @@ function Inventory(self) {
 
 	// do we have this object?
 	this.getObj = function(name) {
-		return this.inv.fetch(new FetchDo(name), name).result;
+		return this.inv.fetch(new FetchEntry(name), name).result;
 	}
 
 	// add this object

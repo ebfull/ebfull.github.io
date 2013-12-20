@@ -65,17 +65,9 @@ Block.prototype = {
 
 function PrevTransition(bid) {
 	this.id = bid;
-
-	this.validate = function(v) {
-		v.isnot(bid)
-		v.applies.push(this)
-	}
-	this.apply = function(s) {
-		s.do(bid, this)
-	}
 }
 
-PrevTransition.prototype = ConsensusTransitionPrototype;
+PrevTransition.prototype = ConsensusMapObject;
 
 function MapOrphans() {
 	this.mapOrphansByPrev = {};
@@ -153,7 +145,7 @@ Chainstate.prototype = {
 	reverse: function() {
 		this.mapOrphans.add(this.head)
 
-		var fetch = this.prevs.fetch(new FetchDo(this.head.id), this.head.id).result
+		var fetch = this.prevs.fetch(new FetchEntry(this.head.id), this.head.id).result
 
 		this.prevs = this.prevs.shift(this.prevs.invalidate(fetch))
 
@@ -198,7 +190,7 @@ Chainstate.prototype = {
 		var cur = block;
 
 		while(true) {
-			if (this.prevs.fetch(new FetchDo(cur.id)).result) {
+			if (this.prevs.fetch(new FetchEntry(cur.id)).result) {
 				var bestOrphanPath = this.getOrphanWorkPath(cur)
 				if ((force && bestOrphanPath.work >= this.head.work) || bestOrphanPath.work > this.head.work) {
 					//console.log(this.self.id + ": adopting orphan chain of (w=" + bestOrphanPath.work + " vs. local " + this.head.work + ")")
@@ -224,7 +216,7 @@ Chainstate.prototype = {
 		if (block == this.head)
 			return -1
 
-		if (!this.prevs.fetch(new FetchDo(block._prev().id)).result) {
+		if (!this.prevs.fetch(new FetchEntry(block._prev().id)).result) {
 			if (!doingReorg)
 				return this.reorg(block, -1, force)
 		}
