@@ -2,9 +2,7 @@ var colors = ["green", "orange", "blue", "purple", "brown", "steelblue"]
 var color_i = 0;
 
 function Block(prev, time, miner) {
-	this._prev = function() {
-		return prev;
-	}
+	this.__prev = prev;
 
 	if (miner)
 		this.credit = miner.id;
@@ -60,6 +58,9 @@ Block.prototype = {
 		this.difficulty *= this.target_avg_between_blocks / avg;
 
 		console.log("(h=" + this.h + ") difficulty adjustment " + (this.target_avg_between_blocks / avg) + "x")
+	},
+	_prev: function() {
+		return this.__prev;
 	}
 }
 
