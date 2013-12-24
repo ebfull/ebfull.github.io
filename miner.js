@@ -155,7 +155,7 @@ function Miner(self) {
 
 				updateDifficulty()
 
-				//console.log("[" + self.now() + "]: " + self.id + ": mined block at h=" + cur.chainstate.head.h)
+				console.log("[" + self.now() + "]: " + self.id + ": mined block at h=" + cur.chainstate.head.h)
 				if (this.attacker_status)
 					self.log("attacker: mined private block h=" + cur.chainstate.head.h + ", new lead " + (cur.chainstate.head.h - self.blockchain.chainstate.head.h))
 

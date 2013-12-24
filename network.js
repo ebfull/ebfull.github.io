@@ -886,6 +886,9 @@ ConsensusState.prototype = {
 			cur = cur.parent;
 		}
 
+		if (typeof f.finalize != "undefined")
+			f.finalize();
+
 		return f;
 	}
 }
@@ -1018,7 +1021,10 @@ var ConsensusTransitionPrototype = {
 
 var ConsensusMapObject = {
 	apply: function(s) {
-		s.attach(this.id, this)
+		if (typeof this.bucket != "undefined")
+			s.attach(this.bucket, this)
+		else
+			s.attach(this.id, this)
 	},
 	validate: function(v) {
 		if (v.applies.indexOf(this) != -1)
@@ -1026,7 +1032,10 @@ var ConsensusMapObject = {
 
 		v.applies.push(this)
 
-		v.check(this.id, this.persist)
+		if (typeof this.bucket != "undefined")
+			v.check(this.bucket, this.persist)
+		else
+			v.check(this.id, this.persist)
 	},
 	invalidate: function(v) {
 		if (v.unapplies.indexOf(this) != -1)
@@ -1053,7 +1062,7 @@ function FetchEntry(name) {
 }
 
 
-function FetchEntries(name) {
+function FetchEntries(name, getid) {
 	this.result = [];
 
 	this.handle = function(state) {
@@ -1064,5 +1073,24 @@ function FetchEntries(name) {
 		}
 
 		return false;
+	}
+
+	this.finalize = function() {
+		if (typeof getid == "undefined")
+			return;
+
+		var found = false;
+
+		this.result.some(function(res) {
+			if (res.id == getid) {
+				this.result = res;
+				found = true;
+				return true;
+			}
+			return false;
+		}, this)
+
+		if (!found)
+			this.result = false;
 	}
 }

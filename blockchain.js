@@ -69,6 +69,118 @@ function PrevTransition(bid) {
 
 PrevTransition.prototype = ConsensusMapObject;
 
+function OrphanBlock(b) {
+	this.id = b.id;
+	this.b = b;
+}
+
+OrphanBlock.prototype = ConsensusMapObject;
+
+function OrphanBlockByPrev(b) {
+	this.id = b.id;
+	this.b = b;
+	this.bucket = b._prev().id;
+}
+
+OrphanBlockByPrev.prototype = ConsensusMapObject;
+
+
+function MapOrphanBlocks(self) {
+	this.mapOrphansByPrev = self.network.shared("block_maporphansbyprev")
+	this.mapOrphans = self.network.shared("block_maporphans")
+
+	this.mapOrphansByPrev.retain()
+	this.mapOrphans.retain()
+}
+
+MapOrphanBlocks.prototype = {
+	add: function(b) {
+		// add this block to the structure
+
+		// 1. add to mapOrphans
+
+		var mo_tr = new OrphanBlock(b);
+
+		var val = this.mapOrphans.validate(mo_tr)
+
+		if (val.state == val.VALID) {
+			this.mapOrphans = this.mapOrphans.shift(val)
+
+			// 2. add to mapOrphansByPrev
+			var mobp_tr = new OrphanBlockByPrev(b)
+
+			val = this.mapOrphansByPrev.validate(mobp_tr)
+
+			if (val.state == val.VALID) {
+				this.mapOrphansByPrev = this.mapOrphansByPrev.shift(val)
+
+				return true;
+			}
+		}
+
+		return false;
+	},
+
+	delete: function(b) {
+		// remove this block from the structure
+
+		// 1. invalidate from mapOrphans
+		// 1a. find it first
+
+		var mo = this.mapOrphans.fetch(new FetchEntry(b.id), "b:"+b.id).result;
+
+		if (mo) {
+			var val = this.mapOrphans.invalidate(mo)
+
+			if (val.state == val.VALID) {
+				this.mapOrphans = this.mapOrphans.shift(val)
+
+				// 2. invalidate from mapOrphansByPrev
+
+				var mobp = this.mapOrphansByPrev.fetch(new FetchEntries(b._prev().id, b.id), "prev:"+b._prev().id+","+b.id).result;
+
+				if (mobp) {
+					val = this.mapOrphansByPrev.invalidate(mobp)
+
+					if (val.state == val.VALID) {
+						this.mapOrphansByPrev = this.mapOrphansByPrev.shift(val)
+					}
+				}
+			}
+		}
+	},
+
+	// returns boolean whether the block is an orphan already
+	is: function(b) {
+		return this.mapOrphans.fetch(new FetchEntry(b.id), "b:" + b.id).result;
+	},
+
+	getForPrev: function(prev) {
+		var d = this.mapOrphansByPrev.fetch(new FetchEntries(prev.id), "allprev:" + prev.id).result
+
+		if (!d)
+			return [];
+		else {
+			var newd = [];
+
+			d.forEach(function(element) {
+				newd.push(element.b)
+			})
+
+			return newd;
+		}
+	},
+
+	cleanOrphans: function(h) {
+		// defunct
+	}
+}
+
+
+/*
+
+// working maporphans structure
+
 function MapOrphans() {
 	this.mapOrphansByPrev = {};
 	this.mapOrphans = {};
@@ -115,7 +227,7 @@ MapOrphans.prototype = {
 		}
 	}
 }
-
+*/
 var GenesisBlock = new Block(false, 0);
 
 function Chainstate(head, self) {
@@ -124,7 +236,7 @@ function Chainstate(head, self) {
 	this.prevs = self.network.shared("chainstate_prevs");
 	this.prevs.retain();
 
-	this.mapOrphans = new MapOrphans();
+	this.mapOrphans = new MapOrphanBlocks(self);
 
 	this.forward(head)
 }
