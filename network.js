@@ -731,7 +731,7 @@ ConsensusState.prototype = {
 			// merge upward as much as possible
 			while(this.parent && this.parent._retain == 0) {
 				// TODO: improve metric
-				if ((this.parent.transitions.length + this.parent.untransitions.length) <= (this.transitions.length + this.untransitions.length)) {
+				if ((this.parent.transitions.length + this.parent.untransitions.length) <= (2 * (this.transitions.length + this.untransitions.length))) {
 					this.inherit();
 				} else {
 					break;
