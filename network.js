@@ -1050,11 +1050,26 @@ ConsensusMapObject.__proto__ = ConsensusTransitionPrototype;
 
 function FetchEntry(name) {
 	this.result = false;
+	this.ignoreTr = [];
 
 	this.handle = function(state) {
+		state.untransitions.forEach(function(untr) {
+			this.ignoreTr.push(untr)
+		}, this)
+
 		if (name in state.buckets) {
-			this.result = state.buckets[name][0]
-			return true;
+			if (state.buckets[name].some(function(tr) {
+				var ind;
+				if ((ind = this.ignoreTr.indexOf(tr)) != -1) {
+					this.ignoreTr.splice(ind, 1)
+				} else {
+					this.result = tr;
+					return true;
+				}
+
+				return false;
+			}, this))
+				return true;
 		}
 
 		return false;
@@ -1064,11 +1079,21 @@ function FetchEntry(name) {
 
 function FetchEntries(name, getid) {
 	this.result = [];
+	this.ignoreTr = [];
 
 	this.handle = function(state) {
+		state.untransitions.forEach(function(untr) {
+			this.ignoreTr.push(untr)
+		}, this)
+
 		if (name in state.buckets) {
 			state.buckets[name].forEach(function(tr) {
-				this.result.push(tr)
+				var ind;
+				if ((ind = this.ignoreTr.indexOf(tr)) != -1) {
+					this.ignoreTr.splice(ind, 1)
+				} else {
+					this.result.push(tr);
+				}
 			}, this)
 		}
 
