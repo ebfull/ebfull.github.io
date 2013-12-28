@@ -1,40 +1,15 @@
-Array.prototype.remove = function() {
-    var what, a = arguments, L = a.length, ax;
-    while (L && this.length) {
-        what = a[--L];
-        while ((ax = this.indexOf(what)) !== -1) {
-            this.splice(ax, 1);
-        }
-    }
-    return this;
-};
+/* helper functions for estimating latency between two node IDs */
 
-var latencySeed = Math.floor(Math.random() * 1000000000);
+var topologySeed = Math.floor(Math.random() * 1000000000);
 
 function latency(a, b) {
-	var min = 10 + Math.abs(((a*latencySeed)^(b*latencySeed)) % 300);
+	var min = 10 + Math.abs(((a*topologySeed)^(b*topologySeed)) % 300);
 	var avgVariance = 15;
 
 	return Math.floor((Math.log(1-Math.random())/-1) * (avgVariance)) + min
 }
 
-function revchart(r, h) {
-	var res = "<table><tr><td>node</td><td>revenue</td></tr>";
-	// sort r
-	var n = [];
-	for (var id in r) {
-		n.push({id:id,rev:r[id]})
-	}
-	n.sort(function(a,b) {
-		if (a.rev == b.rev) return 0;
-
-		return a.rev > b.rev ? -1 : 1;
-	})
-	for (var i=0;i<n.length;i++) {
-		res += "<tr><td>" + n[i].id + "</td><td>" + n[i].rev + " (" + ((n[i].rev/h)*100).toFixed(2) + "%)<br /></td></tr>";
-	}
-	return res + "</table>";
-}
+/* visualizer, uses d3/jquery to visualize the network graph */
 
 function Visualizer(div) {
 	this.divname = div;
@@ -238,49 +213,6 @@ Visualizer.prototype = {
 		this.force.start();
 
 		this.updated = false;
-/*
-		// let's update this.force to adjust the graph linkDistance
-		var smallestY = Number.POSITIVE_INFINITY;
-		var largestY = Number.NEGATIVE_INFINITY;
-		$(".node").each(function() {
-			var thisY = $(this).attr("cy")
-			if (thisY < smallestY)
-				smallestY = thisY;
-
-			if (thisY > largestY)
-				largestY = thisY;
-		})
-
-		if (smallestY != Number.POSITIVE_INFINITY) {
-			if (smallestY > (.2 * this.height)) {
-				this.charge *= 1.01;
-				this.force = this.force.charge(this.charge)
-
-				//this.updated = true;
-				return
-			} else if (smallestY < (.1 * this.height)) {
-				this.charge *= 0.99;
-				this.force = this.force.charge(this.charge)
-
-				//this.updated = true;
-				return
-			}
-		} 
-
-		if (largestY != Number.POSITIVE_INFINITY) {
-			if (largestY < (.8 * this.height)) {
-				this.charge *= 0.99;
-				this.force = this.force.charge(this.charge)
-
-				//this.updated = true;
-			} else if (largestY > (.9 * this.height)) {
-				this.charge *= 1.01;
-				this.force = this.force.charge(this.charge)
-
-				//this.updated = true;
-			}
-		}
-*/
 	}
 };
 
@@ -385,7 +317,8 @@ function NodeTickEvent(delay, nid, f, ctx) {
 @ctx: function context
 
 NodeProbabilisticTickEvent.ignore is used to disable an event if it's
-never going to occur again.
+never going to occur again, thus avoiding a seek and destroy on the 
+binary heap.
 ****/
 function NodeProbabilisticTickEvent(probability, event, nid, ctx) {
 	// The event will occur in this.delay msec
@@ -445,6 +378,7 @@ NodeState.prototype = {
 		this.network.disconnect(this.id, remoteid);
 	},
 
+	// currently disabled
 	log: function(msg) {
 		return;
 		if (this.id == 0)
@@ -598,6 +532,7 @@ Network.prototype = {
 		}
 	},
 
+	// sets the color of the node in the visualizer
 	setColor: function(id, color) {
 		if (typeof this.nodes[id] != "undefined")
 		if (this.visualizer) {
@@ -605,6 +540,7 @@ Network.prototype = {
 		}
 	},
 
+	// could be used to show that network activity occurred between two nodes
 	setLinkActivity: function(from, to) {
 		if (typeof this.nodes[to] != "undefined")
 		if (typeof this.nodes[from] != "undefined")
@@ -614,22 +550,26 @@ Network.prototype = {
 		}
 	},
 
+	// places an event in the queue
 	exec: function(e, bucket) {
 		this.events.add(e.delay+this.now, e, bucket)
 	},
 
+	// connects two nodes in the visualizer
 	connect: function (a, b) {
 		if (this.visualizer) {
 			this.visualizer.connect(this.nodes[a]._vid, this.nodes[b]._vid);
 		}
 	},
 
+	// disconnects two nodes in the visualizer
 	disconnect: function (a, b) {
 		if (this.visualizer) {
 			this.visualizer.disconnect(this.nodes[a]._vid, this.nodes[b]._vid);
 		}
 	},
 
+	// adds amt nodes using the node constructor parameter
 	add: function(amt, node) {
 		for (;amt>0;amt--) {
 			var state = new NodeState(node, this, this.nindex);
@@ -641,7 +581,7 @@ Network.prototype = {
 		}
 	},
 
-	// run buffer time worth of tasks
+	// run buffer time (msec) worth of tasks
 	run: function(buffer) {
 		var max = this.now+buffer;
 		var e = false;
@@ -660,7 +600,11 @@ Network.prototype = {
 
 
 
-
+/*
+	this is a really dirty abstraction for certain data structures, like maps,
+	or the UTXO. It allows for us to internally represent some structures as
+	differences between nodes, avoiding memory redunancy and allowing memoization.
+*/
 
 function ConsensusState(parent) {
 	if (parent) {

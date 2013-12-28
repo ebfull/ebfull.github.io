@@ -1,4 +1,6 @@
-var colors = ["green", "orange", "blue", "purple", "brown", "steelblue"]
+// the colors are just used to visualize chainstate and have no bearing on the simulation
+
+var colors = ["green", "orange", "blue", "purple", "brown", "steelblue", "red"]
 var color_i = 0;
 
 function Block(prev, time, miner) {
@@ -11,13 +13,7 @@ function Block(prev, time, miner) {
 
 	this.id = ConsensusState.prototype.rand();
 	this.time = time;
-	this.color = colors[color_i]
-	if (typeof this.color == "undefined") {
-		color_i = 0;
-		this.color = colors[color_i]
-	} else {
-		color_i++;
-	}
+	this.color = colors[++color_i % colors.length]
 
 	if (prev) {
 		this.h = prev.h + 1;
@@ -33,7 +29,6 @@ function Block(prev, time, miner) {
 		this.h = 0;
 		this.prev = false;
 		this.difficulty = 600000;
-		//this.difficulty = 3000;
 		this.work = 0;
 	}
 }
@@ -96,10 +91,6 @@ function MapOrphanBlocks(self) {
 
 MapOrphanBlocks.prototype = {
 	add: function(b) {
-		// add this block to the structure
-
-		// 1. add to mapOrphans
-
 		var mo_tr = new OrphanBlock(b);
 
 		var val = this.mapOrphans.validate(mo_tr)
@@ -123,11 +114,6 @@ MapOrphanBlocks.prototype = {
 	},
 
 	delete: function(b) {
-		// remove this block from the structure
-
-		// 1. invalidate from mapOrphans
-		// 1a. find it first
-
 		var mo = this.mapOrphans.fetch(new FetchEntry(b.id), "b:"+b.id).result;
 
 		if (mo) {
@@ -135,8 +121,6 @@ MapOrphanBlocks.prototype = {
 
 			if (val.state == val.VALID) {
 				this.mapOrphans = this.mapOrphans.shift(val)
-
-				// 2. invalidate from mapOrphansByPrev
 
 				var mobp = this.mapOrphansByPrev.fetch(new FetchEntries(b._prev().id, b.id), "prev:"+b._prev().id+","+b.id).result;
 
@@ -156,6 +140,7 @@ MapOrphanBlocks.prototype = {
 		return this.mapOrphans.fetch(new FetchEntry(b.id), "b:" + b.id).result;
 	},
 
+	// finds any blocks that depended on this block within this maporphans
 	getForPrev: function(prev) {
 		var d = this.mapOrphansByPrev.fetch(new FetchEntries(prev.id), "allprev:" + prev.id).result
 
@@ -173,7 +158,7 @@ MapOrphanBlocks.prototype = {
 	},
 
 	cleanOrphans: function(h) {
-		// defunct
+		// todo, we should use the given h to clear out old blocks from maporphans
 	}
 }
 
@@ -212,6 +197,7 @@ Chainstate.prototype = {
 
 		this.head = this.head._prev()
 	},
+	// (recursively) resolves the best orphan branch for comparison with the chainstate head
 	getOrphanWorkPath: function(block) {
 		var works = [];
 
@@ -236,6 +222,7 @@ Chainstate.prototype = {
 			return largestWork;
 		}
 	},
+	// this function helps identify orphan blocks
 	reorg: function(block, numorphan, force) {
 		var ourorphans = 0;
 		if (numorphan == -1) {
@@ -272,6 +259,7 @@ Chainstate.prototype = {
 		else
 			return numorphan + ourorphans;
 	},
+	// enter a block into the chainstate, perhaps resulting in a reorg, and also perhaps resulting in its inclusion within maporphans
 	enter: function(block, force, doingReorg) {
 		this.self.log((doingReorg ? "(reorg) " : "") + "entering new block at height " + block.h)
 		if (block == this.head)
