@@ -177,58 +177,6 @@ MapOrphanBlocks.prototype = {
 	}
 }
 
-
-/*
-
-// working maporphans structure
-
-function MapOrphans() {
-	this.mapOrphansByPrev = {};
-	this.mapOrphans = {};
-}
-
-MapOrphans.prototype = {
-	add: function(b) {
-		this.mapOrphans[b.id] = b;
-		if (!(b._prev().id in this.mapOrphansByPrev)) {
-			this.mapOrphansByPrev[b._prev().id] = []
-		}
-		this.mapOrphansByPrev[b._prev().id].push(b)
-	},
-	delete: function(b) {
-		delete this.mapOrphans[b.id];
-		
-		if (b._prev().id in this.mapOrphansByPrev) {
-			var i = this.mapOrphansByPrev[b._prev().id].indexOf(b)
-			if (i != -1) {
-				this.mapOrphansByPrev[b._prev().id].splice(i, 1)
-
-				if (this.mapOrphansByPrev[b._prev().id].length == 0) {
-					delete this.mapOrphansByPrev[b._prev().id];
-				}
-			}
-		}
-	},
-	is: function(b) {
-		return (typeof this.mapOrphans[b.id] != "undefined")
-	},
-	getForPrev: function(prev) {
-		if (!(prev.id in this.mapOrphansByPrev)) {
-			return []
-		} else {
-			return this.mapOrphansByPrev[prev.id]
-		}
-	},
-	cleanOrphans: function(h) {
-		for (var id in this.mapOrphans) {
-			if (this.mapOrphans[id].h < h) {
-			// TODO: figure out how often/what we should clear
-			//	this.delete(this.mapOrphans[id])
-			}
-		}
-	}
-}
-*/
 var GenesisBlock = new Block(false, 0);
 
 function Chainstate(head, self) {
