@@ -83,8 +83,6 @@ Transaction.prototype = {
 
 Transaction.prototype.__proto__ = ConsensusTransitionPrototype;
 
-// no more fetch collapse
-
 function Transactions(self) {
 	self.mempool = this;
 	this.utxo = self.network.shared("utxo")
@@ -118,28 +116,8 @@ function Transactions(self) {
 		return results;
 	}
 
-	this.getRandomInputs = function(amt) {
-		// collapse the UTXO
-		var collapse = Object.keys(this.utxo.fetch(new FetchCollapse(), "collapse").unspent);
-
-		var results = [];
-
-		while (results.length < amt) {
-			if (!collapse.length)
-				break;
-
-			var r = collapse[Math.floor(Math.random() * collapse.length)]
-
-			results.push(r)
-			collapse.splice(collapse.indexOf(r), 1)
-		}
-
-		return results;
-	}
-
 	// TODO: ???
 	this.createTransaction = function() {
-		//var inputs = this.getRandomInputs(Math.floor(Math.random() * 2) + 1)
 		var inputs = [];
 		var outputs = this.createRandomOutputs(Math.floor(Math.random() * 2) + 1)
 
