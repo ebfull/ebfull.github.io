@@ -7,6 +7,7 @@ function Miner(self) {
 	this.difficulty = self.blockchain.chainstate.head.difficulty; // genesis block difficulty
 	this.attacker_status = false;
 	this.attacker_inv = {};
+	this.attacker_tied = false;
 	this.enabled = false;
 
 	var updateDifficulty = function () {
@@ -62,13 +63,21 @@ function Miner(self) {
 					var no = this.chainstate.enter(b)
 					updateDifficulty();
 
+					self.miner.attacker_tied = false;
+
 					if (no >= 0) {
 						// the new block defeated our chain
 						self.log("attacker: adopted public chain at h=" + self.blockchain.chainstate.head.h)
 						self.miner.attacker_inv = {};
 					}
 
-					if (/*self.blockchain.chainstate.head.work >= this.chainstate.head.work && */self.blockchain.chainstate.head != this.chainstate.head) {
+					if (self.blockchain.chainstate.head != this.chainstate.head) {
+						if (self.blockchain.chainstate.head.h == this.chainstate.head.h) {
+		           			// our chain is tied with the public chain
+		           			// the next block we mine should be immediately released
+		           			self.miner.attacker_tied = true;
+			         	}
+
 						var offset = 0;
 						if (self.blockchain.chainstate.head.h == this.chainstate.head.h-1) {
 							offset = 1;
@@ -104,7 +113,6 @@ function Miner(self) {
 
 			            self.log("attacker: published partial private chain up to h=" + (self.blockchain.chainstate.head.h) + " (new lead=" + lead + ")")
 		           }
-
 				}
 				self.private_blockchain.onMine = function(b) {
 					self.log("attacker: onMine")
@@ -112,8 +120,15 @@ function Miner(self) {
 					// just update chainstate
 					this.chainstate.enter(b)
 
-					// save it for later
-					self.miner.attacker_inv[b.id] = true;
+					if (self.miner.attacker_tied) {
+					//if (false) {
+						self.miner.attacker_tied = false;
+
+						self.blockchain.onMine.call(self.blockchain, b, true)
+					} else {
+						// save it for later
+						self.miner.attacker_inv[b.id] = true;
+					}
 				}
 			}
 			self.private_blockchain.onBlock(self.blockchain.chainstate.head)
