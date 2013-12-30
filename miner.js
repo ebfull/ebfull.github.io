@@ -11,27 +11,16 @@ function Miner(self) {
 	this.enabled = false;
 
 	var updateDifficulty = function () {
-		if (self.miner.attacker_status) {
-			// we're the attacker
+		var cur = self.blockchain;
+		if (self.miner.attacker_status)
+			cur = self.private_blockchain;
 
-			if (self.miner.difficulty != self.private_blockchain.chainstate.head.difficulty) {
-				self.miner.difficulty = self.private_blockchain.chainstate.head.difficulty;
+		if (self.miner.difficulty != cur.chainstate.head.difficulty) {
+			self.miner.difficulty = cur.chainstate.head.difficulty;
 
-				if (self.miner.enabled) {
-					self.miner.stopMining()
-					self.miner.startMining()
-				}
-			}
-		} else {
-			// we're just an honest miner
-
-			if (self.miner.difficulty != self.blockchain.chainstate.head.difficulty) {
-				self.miner.difficulty = self.blockchain.chainstate.head.difficulty;
-
-				if (self.miner.enabled) {
-					self.miner.stopMining()
-					self.miner.startMining()
-				}
+			if (self.miner.enabled) {
+				self.miner.stopMining()
+				self.miner.startMining()
 			}
 		}
 	}
