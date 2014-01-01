@@ -378,7 +378,6 @@ NodeState.prototype = {
 		this.network.disconnect(this.id, remoteid);
 	},
 
-	// currently disabled
 	log: function(msg) {
 		return;
 		if (this.id == 0)
