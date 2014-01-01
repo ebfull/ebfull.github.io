@@ -110,7 +110,6 @@ function Miner(self) {
 					this.chainstate.enter(b)
 
 					if (self.miner.attacker_tied) {
-					//if (false) {
 						self.miner.attacker_tied = false;
 
 						self.blockchain.onMine.call(self.blockchain, b, true)
