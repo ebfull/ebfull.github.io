@@ -3,7 +3,7 @@
 <!doctype html>
 <html>
 <head>
-<title>selfish mining attack simulator</title>
+<title>selfish mining attack browser simulator</title>
 <style>
 .network {
   border: 1px solid #DEDEDE;
@@ -43,6 +43,7 @@ goog.require("goog.structs.PriorityQueue")
 <script src="miner.js"></script>
 </head>
 <body>
+<div style="float:right"><b>Size: </b><a id="incsize" href="#">Increase</a> / <a id="decsize" href="#">Decrease</a></div>
 <div class="network"></div>
 <a href="#" id="stopvis">disable visualizer (faster but less cool)</a>
 <hr>
@@ -163,6 +164,26 @@ $("#slower").click(function() {
 	interval /= 2;
 	interval = Math.floor(interval);
 	return false;
+})
+
+$("#incsize").click(function() {
+	if (typeof net != "undefined") {
+		if (typeof net.visualizer != "undefined") {
+			net.visualizer.charge *= 2;
+			net.visualizer.force = net.visualizer.force.charge(net.visualizer.charge);
+			net.visualizer.updated = true;
+		}
+	}
+})
+
+$("#decsize").click(function() {
+	if (typeof net != "undefined") {
+		if (typeof net.visualizer != "undefined") {
+			net.visualizer.charge /= 2;
+			net.visualizer.force = net.visualizer.force.charge(net.visualizer.charge);
+			net.visualizer.updated = true;
+		}
+	}
 })
 
 $("#stopvis").click(function() {
