@@ -48,7 +48,7 @@ goog.require("goog.structs.PriorityQueue")
 <a href="#" id="stopvis">disable visualizer (faster but less cool)</a>
 <hr>
 <b><a id="pause" href="#">(pause)</a></b> <b><a id="default" href="#">(default)</a></b> <b><a id="faster" href="#">+</a></b>/<b><a id="slower" href="#">-</a></b> <span id="timenow"></span><br /><br />
-<!--<a id="restart" href="#">Restart</a><br />-->
+<a id="skip" href="#">skip</a><br />
 <div id="statchart"></div>
 <script>
 var net;
@@ -139,8 +139,9 @@ setInterval(function() {
 	}
 }, 10)
 
-$("#restart").click(function() {
-	start();
+$("#skip").click(function() {
+	curtrial = trials.shift()
+	start(curtrial.percent, curtrial.sybil, curtrial.attack);
 	return false;
 })
 

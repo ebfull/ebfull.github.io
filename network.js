@@ -12,7 +12,21 @@ function latency(a, b) {
 /* visualizer, uses d3/jquery to visualize the network graph */
 
 function Visualizer(div) {
+	this.nindex = 0;
+	this.svg = null;
 	this.divname = div;
+	this.force = null;
+	this.nodes = null;
+	this.links = null;
+	this.slink = null;
+	this.snode = null;
+	this.edges = {};
+	this.inodes = [];
+	this.updated = false;
+	this.colormap = {};
+	this.colormap_u = false;
+	this.link_colormap = {};
+	this.link_colormap_last = 0;
 }
 
 Visualizer.prototype = {
@@ -22,22 +36,6 @@ Visualizer.prototype = {
 	charge: -100,
 	gravity: .5,
 	nindex: 0, // the cursor of the nodes array
-
-	svg: null,
-	force: null,
-	nodes: null,
-	links: null,
-	slink: null,
-	snode: null,
-	edges: {},
-	inodes: [],
-	updated:false,
-
-	colormap:{},
-	colormap_u:false,
-
-	link_colormap:{},
-	link_colormap_last:0,
 
 	init: function() {
 		// init the network layout/svg
