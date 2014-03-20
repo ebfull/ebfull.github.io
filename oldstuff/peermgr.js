@@ -20,12 +20,11 @@ function PeerState(id, lastmessage) {
 
 function PeerMgr(self) {
 	// attach to nodestate 'peers' property
-	// self.peers = this;
-	self.peermgr = this;
+	self.peers = this;
 
 	this.peers = {}; // current established or attempted connections
 	this.numpeers = 0; // the number of peers we have
-	this.maxpeers = 8; // the max number of peers we can have
+	this.maxpeers = Math.floor(Math.random() * 30) + 8; // the max number of peers we can have
 	if (self.id != 0)
 		this.nodearchive = [new PeerState(0, self.now())]; // a node archived, initialized with a bootstrap node
 	else
@@ -66,13 +65,6 @@ function PeerMgr(self) {
 			} else {
 				self.send(this.peers[to].id, "__peermsg", {name:name,obj:msg})
 			}
-		}
-	}
-
-	this.each = function(cb) {
-		for (var p in this.peers) {
-			if (this.peers[p].active)
-				cb.call(self, p)
 		}
 	}
 
@@ -279,5 +271,3 @@ function PeerMgr(self) {
 	self.on("ack", this.onAck, this);
 	self.on("__peermsg", this.onReceive, this);
 }
-
-module.exports = PeerMgr;

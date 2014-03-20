@@ -1,8 +1,5 @@
 // hub script for dispatching simulation tasks to lots of servers
 
-console.log("THIS IS NOT STABLE")
-process.exit(1)
-
 var async = require('async')
 var sys = require('sys')
 

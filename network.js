@@ -1,4 +1,9 @@
-/* helper functions for estimating latency between two node IDs */
+if (typeof goog == "undefined") {
+	require('./goog/bootstrap/nodejs')
+	goog.require("goog.structs.PriorityQueue")
+}
+
+var BitArray = require("./bit-array");
 
 var topologySeed = Math.floor(Math.random() * 1000000000);
 
@@ -8,211 +13,6 @@ function latency(a, b) {
 
 	return Math.floor((Math.log(1-Math.random())/-1) * (avgVariance)) + min
 }
-
-/* visualizer, uses d3/jquery to visualize the network graph */
-
-function Visualizer(div) {
-	this.nindex = 0;
-	this.svg = null;
-	this.divname = div;
-	this.force = null;
-	this.nodes = null;
-	this.links = null;
-	this.slink = null;
-	this.snode = null;
-	this.edges = {};
-	this.inodes = [];
-	this.updated = false;
-	this.colormap = {};
-	this.colormap_u = false;
-	this.link_colormap = {};
-	this.link_colormap_last = 0;
-}
-
-Visualizer.prototype = {
-	width: 1000,
-	height: 500,
-	linkDistance: 30,
-	charge: -100,
-	gravity: .5,
-	nindex: 0, // the cursor of the nodes array
-
-	init: function() {
-		// init the network layout/svg
-		$(this.divname).css('width', this.width);
-		$(this.divname).css('height', this.height);
-
-		this.force = d3.layout.force()
-			.size([this.width,this.height])
-			.nodes([]) // no nodes
-			.linkDistance(this.linkDistance)
-			.charge(this.charge)
-			.gravity(this.gravity);
-
-		this.svg = d3.select(this.divname).append("svg")
-	    	.attr("width", this.width)
-	    	.attr("height", this.height);
-
-	   	this.svg.append("rect")
-		    .attr("width", this.width)
-		    .attr("height", this.height);
-
-		this.nodes = this.force.nodes();
-		this.links = this.force.links();
-		this.slink = this.svg.selectAll(".link");
-		this.snode = this.svg.selectAll(".node");
-
-		this.force = this.force.on("tick", this.tick());
-
-		this.updated = true;
-		this.rehash(0);
-	},
-
-	setColor: function(p, color) {
-		this.colormap_u = true;
-		this.colormap[p] = color;
-	},
-
-	setLinkActivity: function(p, now) {
-		this.link_colormap[p] = now;
-		this.link_colormap_last = 0;
-	},
-
-	getRandomLink: function() {
-		var result;
-		var count=1;
-		for (var prop in this.edges) {
-			if (Math.random() < 1/++count)
-				result = prop;
-		}
-		if (!result)
-			return -1;
-		var e = result.split("-");
-		return [parseInt(e[0]), parseInt(e[1])];
-	},
-
-	getRandomNode: function() {
-		return this.inodes[Math.floor(Math.random()*this.inodes.length)];
-	},
-
-	getKeyForID: function(id) {
-		return this.inodes.indexOf(id);
-	},
-
-	incCharge: function(amt) {
-		this.force.charge(this.force.charge() - amt);
-		this.updated = true;
-		///////////this.rehash();
-	},
-
-	addNode: function() {
-		// add a node, return the index
-		this.nodes.push({id:"n"+this.nindex});
-		this.inodes.push(this.nindex);
-		this.updated = true;
-		/////////////this.rehash();
-
-		this.nindex++;
-		return this.nindex-1;
-	},
-
-	connect: function(a, b) {
-		if (this.edges.hasOwnProperty(a + '-' + b) || this.edges.hasOwnProperty(b + '-' + a))
-			return false; // we're already connected
-
-		if (a==b)
-			return false; // can't connect to ourself silly!
-
-		this.edges[a + '-' + b] = {source:this.nodes[this.getKeyForID(a)],target:this.nodes[this.getKeyForID(b)]};
-		this.links.push(this.edges[a + '-' + b]);
-
-		this.updated = true;
-		//////this.rehash();
-	},
-
-	disconnect: function(a, b) {
-		if (!this.edges.hasOwnProperty(a + '-' + b) && !this.edges.hasOwnProperty(b + '-' + a))
-			return false; // we're already disconnected
-
-		var i = this.links.indexOf(this.edges[a + '-' + b]);
-		if (i<0)
-			i = this.links.indexOf(this.edges[b + '-' + a]);
-
-		delete this.edges[a + '-' + b];
-		delete this.edges[b + '-' + a];
-
-		this.links.splice(i, 1); // remove the link
-
-		this.updated = true;
-		//////this.rehash();
-	},
-
-	removeNode: function(index) {
-		// remove a node at index
-		var i = this.getKeyForID(index);
-		if (i < 0)
-			return false; // this one has already been removed
-
-		this.nodes.splice(i, 1);
-		this.inodes.splice(i, 1);
-		this.updated = true;
-		///////////////////this.rehash();
-	},
-
-	tick: function() {
-		var svg = this.svg;
-		return function() {
-			svg.selectAll(".link").attr("x1", function(d) { return d.source.x; })
-				.attr("y1", function(d) { return d.source.y; })
-				.attr("x2", function(d) { return d.target.x; })
-				.attr("y2", function(d) { return d.target.y; })
-				.attr("id", function(d) {return "l-" + d.source.id + "-" + d.target.id;});
-
-			svg.selectAll(".node").attr("cx", function(d) { return d.x; })
-				.attr("cy", function(d) { return d.y; });
-		}
-	},
-
-	rehash: function(now) {
-		/***** COLORMAP *****/
-		if (this.colormap_u) {
-			for (var p in this.colormap) {
-				$(".n" + p).css('fill', this.colormap[p]);
-			}
-			this.colormap_u = false;
-		}
-
-		if (this.link_colormap_last < (now-100)) {
-			this.link_colormap_last = now;
-			for (var p in this.link_colormap) {
-				if (this.link_colormap[p] + 100 > now) {
-					$("#l-" + p).css('stroke', "black")
-				} else {
-					$("#l-" + p).css('stroke', "#999")
-					delete this.link_colormap[p];
-				}
-			}
-		}
-
-		if (!this.updated)
-			return;
-
-		this.slink = this.slink.data(this.force.links(), function(d) { return d.source.id + "-" + d.target.id; });
-		this.slink.enter().insert("line", ".node")
-			.attr("class", "link");
-		this.slink.exit().remove();
-
-		this.snode = this.snode.data(this.force.nodes(), function(d) {return d.id;});
-		this.snode.enter().append("circle").attr("class", function (d) {return "node " + d.id;})
-			.attr("r", 3)
-			.call(this.force.drag);
-		this.snode.exit().remove();
-
-		this.force.start();
-
-		this.updated = false;
-	}
-};
 
 /*
 	Events
@@ -295,7 +95,7 @@ function NodeMessageEvent(from, nid, name, obj) {
 	}
 }
 
-function NodeTickEvent(delay, nid, f, ctx) {
+function NodeTickEvent(delay, f, ctx) {
 	this.delay = delay;
 
 	this.run = function(network) {
@@ -377,9 +177,9 @@ NodeState.prototype = {
 	},
 
 	log: function(msg) {
-		return;
-		if (this.id == 0)
-			console.log("[" + this.now() + "]: " + this.id + ": " + msg)
+		var str = "[" + this.now() + "]: " + this.id + ": " + msg;
+
+		this.network.log(str)
 	},
 
 	now: function() {
@@ -390,7 +190,7 @@ NodeState.prototype = {
 		if (typeof ctx == "undefined")
 			ctx = this;
 
-		this.network.exec(new NodeTickEvent(delay, this.id, f, ctx))
+		this.network.exec(new NodeTickEvent(delay, f, ctx))
 	},
 
 	send: function(nid, name, obj) {
@@ -399,7 +199,7 @@ NodeState.prototype = {
 
 	handle: function(from, name, obj) {
 		if (typeof this.handlers[name] != "undefined") {
-			this.handlers[name](from, obj)
+			return this.handlers[name](from, obj)
 		}
 	},
 
@@ -409,7 +209,7 @@ NodeState.prototype = {
 
 		if (typeof this.handlers[name] != "undefined") {
 			var oldHandler = this.handlers[name];
-			this.handlers[name] = function(from, obj) {oldHandler.call(ctx, from, obj); f.call(ctx, from, obj);}
+			this.handlers[name] = function(from, obj) {if (f.call(ctx, from, obj) !== false) oldHandler.call(ctx, from, obj);}
 		} else {
 			this.handlers[name] = function(from, obj) {return f.call(ctx, from, obj);};
 		}
@@ -420,15 +220,12 @@ NodeState.prototype = {
 	}
 }
 
-function Node() {
-	this._handlers = [];
-	this._ticks = [];
-	this._probs = [];
+function Client() {
 	this._use = [];
 	this._init = false;
 }
 
-Node.prototype = {
+Client.prototype = {
 	setup: function(node) {
 		// run middleware
 		for (var i=0;i<this._use.length;i++) {
@@ -438,21 +235,6 @@ Node.prototype = {
 		// run init functions
 		if (this._init)
 			this._init.call(node);
-
-		// create tick events
-		for (var i=0;i<this._ticks.length;i++) {
-			node.tick(this._ticks[i].delay, this._ticks[i].f)
-		}
-
-		// create prob tick events
-		for (var i=0;i<this._probs.length;i++) {
-			node.prob(this._probs[i].label, this._probs[i].p, this._probs[i].f)
-		}
-
-		// create event handlers
-		for (var i=0;i<this._handlers.length;i++) {
-			node.on(this._handlers[i].name, this._handlers[i].f)
-		}
 	},
 
 	use: function(f) {
@@ -467,35 +249,133 @@ Node.prototype = {
 			this._init = function() {oldInit.call(this); callback.call(this)};
 		}
 	},
-
-	on: function(event, callback) {
-		this._handlers.push({name:event, f:callback})
-	},
-
-	tick: function(delay, callback) {
-		this._ticks.push({delay: delay, f: callback})
-	},
-
-	prob: function(label, p, callback) {
-		this._probs.push({label:label, p:p, f:callback})
-	}
 }
 
-/*
-	Network
-*/
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function Network(visualizerDiv) {
+function Consensus() {
+	this.store = {}; // key value store for objects themselves
+	this.n = 0;
+}
+
+function LocalizedState(consensus) {
+	this.consensus = consensus;
+	this.id = consensus.n++;
+}
+
+Consensus.prototype = {
+	add: function(key, obj) {
+		this.store[key] = {obj:obj, states:[]};
+	},
+	obtain: function() {
+		return new LocalizedState(this);
+	},
+	rand: function() {
+		return String.fromCharCode(
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256)
+			)
+	}
+};
+
+function ConsensusState() {
+	this.status = "none";
+
+	this.equals = function(v) { if ((this.status == "none") && (v.status == "none")) { return true; } return false;}
+}
+
+LocalizedState.prototype = {
+	// sets k's state to v
+	set: function(k, v) {
+		if (!(k in this.consensus.store)) {
+			this.consensus.add(k, {})
+		}
+
+		var states = this.consensus.store[k].states;
+		var del = false;
+		states.forEach(function(s) {
+			if (s.members.get(this.id))
+				del = s;
+		}, this)
+
+		if (del !== false) {
+			del.members.set(this.id, false);
+			if (del.members.count() == 0) {
+				states.splice(states.indexOf(del), 1);
+			}
+		}
+
+		var proc = false;
+
+		states.forEach(function(s) {
+			if (s.state.equals(v)) {
+				proc = s;
+			}
+		}, this)
+
+		if (proc !== false)
+			proc.members.set(this.id, true);
+		else {
+			var n = {state:v, members: new BitArray(1024)};
+			n.state.__proto__ = this.consensus.store[k].obj;
+			n.members.set(this.id, true);
+			states.push(n)
+		}
+	},
+	get: function(k) {
+		if (!(k in this.consensus.store)) {
+			this.consensus.add(k, {})
+		}
+
+		var states = this.consensus.store[k].states;
+		var get = false;
+		states.forEach(function(s) {
+			if (s.members.get(this.id)) {
+				get = s;
+			}
+		}, this)
+
+		if (get !== false)
+			return get.state;
+		else {
+			var gen = new ConsensusState();
+			this.set(k, gen);
+			return gen;
+		}
+	},
+	create: function(obj) {
+		return obj.init(this.consensus);
+	},
+	rand: function() {
+		return this.consensus.rand();
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function Network() {
 	this.events = new Events(); // normal events
 	this.pevents = {}; // probablistic event buckets
-	if (typeof visualizerDiv != "undefined") {
-		$(visualizerDiv).html("");
-		this.visualizer = new Visualizer(visualizerDiv);
-		this.visualizer.init();
+	if (typeof VISUALIZER != "undefined") {
+		this.visualizer = VISUALIZER;
 	} else {
 		this.visualizer = false;
 	}
 	this.now = 0;
+	this.maxrun = 0;
 
 	this.nodes = [];
 	this.nindex = 0;
@@ -504,13 +384,25 @@ function Network(visualizerDiv) {
 }
 
 Network.prototype = {
+	Client: Client,
+	// random data
+	rand: function(name) {
+		return Consensus.prototype.rand();
+	},
 	// grab a shared cache object
 	shared: function(name) {
 		if (typeof this._shared[name] == "undefined") {
-			this._shared[name] = new ConsensusState(false, false);
+			this._shared[name] = new Consensus();
 		}
 
-		return this._shared[name];
+		return this._shared[name].obtain();
+	},
+
+	log: function(str) {
+		if (this.visualizer)
+			this.visualizer.log(str)
+		else
+			console.log(str)
 	},
 
 	// registers probablistic event
@@ -579,484 +471,50 @@ Network.prototype = {
 	},
 
 	// run buffer time (msec) worth of tasks
-	run: function(buffer) {
-		var max = this.now+buffer;
-		var e = false;
+	run: function(msec, next) {
+		this.maxrun = this.now + msec;
+
+		if (typeof(DELAY_RUN) != "undefined") {
+			// this is an async call
+			DELAY_RUN.net = this;
+			DELAY_RUN.cb = next;
+		} else {
+			this._run(msec)
+			if (next)
+				next.call(this);
+		}
+	},
+
+	_run: function(msec) {
+		if (this.now >= this.maxrun) {
+			if (DELAY_RUN) {
+				if (DELAY_RUN.cb) {
+					var cb = DELAY_RUN.cb;
+					DELAY_RUN.cb = false;
+					cb.call(this);
+				}
+			}
+			return;
+		}
+
+		var max = Math.min(this.now + msec, this.maxrun);
+
+		// actually run msec worth of shit
 		while (e = this.events.next(max)) {
 			this.now = e.time;
 			e.event.run(this)
 		}
 
-		this.now += buffer;
+		this.now = max;
+	},
 
-		if (this.visualizer) {
-			this.visualizer.rehash(this.now);
-		}
+	check: function(msec, f) {
+		this.exec(new NodeTickEvent(msec, f, this))
+	},
+
+	stop: function() {
+		this.maxrun = this.now;
 	}
 }
 
-
-
-/*
-	this is a really dirty abstraction for certain data structures, like maps,
-	or the UTXO. It allows for us to internally represent some structures as
-	differences between nodes, avoiding memory redunancy and allowing memoization.
-*/
-
-function ConsensusState(parent) {
-	if (parent) {
-		this.id = parent.id;
-		this.root = parent.root;
-		this._retain = 1;
-		parent.children.push(this)
-	} else {
-		this.id = this.rand();
-		this.root = this;
-		this._retain = 0;
-
-		this.statecache = {};
-	}
-	this.parent = parent; // our parent state
-	this.children = []; // states that build on top of us, we must release these
-
-	this.transitions = []; // stuff we applied to this state
-	this.untransitions = []; // stuff we unapplied to this state
-
-	this.buckets = {}; // transitions are placed into buckets to comb less of them during validation
-
-	this.validatorCache = {}; // map transitions id to validator
-	this.invalidatorCache = {}; // map transition id to validator
-
-	this.fetchCache = {}; // cache of fetch() result objects
-}
-
-ConsensusState.prototype = {
-	inherit: function() {
-		for (var key in this.parent.buckets) {
-			this.parent.buckets[key].forEach(function(tr) {
-				if (this.untransitions.indexOf(tr) == -1) {
-					if (!(key in this.buckets)) {
-						this.buckets[key] = []
-					}
-					this.buckets[key].push(tr)
-				}
-			}, this)
-		}
-
-		this.parent.transitions.forEach(function(parentTr) {
-			var un = this.untransitions.indexOf(parentTr);
-
-			if (un != -1) {
-				this.untransitions.splice(un, 1)
-			} else {
-				this.transitions.push(parentTr)
-			}
-		}, this)
-
-		this.parent.untransitions.forEach(function(parentUntr) {
-			this.untransitions.push(parentUntr)
-		}, this)
-
-		this.parent = this.parent.parent;
-	},
-	retain: function() {
-		this._retain++;
-	},
-	release: function() {
-		this._retain--;
-
-		if (this._retain == 0) {
-			// nothing will shift to this state anymore
-			delete this.root.statecache[this.id]
-
-			// merge upward as much as possible
-			while(this.parent && this.parent._retain == 0) {
-				// TODO: improve metric
-				if ((this.parent.transitions.length + this.parent.untransitions.length) <= (2 * (this.transitions.length + this.untransitions.length))) {
-					this.inherit();
-				} else {
-					break;
-				}
-			}
-
-			// release our children
-			this.children.forEach(function(child) {
-				child.release();
-			}, this)
-
-			// garbage collect defunct branches
-			this.children = [];
-
-			// garbage collect other stuff
-			this.fetchCache = {};
-			this.validatorCache = {};
-			this.invalidatorCache = {};
-		}
-	},
-	rand: function() {
-		return String.fromCharCode(
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256),
-			Math.floor(Math.random() * 256)
-			)
-	},
-	xor: function(a, b) {
-		var n = "";
-
-		for (var i=0;i<a.length;i++) {
-			n += String.fromCharCode(a.charCodeAt(i) ^ b.charCodeAt(i));
-		}
-
-		return n;
-	},
-	attach: function(bucket, transition) {
-		if (!(bucket in this.buckets)) {
-			this.buckets[bucket] = []
-		}
-
-		this.buckets[bucket].unshift(transition)
-	},
-	unattach: function(bucket, transition) {
-		if (bucket in this.buckets) {
-			var i = this.buckets[bucket].indexOf(transition)
-
-			if (i != -1) {
-				this.buckets[bucket].splice(i, 1)
-
-				if (this.buckets[bucket].length == 0) {
-					delete this.buckets[bucket]
-				}
-			}
-		}
-	},
-	// Verify that the transition can be constructed on top of this state.
-	validate: function(transition) {
-		if (transition.id in this.validatorCache) {
-			return this.validatorCache[transition.id]
-		} else {
-			this.validatorCache[transition.id] = new ConsensusValidator(transition);
-			transition.validate(this.validatorCache[transition.id])
-			this.validatorCache[transition.id].validate(this)
-
-			return this.validatorCache[transition.id];
-		}
-	},
-	// Invalidate the transition, and anything that may depend on it
-	invalidate: function(transition) {
-		if (transition.id in this.invalidatorCache) {
-			return this.invalidatorCache[transition.id]
-		} else {
-			this.invalidatorCache[transition.id] = new ConsensusValidator(transition);
-			transition.invalidate(this.invalidatorCache[transition.id])
-			this.invalidatorCache[transition.id].validate(this)
-
-			return this.invalidatorCache[transition.id];
-		}
-	},
-	// Create a new ConsensusState, release the old one, return the new one.
-	shift: function(validator) {
-		if (validator.state != validator.VALID)
-			return false;
-
-		var newid = this.id;
-
-		validator.applies.forEach(function(transition) {
-			newid = this.xor(newid, transition.id)
-		}, this)
-
-		validator.unapplies.forEach(function(transition) {
-			newid = this.xor(newid, transition.id)
-		}, this)
-
-		if (newid in this.root.statecache) {
-			var n = this.root.statecache[newid];
-
-			n.retain();
-			this.release();
-			return n;
-		}
-
-		var n = new ConsensusState(this);
-
-		this.root.statecache[newid] = n;
-
-		validator.applies.forEach(function(transition) {
-			transition.apply(n)
-			n.transitions.push(transition)
-		}, this)
-
-		validator.unapplies.forEach(function(transition) {
-			//transition.unapply(n) // TODO? ??
-			n.untransitions.push(transition)
-		}, this)
-
-		n.id = newid;
-		n.retain(); // retain new state
-		this.release(); // release old state
-
-		return n;
-	},
-	fetch: function(f, key) {
-		if (typeof key != "undefined") {
-			if (key in this.fetchCache) {
-				return this.fetchCache[key]
-			} else {
-				this.fetchCache[key] = f;
-			}
-		}
-
-		var cur = this;
-
-		while (cur) {
-			if (f.handle(cur)) {
-				return f;
-			}
-
-			cur = cur.parent;
-		}
-
-		if (typeof f.finalize != "undefined")
-			f.finalize();
-
-		return f;
-	}
-}
-
-
-
-function ConsensusValidator(transition) {
-	this.state = this.PARTIAL;
-	this.conflict = false;
-
-	this.applies = []; // (for shift) a list of transitions we should apply
-	this.unapplies = []; // (for shift) a list of transitions we should unapply
-
-	this.closed = true; // is the checklist closed
-	this.checklist = []; // checklist which we should satisfy
-}
-
-ConsensusValidator.prototype = {
-	VALID: 0,
-	PARTIAL: 1,
-	CONFLICT: 2,
-	INVALID: 3,
-	DUPLICATE: 4,
-
-	// Asserts that a named event virtually occurred.
-	check: function(bucket, f) {
-		this.checklist.push({bucket:bucket,f:f})
-		this.closed = false;
-	},
-	// Process this validation for the given state
-	validate: function(state) {
-		this.closed = true;
-		while(true) {
-			var ignore = [];
-
-			var cur = state;
-
-			while (cur) {
-				this.applies.forEach(function(tr) {
-					if (cur.transitions.indexOf(tr) != -1) {
-						if (ignore.indexOf(tr) == -1)
-							this.state = this.DUPLICATE;
-					}
-				}, this)
-
-				if (this.state != this.PARTIAL)
-					return;
-
-				var removeFromChecklist = [];
-
-				this.checklist.forEach(function(check, indexCheck) {
-					if (check.bucket in cur.buckets) {
-						var iter = cur.buckets[check.bucket]
-
-						for (var i=0;i<iter.length;i++) {
-							var transition = iter[i]
-
-							if (ignore.indexOf(transition) == -1) {
-								if (check.f(transition, this, check.bucket)) {
-									// callback returned true, thus we can remove this checklist item
-									removeFromChecklist.push(indexCheck)
-									return;
-								}
-							}
-						}
-					}
-				}, this)
-
-				var d = 0;
-				removeFromChecklist.forEach(function(ci) {
-					this.checklist.splice(ci-d, 1)
-					d++;
-				}, this)
-
-				// start ignoring anything this state claims never occurred
-				cur.untransitions.forEach(function(ignoreThis) {
-					ignore.push(ignoreThis)
-				})
-
-				if (this.state != this.PARTIAL)
-					return;
-
-				if (!this.closed) {
-					this.closed = true;
-					continue;
-				}
-
-				cur = cur.parent;
-			}
-
-			break;
-		}
-
-		var removeFromChecklist = [];
-
-		// final pass through checklist:
-		this.checklist.forEach(function(check, indexCheck) {
-			if (check.f(false, this, check.bucket)) {
-				removeFromChecklist.push(indexCheck)
-			}
-		}, this)
-
-		var d = 0;
-		removeFromChecklist.forEach(function(ci) {
-			this.checklist.splice(ci-d, 1)
-			d++;
-		}, this)
-
-		if (this.state == this.PARTIAL) {
-			if (this.checklist.length == 0) {
-				this.state = this.VALID;
-			}
-		}
-	}
-}
-
-
-var ConsensusTransitionPrototype = {
-	// traverse all parent states, presumably to catch duplicate transitions
-	persist: function(tr, v) {
-		if (!tr)
-			return true;
-
-		return false;
-	}
-}
-
-
-// Templates for Generic Structures
-
-var ConsensusMapObject = {
-	apply: function(s) {
-		if (typeof this.bucket != "undefined")
-			s.attach(this.bucket, this)
-		else
-			s.attach(this.id, this)
-	},
-	validate: function(v) {
-		if (v.applies.indexOf(this) != -1)
-			return;
-
-		v.applies.push(this)
-
-		if (typeof this.bucket != "undefined")
-			v.check(this.bucket, this.persist)
-		else
-			v.check(this.id, this.persist)
-	},
-	invalidate: function(v) {
-		if (v.unapplies.indexOf(this) != -1)
-			return;
-
-		v.unapplies.push(this)
-	}
-}
-
-ConsensusMapObject.__proto__ = ConsensusTransitionPrototype;
-
-
-function FetchEntry(name) {
-	this.result = false;
-	this.ignoreTr = [];
-
-	this.handle = function(state) {
-		state.untransitions.forEach(function(untr) {
-			this.ignoreTr.push(untr)
-		}, this)
-
-		if (name in state.buckets) {
-			if (state.buckets[name].some(function(tr) {
-				var ind;
-				if ((ind = this.ignoreTr.indexOf(tr)) != -1) {
-					this.ignoreTr.splice(ind, 1)
-				} else {
-					this.result = tr;
-					return true;
-				}
-
-				return false;
-			}, this))
-				return true;
-		}
-
-		return false;
-	}
-}
-
-
-function FetchEntries(name, getid) {
-	this.result = [];
-	this.ignoreTr = [];
-
-	this.handle = function(state) {
-		state.untransitions.forEach(function(untr) {
-			this.ignoreTr.push(untr)
-		}, this)
-
-		if (name in state.buckets) {
-			state.buckets[name].forEach(function(tr) {
-				var ind;
-				if ((ind = this.ignoreTr.indexOf(tr)) != -1) {
-					this.ignoreTr.splice(ind, 1)
-				} else {
-					this.result.push(tr);
-				}
-			}, this)
-		}
-
-		return false;
-	}
-
-	this.finalize = function() {
-		if (typeof getid == "undefined")
-			return;
-
-		var found = false;
-
-		this.result.some(function(res) {
-			if (res.id == getid) {
-				this.result = res;
-				found = true;
-				return true;
-			}
-			return false;
-		}, this)
-
-		if (!found)
-			this.result = false;
-	}
-}
+module.exports = new Network();

@@ -1,0 +1,458 @@
+<script>
+
+function Group(parent) {
+	this._r = 0;
+	this.states = {};
+	this.children = [];
+
+	if (parent) {
+		this._r = 1;
+		this.consensus = parent.consensus;
+		this.parent = parent;
+		this.id = parent.id;
+
+		this.parent.children.push(this);
+	}
+}
+
+Group.prototype = {
+	get: function(k) {
+		if (k in this.states) {
+			return this.states[k];
+		} else {
+			if (this.parent) {
+				return this.parent.get(k);
+			} else {
+				return {state:0};
+			}
+		}
+	},
+	set: function(k, value) {
+		this.states[k] = value;
+	},
+	inherit: function() {
+		// inherit states from our parent
+		for (var id in this.parent.states) {
+			if (!(id in this.states)) {
+				this.states[id] = this.parent.states[id];
+			}
+		}
+
+		this.parent = this.parent.parent;
+	},
+	retain: function() {
+		this._r++;
+	},
+	release: function() {
+		this._r--;
+
+		if (this._r == 0) {
+			// nothing will switch to this state again, remove us from cache
+			this.consensus.rmgroup(this);
+
+			// merge upward as much as possible
+			while (this.parent && this.parent._r == 0) {
+				if (Object.keys(this.parent.states).length <= Object.keys(this.states).length) {
+					this.inherit();
+				} else {
+					break;
+				}
+			}
+
+			// release our children
+			this.children.forEach(function(child) {
+				child.release();
+			})
+
+			// garbage collect
+			this.children = false;
+		}
+	}
+}
+
+function Consensus() {
+	this._defaultGroup = this.rand();
+	this.store = {}; // key value store for objects themselves
+	var defaultGroup = new Group();
+	defaultGroup.id = this._defaultGroup;
+	defaultGroup.parent = false;
+	defaultGroup.consensus = this;
+
+	this.groups = {};
+	this.groups[this._defaultGroup] = defaultGroup;
+}
+
+function LocalizedState(consensus) {
+	this.consensus = consensus;
+	this.group = consensus.group(consensus._defaultGroup);
+	this.group.retain();
+	this.id = consensus.rand();
+}
+
+Consensus.prototype = {
+	group: function(name) {
+		if (!(name in this.groups)) {
+			return false;
+		}
+
+		return this.groups[name];
+	},
+	newgroup: function(g) {
+		this.groups[g.id] = g;
+	},
+	rmgroup: function(g) {
+		delete this.groups[g.id];
+	},
+	add: function(key, obj) {
+		this.store[key] = obj;
+	},
+	obtain: function() {
+		return new LocalizedState(this);
+	},
+	rand: function() {
+		return String.fromCharCode(
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256),
+			Math.floor(Math.random() * 256)
+			)
+	},
+	xor: function(a, b) {
+		var n = "";
+
+		for (var i=0;i<a.length;i++) {
+			n += String.fromCharCode(a.charCodeAt(i) ^ b.charCodeAt(i));
+		}
+
+		return n;
+	},
+	and: function(a, b) {
+		var n = "";
+
+		for (var i=0;i<a.length;i++) {
+			n += String.fromCharCode(a.charCodeAt(i) & b.charCodeAt(i));
+		}
+
+		return n;
+	}
+};
+
+LocalizedState.prototype = {
+	set: function(k, v) {
+		return this.group.set(k, v);
+	},
+	get: function(k) {
+		return this.group.get(k);
+	},
+	create: function(obj) {
+		return obj.init(this.consensus);
+	}
+};
+
+function TxIn(ref, n) {
+	this.ref = ref;
+	this.n = n;
+	this.k = ref.id + ':' + n;
+
+	this.isvalid = function() {return true;}
+}
+
+function TxOut(txid, n) {
+	this.n = n;
+	this.k = txid + ':' + n;
+}
+
+function Transaction(inputs, n) {
+	this.id = Consensus.prototype.rand();
+	this.vin = inputs;
+	this.vout = [];
+
+	for (var i = 0;i<n;i++) {
+		this.vout.push(new TxOut(this.id, i));
+	}
+}
+
+// Transaction validator:
+function TransactionValidator(tx) {
+	this.tx = tx;
+	this.state = this.DEFAULT;
+	this.conflicts = [];
+}
+
+TransactionValidator.prototype = {
+	DEFAULT: 0,
+	ORPHAN: 1,
+	CONFLICT: 2,
+	INVALID: 3,
+	VALID: 4,
+
+	clean: function() {
+		var newConflicts = [];
+
+		this.conflicts.forEach(function(c) {
+			if (newConflicts.indexOf(c) == -1) {
+				newConflicts.push(c);
+			}
+		})
+
+		this.conflicts = newConflicts;
+	},
+
+	id: function(me) {
+		var cur = me.group.id;
+
+		cur = Consensus.prototype.xor(cur, this.tx.id);
+
+		this.conflicts.forEach(function(c) {
+			cur = Consensus.prototype.xor(cur, c.id);
+		})
+
+		return cur;
+	},
+
+	shift: function(me) {
+		var nn;
+		var nid = this.id(me);
+		if (nn = me.consensus.group(nid)) {
+			var oldgroup = me.group;
+			me.group = nn;
+			nn.retain();
+			oldgroup.release();
+			return true;
+		} else {
+			var oldgroup = me.group;
+			me.group = new Group(me.group); // new group
+			me.group.id = nid;
+
+			me.consensus.newgroup(me.group)
+
+			me.group.retain();
+
+			oldgroup.release();
+			return false;
+		}
+	},
+
+	// apply a transaction to the state
+	// todo prevent duplicates?
+	apply: function(me) {
+		if (this.state != this.VALID) {
+			return false;
+		}
+
+		// let's move to a new state group
+		if (this.shift(me))
+			return; // using cached shift
+
+		// remove all conflicting transactions
+		this.conflicts.forEach(function(ctx) {
+			ctx.remove(me);
+		}, this)
+
+		// Now, spend our inputs...
+		var spentByN = 0;
+
+		this.tx.vin.forEach(function(input) {
+			me.set(input.k, {state:this.tx.STATE_SPENT, spentBy: this.tx, spentByN: spentByN})
+			spentByN++;
+		}, this);
+
+		// Now, set our outputs as unspent...
+		this.tx.vout.forEach(function(output) {
+			me.set(output.k, {state:this.tx.STATE_UNSPENT});
+		}, this);
+	},
+
+	unapply: function(me) {
+		if (this.state != this.VALID)
+			return false;
+
+		// move to a new state group
+		if (this.shift(me))
+			return; // using cached shift
+
+		// remove child transactions
+		this.conflicts.forEach(function(ctx) {
+			ctx.remove(me);
+		}, this)
+
+		this.tx.remove(me);
+	}
+};
+
+Transaction.prototype = {
+	STATE_NONE: 0,
+	STATE_UNSPENT: 2,
+	STATE_SPENT: 3,
+
+	init: function(consensus) {
+		var n = 0;
+
+		this.vout.forEach(function(output) {
+			consensus.add(this.id + ':' + output.n, output);
+		}, this);
+	},
+
+	validate: function(me) {
+		// Check if a transaction is valid given state `me`.
+
+		var fin = new TransactionValidator(this);
+
+		this.vin.forEach(function(input) {
+			// Check if we have the input in our UTXO
+
+			var ir = me.get(input.k);
+
+			switch (ir.state) {
+				case this.STATE_NONE:
+					if (fin.state == fin.DEFAULT) {
+						fin.state = fin.ORPHAN; // This input is not in our UTXO.
+					}
+				break;
+				case this.STATE_SPENT:
+					if (fin.state < fin.INVALID) {
+						fin.state = fin.CONFLICT; // This input has been spent, and so this tx conflicts with another.
+
+						var sub = ir.spentBy.invalidate(me);
+
+						fin.conflicts.concat(sub.conflicts);
+						fin.conflicts.push(ir.spentBy);
+					}
+				break;
+			}
+
+			if (!input.isvalid()) {
+				fin.state = fin.INVALID; // This input is not valid. (Script failed?)
+			}
+		}, this)
+
+		if (fin.state == fin.DEFAULT)
+			fin.state = fin.VALID; // If we didn't run into problems, tx is valid.
+
+		fin.clean();
+
+		return fin;
+	},
+
+	invalidate: function(me) {
+		var fin = new TransactionValidator(this);
+
+		var fault = false;
+
+		this.vin.forEach(function(input) {
+			var ir = me.get(input.k);
+
+			if ((ir.state != this.STATE_SPENT) || (ir.spentBy != this)) {
+				fault = true;
+			}
+		}, this)
+
+		if (fault) {
+			fin.state = fin.INVALID;
+			return fin;
+		}
+
+		this.vout.forEach(function(output) {
+			var ir = me.get(output.k);
+
+			if (ir.state == this.STATE_SPENT) {
+				var sub = ir.spentBy.invalidate(me);
+
+				fin.conflicts.concat(sub.conflicts);
+				fin.conflicts.push(ir.spentBy);
+			}
+		}, this)
+
+		fin.state = fin.VALID;
+
+		return fin;
+	},
+
+	remove: function(me) {
+		// delete all outputs
+		this.vout.forEach(function(output) {
+			me.set(output.k, {state:this.STATE_NONE});
+		}, this);
+
+		// set all inputs as unspent (if they weren't already purged)
+		this.vin.forEach(function(input) {
+			var cir = me.get(input.k)
+
+			if (cir.state == this.STATE_SPENT)
+				me.set(input.k, {state:this.STATE_UNSPENT});
+
+		}, this);
+	}
+};
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var UTXO = new Consensus();
+
+var node1 = UTXO.obtain();
+var node2 = UTXO.obtain();
+//var node3 = UTXO.obtain();
+
+var tx1 = new Transaction([], 3); console.log(tx1);
+var tx2 = new Transaction([new TxIn(tx1, 0)], 2); console.log(tx2);
+var tx3 = new Transaction([new TxIn(tx1, 0)], 2); console.log(tx3);
+
+console.log("---")
+
+node1.create(tx1);
+node1.create(tx2);
+node1.create(tx3);
+
+var v;
+
+/////////////////////////////////////////////////
+
+v = tx1.validate(node1);
+v.apply(node1);
+
+v = tx3.validate(node1);
+v.apply(node1);
+
+/////////////////////////////
+
+v = tx1.validate(node2);
+v.apply(node2);
+
+v = tx2.validate(node2);
+v.apply(node2);
+
+v = tx3.validate(node2);
+v.state = v.VALID;
+v.apply(node2);
+
+/////////////////////////
+
+v = tx1.invalidate(node1);
+v.unapply(node1);
+
+v = tx1.invalidate(node2);
+v.unapply(node2)
+
+v = tx1.validate(node1);
+v.apply(node1);
+
+v = tx1.validate(node2);
+v.apply(node2)
+
+console.log(UTXO);
+
+</script>
