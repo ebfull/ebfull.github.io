@@ -1,13 +1,11 @@
 function Miner(self) {
 	self.miner = this;
 
-	var updateDifficulty = function () {
-		if (self.miner.difficulty != self.miner.staged.difficulty) {
-			self.miner.difficulty = self.miner.staged.difficulty;
-			if (self.miner.enabled) {
-				self.miner.stopMining()
-				self.miner.startMining()
-			}
+	this.restage = function () {
+		self.miner.difficulty = self.miner.staged.difficulty;
+		if (self.miner.enabled) {
+			self.miner.stopMining()
+			self.miner.startMining()
 		}
 	}
 
@@ -48,14 +46,14 @@ function Miner(self) {
 			self.prob("mining", self.mprob / this.staged.difficulty, function() {
 				self.handle(-1, "miner:success", this.staged);
 
-				this.staged = this.mcb.call(self); // restage next block
-				updateDifficulty();
+				this.restage();
 			}, this)
 		}
 	}
 
 	self.on("miner:success", function(from, b) {
 		b.time = self.now();
+		b.transactions = self.mempool.getList();
 
 		self.inventory.createObj("block", b)
 
@@ -65,8 +63,7 @@ function Miner(self) {
 	}, this)
 
 	self.on("blockchain:block", function(from, b) {
-		this.staged = this.mcb.call(self); // restage next block
-		updateDifficulty();
+		this.restage();
 	}, this)
 }
 

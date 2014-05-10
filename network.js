@@ -120,7 +120,7 @@ binary heap.
 ****/
 function NodeProbabilisticTickEvent(probability, event, nid, ctx) {
 	// The event will occur in this.delay msec
-	this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (probability)));
+	this.delay = Math.floor(Math.log(1.0-Math.random())/-probability);
 	this.ignore = false;
 
 	this.run = function(network) {
@@ -132,12 +132,6 @@ function NodeProbabilisticTickEvent(probability, event, nid, ctx) {
 
 		// fire event
 		event.call(ctx)
-
-		// new delay
-		this.delay = Math.floor((Math.log(1-Math.random())/-1) * (1 / (probability)));
-
-		// create next event
-		network.exec(this, "probs")
 	}
 }
 
@@ -265,13 +259,14 @@ function LocalizedState(consensus) {
 
 Consensus.prototype = {
 	add: function(key, obj) {
-		this.store[key] = {obj:obj, states:[]};
+		if (!(key in this.store))
+			this.store[key] = {obj:obj, states:[]};
 	},
 	obtain: function() {
 		return new LocalizedState(this);
 	},
 	rand: function() {
-		return String.fromCharCode(
+		/*return String.fromCharCode(
 			Math.floor(Math.random() * 256),
 			Math.floor(Math.random() * 256),
 			Math.floor(Math.random() * 256),
@@ -287,7 +282,11 @@ Consensus.prototype = {
 			Math.floor(Math.random() * 256),
 			Math.floor(Math.random() * 256),
 			Math.floor(Math.random() * 256)
-			)
+			)*/
+		return 'xxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+		    return v.toString(16);
+		});
 	}
 };
 
@@ -355,6 +354,21 @@ LocalizedState.prototype = {
 			this.set(k, gen);
 			return gen;
 		}
+	},
+	find: function(v) {
+		// TODO: improve efficiency of this by indexing states -> objects
+
+		var results = [];
+
+		for (k in this.consensus.store) {
+			var state = this.get(k);
+
+			if (state.equals(v)) {
+				results.push(state.__proto__);
+			}
+		}
+
+		return results;
 	},
 	create: function(obj) {
 		return obj.init(this.consensus);

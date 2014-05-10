@@ -8,8 +8,12 @@ var color_i = 0;
 function Block(prev, time, miner) {
 	this.__prev = prev;
 
-	if (miner)
+	this.transactions = [];
+
+	if (miner) {
 		this.credit = miner.id;
+		this.transactions = miner.mempool.getList();
+	}
 	else
 		this.credit = false;
 
@@ -28,7 +32,11 @@ function Block(prev, time, miner) {
 		}
 	}
 	else {
-		this.id = String.fromCharCode(252, 124, 195, 233, 126, 94, 182, 200, 23, 107, 236, 43, 77, 137);
+		//this.id = String.fromCharCode(252, 124, 195, 233, 126, 94, 182, 200, 23, 107, 236, 43, 77, 137);
+		this.id = 'xxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+		    return v.toString(16);
+		});
 		this.h = 0;
 		this.prev = false;
 		this.difficulty = 600000;
@@ -65,7 +73,7 @@ Block.prototype = {
 		var old = this.difficulty;
 		this.difficulty *= this.target_avg_between_blocks / avg;
 
-		//console.log("(h=" + this.h + ") difficulty adjustment " + (this.target_avg_between_blocks / avg) + "x")
+		console.log("(h=" + this.h + ") difficulty adjustment " + (this.target_avg_between_blocks / avg) + "x")
 	},
 	_prev: function() {
 		return this.__prev;
@@ -154,6 +162,14 @@ Chainstate.prototype = {
 	forward: function(b) {
 		this.self.setColor(b.color)
 		this.head = b
+
+		this.head.transactions.forEach(function(tx) {
+			// transaction _must_ be entered into UTXO to advance to this state
+			this.self.transactions.enter(tx, true);
+
+			// transaction must be removed from mempool
+			this.self.mempool.remove(tx);
+		}, this);
 		
 		b.addPrev(this.prevs);
 
@@ -161,6 +177,11 @@ Chainstate.prototype = {
 			this.self.inventory.relay(this.head.id);
 	},
 	reverse: function() {
+		this.head.transactions.forEach(function(tx) {
+			// transaction must be added back to mempool
+			this.self.mempool.add(tx);
+		}, this);
+
 		this.mapOrphans.add(this.head)
 
 		this.head.rmPrev(this.prevs);
@@ -296,22 +317,23 @@ function Blockchain(self) {
 		return new Chainstate(this.chainstate.head, self);
 	}
 
-	// When we receive a new block, either over the wire or by mining it, process it here.
+	// When we receive a new block over the wire, process it here.
 	this.onBlock = function(b) {
 		if (this.chainstate.enter(b) != -1) {
 			self.inventory.relay(b.id);
+			return true;
 		};
 	}
 
 	self.on("obj:block", function(from, o) {
-		this.onBlock(o);
-
-		self.handle(from, "blockchain:block", o);
+		if (this.onBlock(o))
+			self.handle(from, "blockchain:block", o);
 	}, this)
 }
 
 Blockchain.prototype = {
-	Block: Block
+	Block: Block,
+	GenesisBlock: GenesisBlock
 }
 
 module.exports = Blockchain;
