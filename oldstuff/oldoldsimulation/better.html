@@ -1,0 +1,20 @@
+<script>
+var Nodes = {
+	nodes:[], // all node objects
+	nindex:0,
+	queue:[],
+	viewqueue:[],
+	now:0,
+	network:false,
+
+	// creates a new node
+	add:function() {
+		var parent = this;
+		this.nodes.push({id:this.nindex, obj:new Node(this.nindex, parent)})
+
+		this.viewqueue.push({time:this.now,act:"addNode"})
+
+		return this.nindex++;
+	}
+}
+</script>

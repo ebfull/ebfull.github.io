@@ -1,0 +1,474 @@
+<head>
+<meta charset="utf-8">
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="lib.js"></script>
+<script src="node.js"></script>
+<style>
+.network {
+  border: 1px solid #DEDEDE;
+  display:block;
+  margin:auto;
+}
+
+svg {
+  margin: auto;
+  display:block;
+}
+
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+circle {
+	display:block;
+}
+
+line {
+	display:block;
+}
+
+circle[cx=NaN] {
+	display:none !important;
+}
+
+circle[cy=NaN] {
+	display:none !important;
+}
+
+line[x1=NaN] {
+	display:none !important;
+}
+
+line[y1=NaN] {
+	display:none !important;
+}
+
+line[x2=NaN] {
+	display:none !important;
+}
+
+line[y2=NaN] {
+	display:none !important;
+}
+
+
+.node {
+  fill: #000;
+}
+
+.link {
+  stroke: #999;
+}
+</style>
+</head>
+<body>
+<div class="network">
+</div>
+<div style="display:none">
+Now (simulation): <b><span id="now" style="text-align:center"></span></b>
+</div>
+<script>
+var Nodes = {
+	network:null,
+	nodes:{},
+	nindex: 0,
+	tindex: 50,
+	runlock:false,
+	con:0,
+	queue:[],
+	active:false,
+	now:0,
+	viewchanges:[], // view changes are events that are imposed on the network object
+
+	triggers:[], // triggers are events that execute at certain times
+
+	init:function() {
+		this.network.init();
+	},
+
+	/*
+	message is from fromid (-1 for local sleeps)
+	message is to toid
+	message is delayed by delay
+	message is directed to name method
+	message is obj
+	*/
+	run:function(fromid, toid, delay, name, obj) {
+		if (this.runlock)
+			return;
+
+		// we need to calculate the latency from fromid to toid
+		// for now let's just randomly choose somewhere between 50 and 120ms
+		// on each message
+		var latency = delay;
+
+		if (fromid != -1)
+			latency += Math.floor(Math.random() * 5000) + 100;
+
+		// later we can make this more consistent
+		// later we can make this buffered
+		// later we can make this depend on the object size
+
+		if (!this.nodes.hasOwnProperty(toid))
+			return false;
+
+		if (!this.nodes[toid].actor.hasOwnProperty(name))
+			return false; // do we need to overload this
+
+		if (this.nodes[toid].actor.lock && name != 'deconstruct')
+			return false; // locked! no more messages
+
+		var parent = this;
+
+		var e = function() {
+			//console.log("RUNNING " + name + " ON " + toid + " FROM " + fromid + ": " + JSON.stringify(obj))
+
+			if (parent.nodes.hasOwnProperty(toid))
+				parent.nodes[toid].actor[name](fromid, obj);
+		}
+
+		if (typeof(this.triggers[this.now+parseInt(latency)]) == "undefined")
+			this.triggers[this.now+parseInt(latency)] = [];
+
+		this.triggers[this.now+parseInt(latency)].push(e);
+	},
+
+	// buffer describes the tolerance of this.now from the start to finish of exec
+	// if we want to 'run' 10 seconds of tasks before we concern ourselves with view changes
+	// we can do that
+	// viewchanges that are shown will also be, then, 10 seconds behind the simulation at most
+
+	exec:function(buffer) {
+		// executes a trigger
+		var starttime = this.now;
+
+		// assumes keys are sorted:
+		for (var index in this.triggers) {
+		// if they're not?
+		// ECMASCRIPT 5 TO THE RESCUE
+
+		/*var sorted_keys = Object.keys(this.triggers).sort(function(x,y) { x = parseInt(x); y = parseInt(y); return ((x < y) ? -1 : ((x > y) ? 1 : 0)); })
+		for (var index_key in sorted_keys) {
+			var index = sorted_keys[index_key]
+*/
+			index = parseInt(index)
+
+			if (starttime+buffer <= index) {
+				// let's do a buffer's worth of tasks
+				// or skip a buffer's worth of time instead
+				// or both!
+				this.now+=buffer;
+				$("#now").html(this.now)
+				break;
+			}
+
+			this.now = index;
+			$("#now").html(index)
+			var val = this.triggers[index].pop()
+			if (this.triggers[index].length == 0) {
+				delete this.triggers[index];
+			}
+
+			val();
+		}
+
+		// great! now, let's see if we can find any 'view' changes
+		// we need to reflect onto the network at the current time
+
+		for (var index in this.viewchanges) {
+			index = parseInt(index)
+
+			if (index >= (this.now-buffer)) {
+				break;
+			}
+
+			var val = this.viewchanges[index]
+
+			while(true) {
+				var change = val.pop()
+				if (typeof(change) == 'undefined') {
+					break;
+				}
+
+				switch(change.type) {
+					case "disconnect":
+						this.network.disconnect(this.get(change.a).networkid, this.get(change.b).networkid);
+					break;
+					case "connect":
+						this.network.connect(this.get(change.a).networkid, this.get(change.b).networkid);
+					break;
+					case "setColor":
+						$(".n" + this.get(change.id).networkid).css('fill', change.color);
+					break;
+				}
+
+				this.network.rehash();
+			}
+
+			delete this.viewchanges[index]
+		}
+
+		this.network.rehash();
+	},
+
+	get:function(id) {
+		return this.nodes[id];
+	},
+
+	setColor: function(id, color) {
+		this.viewchange("setColor", {color:color,id:id})
+	},
+
+	viewchange:function(type, args) {
+		args.type = type;
+
+		if (typeof(this.viewchanges[this.now]) == 'undefined')
+			this.viewchanges[this.now] = [];
+
+		this.viewchanges[this.now].push(args);
+	},
+
+	connect: function(a, b) {
+		// only write to graph if both nodes agree to connection
+		if (this.get(a).actor.peers.exists(b) && this.get(b).actor.peers.exists(a))
+			this.viewchange('connect', {a:a,b:b})
+		else {
+			//console.log('deferring graph write');
+		}
+	},
+
+	disconnect: function(a, b) {
+		this.viewchange('disconnect', {a:a,b:b})
+	},
+
+	add:function() {
+		var n = this.network.addNode();
+		var parent = this;
+
+		this.nodes[this.nindex] =
+			{
+				networkid:n,
+				actor:new Node(this.nindex, parent),
+			};
+		this.run(-1, this.nindex, 100, 'tick', {});
+		this.nindex++;
+		return this.nindex-1;
+	},
+
+	remove:function(id) {
+		this.get(id).actor.lock = true;
+		this.run(-1, id, 0, 'deconstruct', {});
+	}
+};
+
+Nodes.network = {
+	width: 1000,
+	height: 500,
+	linkDistance: 30,
+	charge: -100,
+	gravity: .5,
+	nindex: 0, // the cursor of the nodes array
+
+	svg: null,
+	force: null,
+	nodes: null,
+	links: null,
+	slink: null,
+	snode: null,
+	edges: {},
+	inodes: [],
+	updated:false,
+
+	init: function() {
+		// init the network layout/svg
+		$('.network').css('width', this.width);
+		$('.network').css('height', this.height);
+
+		this.force = d3.layout.force()
+			.size([this.width,this.height])
+			.nodes([]) // no nodes
+			.linkDistance(this.linkDistance)
+			.charge(this.charge)
+			.gravity(this.gravity);
+
+		this.svg = d3.select(".network").append("svg")
+	    	.attr("width", this.width)
+	    	.attr("height", this.height);
+
+	   	this.svg.append("rect")
+		    .attr("width", this.width)
+		    .attr("height", this.height);
+
+		this.nodes = this.force.nodes();
+		this.links = this.force.links();
+		this.slink = this.svg.selectAll(".link");
+		this.snode = this.svg.selectAll(".node");
+
+		this.force = this.force.on("tick", this.tick());
+
+		this.updated = true;
+		this.rehash();
+	},
+
+	getRandomLink: function() {
+		var result;
+		var count=1;
+		for (var prop in this.edges) {
+			if (Math.random() < 1/++count)
+				result = prop;
+		}
+		if (!result)
+			return -1;
+		var e = result.split("-");
+		return [parseInt(e[0]), parseInt(e[1])];
+	},
+
+	getRandomNode: function() {
+		return this.inodes[Math.floor(Math.random()*this.inodes.length)];
+	},
+
+	getKeyForID: function(id) {
+		return this.inodes.indexOf(id);
+	},
+
+	incCharge: function(amt) {
+		this.force.charge(this.force.charge() - amt);
+		this.updated = true;
+		///////////this.rehash();
+	},
+
+	addNode: function() {
+		// add a node, return the index
+		this.nodes.push({id:"n"+this.nindex});
+		this.inodes.push(this.nindex);
+		this.updated = true;
+		/////////////this.rehash();
+
+		this.nindex++;
+		return this.nindex-1;
+	},
+
+	connect: function(a, b) {
+		if (this.edges.hasOwnProperty(a + '-' + b) || this.edges.hasOwnProperty(b + '-' + a))
+			return false; // we're already connected
+
+		if (a==b)
+			return false; // can't connect to ourself silly!
+
+		console.log('CONNECTING EDGES ' + a + ' AND ' + b);
+		this.edges[a + '-' + b] = {source:this.nodes[this.getKeyForID(a)],target:this.nodes[this.getKeyForID(b)]};
+		this.links.push(this.edges[a + '-' + b]);
+
+		this.updated = true;
+		////////////this.rehash();
+	},
+
+	disconnect: function(a, b) {
+		if (!this.edges.hasOwnProperty(a + '-' + b) && !this.edges.hasOwnProperty(b + '-' + a))
+			return false; // we're already disconnected
+
+		var i = this.links.indexOf(this.edges[a + '-' + b]);
+		if (i<0)
+			i = this.links.indexOf(this.edges[b + '-' + a]);
+
+		delete this.edges[a + '-' + b];
+		delete this.edges[b + '-' + a];
+
+		this.links.splice(i, 1); // remove the link
+
+		this.updated = true;
+		//////////////////this.rehash();
+	},
+
+	removeNode: function(index) {
+		// remove a node at index
+		var i = this.getKeyForID(index);
+		if (i < 0)
+			return false; // this one has already been removed
+
+		this.nodes.splice(i, 1);
+		this.inodes.splice(i, 1);
+		this.updated = true;
+		///////////////////this.rehash();
+	},
+
+	tick: function() {
+		var svg = this.svg;
+		return function() {
+			svg.selectAll(".link").attr("x1", function(d) { return d.source.x; })
+				.attr("y1", function(d) { return d.source.y; })
+				.attr("x2", function(d) { return d.target.x; })
+				.attr("y2", function(d) { return d.target.y; });
+
+			svg.selectAll(".node").attr("cx", function(d) { return d.x; })
+				.attr("cy", function(d) { return d.y; });
+		}
+	},
+
+	rehash: function() {
+		if (!this.updated)
+			return;
+
+		this.slink = this.slink.data(this.force.links(), function(d) { return d.source.id + "-" + d.target.id; });
+		this.slink.enter().insert("line", ".node")
+			.attr("class", "link");
+		this.slink.exit().remove();
+
+		this.snode = this.snode.data(this.force.nodes(), function(d) {return d.id;});
+		this.snode.enter().append("circle").attr("class", function (d) {return "node " + d.id;})
+			.attr("r", 3)
+			.call(this.force.drag);
+		this.snode.exit().remove();
+
+		this.force.start();
+
+		this.updated = false;
+	}
+};
+
+$(document).ready(function() {
+	var interval = 1000;
+	Nodes.init();
+
+	$("#create").click(function() {
+		for (var i=0;i<100;i++) {
+			Nodes.add();
+		}
+	});
+
+	$("#create").click();
+
+	$("#stop").click(function() {
+		Nodes.runlock = true;
+	});
+
+	$("#normal").click(function() {
+		interval = 10;
+	})
+
+	$("#fast").click(function() {
+		interval = 100;
+	})
+
+	$("#faster").click(function() {
+		interval = 1000;
+	})
+
+	$("#fastest").click(function() {
+		interval = 10000;
+	})
+
+	setInterval(function() {
+		Nodes.exec(interval)
+	}, 10);
+});
+</script>
+<div style="display:none">
+<p><a id="create" href="#">add a node</a> <a id="stop" href="#">stop everything</a> </p>
+
+<p>Speed: <a id="normal" href="#">normal</a> <a id="fast" href="#">fast</a> <a id="faster" href="#">faster</a> <a id="fastest" href="#">fastest</a> </p>
+</div>
+
+</body>
