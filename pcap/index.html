@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/pcap/lib.rs.html#1-610' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-0' class='srclink' href='../src/pcap/lib.rs.html#1-607' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>pcap is a packet capture library available on Linux, Windows and Mac. This
 crate supports creating and configuring capture contexts, sniffing packets,
 sending packets to interfaces, listing devices, and recording packet captures
@@ -139,8 +139,16 @@ used to express these behaviors.</p>
                         <td><a class='struct' href='struct.Packet.html'
                                title='pcap::Packet'>Packet</a></td>
                         <td class='docblock short'>
-                             <p>Represents a packet returned from pcap. This can be dereferenced to access
-the underlying packet <code>[u8]</code> slice.</p>
+                             <p>Represents a packet returned from pcap.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.PacketHeader.html'
+                               title='pcap::PacketHeader'>PacketHeader</a></td>
+                        <td class='docblock short'>
+                             <p>Represents a packet header provided by pcap, including the timeval, caplen and len.</p>
 
                         </td>
                     </tr>
@@ -159,9 +167,7 @@ the underlying packet <code>[u8]</code> slice.</p>
                         <td><a class='enum' href='enum.Active.html'
                                title='pcap::Active'>Active</a></td>
                         <td class='docblock short'>
-                             <p>Phantom type representing an active capture handle. Implements <code>Activated</code> because
-you can do pretty much all of the same things with it that you can do with a live
-capture.</p>
+                             <p>Phantom type representing an active capture handle.</p>
 
                         </td>
                     </tr>
@@ -189,7 +195,7 @@ capture.</p>
                                title='pcap::Offline'>Offline</a></td>
                         <td class='docblock short'>
                              <p>Phantom type representing an offline capture handle, from a pcap dump file.
-Implements <code>Activated</code>.</p>
+Implements <code>Activated</code> because it behaves nearly the same as a live handle.</p>
 
                         </td>
                     </tr>

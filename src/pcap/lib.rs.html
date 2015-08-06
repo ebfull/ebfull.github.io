@@ -647,9 +647,6 @@
 <span id="605">605</span>
 <span id="606">606</span>
 <span id="607">607</span>
-<span id="608">608</span>
-<span id="609">609</span>
-<span id="610">610</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! pcap is a packet capture library available on Linux, Windows and Mac. This</span>
 <span class='doccomment'>//! crate supports creating and configuring capture contexts, sniffing packets,</span>
@@ -724,6 +721,8 @@
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>str</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
 <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>Error</span>::<span class='op'>*</span>;
+
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>raw</span>::<span class='ident'>PacketHeader</span>;
 
 <span class='kw'>mod</span> <span class='ident'>raw</span>;
 <span class='kw'>mod</span> <span class='ident'>unique</span>;
@@ -903,37 +902,32 @@
     }
 }
 
-<span class='doccomment'>/// Represents a packet returned from pcap. This can be dereferenced to access</span>
-<span class='doccomment'>/// the underlying packet `[u8]` slice.</span>
+<span class='doccomment'>/// Represents a packet returned from pcap.</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
-    <span class='ident'>header</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>raw</span>::<span class='ident'>Struct_pcap_pkthdr</span>,
-    <span class='ident'>data</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>libc</span>::<span class='ident'>c_uchar</span>
+    <span class='kw'>pub</span> <span class='ident'>header</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>PacketHeader</span>,
+    <span class='kw'>pub</span> <span class='ident'>data</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> [<span class='ident'>u8</span>]
 }
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;b</span><span class='op'>&gt;</span> <span class='ident'>Deref</span> <span class='kw'>for</span> <span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;b</span><span class='op'>&gt;</span> {
-    <span class='kw'>type</span> <span class='ident'>Target</span> <span class='op'>=</span> [<span class='ident'>u8</span>];
+   <span class='kw'>type</span> <span class='ident'>Target</span> <span class='op'>=</span> [<span class='ident'>u8</span>];
 
     <span class='kw'>fn</span> <span class='ident'>deref</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>] {
-        <span class='kw'>unsafe</span> {
-            <span class='ident'>slice</span>::<span class='ident'>from_raw_parts</span>(<span class='self'>self</span>.<span class='ident'>data</span>, <span class='self'>self</span>.<span class='ident'>header</span>.<span class='ident'>caplen</span> <span class='kw'>as</span> <span class='ident'>usize</span>)
-        }
+        <span class='self'>self</span>.<span class='ident'>data</span>
     }
 }
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>fmt</span>::<span class='ident'>Debug</span> <span class='kw'>for</span> <span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='kw'>fn</span> <span class='ident'>fmt</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>f</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>fmt</span>::<span class='ident'>Formatter</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>fmt</span>::<span class='ident'>Error</span><span class='op'>&gt;</span> {
-        <span class='self'>self</span>.<span class='ident'>deref</span>().<span class='ident'>fmt</span>(<span class='ident'>f</span>)
+        <span class='self'>self</span>.<span class='ident'>data</span>.<span class='ident'>fmt</span>(<span class='ident'>f</span>)
     }
 }
 
 <span class='doccomment'>/// Phantom type representing an inactive capture handle.</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>Inactive</span> {}
-<span class='doccomment'>/// Phantom type representing an active capture handle. Implements `Activated` because</span>
-<span class='doccomment'>/// you can do pretty much all of the same things with it that you can do with a live</span>
-<span class='doccomment'>/// capture.</span>
+<span class='doccomment'>/// Phantom type representing an active capture handle.</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>Active</span> {}
 <span class='doccomment'>/// Phantom type representing an offline capture handle, from a pcap dump file.</span>
-<span class='doccomment'>/// Implements `Activated`.</span>
+<span class='doccomment'>/// Implements `Activated` because it behaves nearly the same as a live handle.</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>Offline</span> {}
 
 <span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>Activated</span>: <span class='ident'>State</span> {}
@@ -1169,8 +1163,8 @@
                 <span class='number'>1</span> <span class='op'>=&gt;</span> {
                     <span class='comment'>// packet was read without issue</span>
                     <span class='prelude-val'>Some</span>(<span class='ident'>Packet</span> {
-                        <span class='ident'>header</span>: <span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>header</span>,
-                        <span class='ident'>data</span>: <span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>packet</span>
+                        <span class='ident'>header</span>: <span class='ident'>transmute</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>header</span>),
+                        <span class='ident'>data</span>: <span class='ident'>slice</span>::<span class='ident'>from_raw_parts</span>(<span class='ident'>packet</span>, (<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>header</span>).<span class='ident'>caplen</span> <span class='kw'>as</span> <span class='ident'>usize</span>)
                     })
                 },
                 _ <span class='op'>=&gt;</span> {
@@ -1240,7 +1234,7 @@
 <span class='kw'>impl</span> <span class='ident'>Savefile</span> {
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>write</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>packet</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>) {
         <span class='kw'>unsafe</span> {
-            <span class='ident'>raw</span>::<span class='ident'>pcap_dump</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span> <span class='kw'>as</span> <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>u8</span>, <span class='ident'>packet</span>.<span class='ident'>header</span>, <span class='ident'>packet</span>.<span class='ident'>data</span>);
+            <span class='ident'>raw</span>::<span class='ident'>pcap_dump</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span> <span class='kw'>as</span> <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>u8</span>, <span class='ident'>transmute</span>::<span class='op'>&lt;</span>_, <span class='kw-2'>&amp;</span><span class='ident'>raw</span>::<span class='ident'>Struct_pcap_pkthdr</span><span class='op'>&gt;</span>(<span class='ident'>packet</span>.<span class='ident'>header</span>), <span class='ident'>packet</span>.<span class='ident'>data</span>.<span class='ident'>as_ptr</span>());
         }
     }
 }
