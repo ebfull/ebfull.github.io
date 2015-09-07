@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-6270' class='srclink' href='../src/pcap/lib.rs.html#314-317' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-4558' class='srclink' href='../src/pcap/lib.rs.html#314-317' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Capture&lt;T: <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a>&gt; {
     // some fields omitted
 }</pre><div class='docblock'><p>This is a pcap capture handle which is an abstraction over the <code>pcap_t</code> provided by pcap.
@@ -90,6 +90,8 @@ indefinitely.</p>
 <div class='docblock'><p>Set promiscuous mode on or off. By default, this is off.</p>
 </div><h4 id='method.rfmon' class='method'><code>fn <a href='#method.rfmon' class='fnname'>rfmon</a>(self, to: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;<a class='enum' href='../pcap/enum.Inactive.html' title='pcap::Inactive'>Inactive</a>&gt;</code></h4>
 <div class='docblock'><p>Set rfmon mode on or off. The default is maintained by pcap.</p>
+
+<p><strong>This is not available on Windows.</strong></p>
 </div><h4 id='method.buffer_size' class='method'><code>fn <a href='#method.buffer_size' class='fnname'>buffer_size</a>(self, to: <a href='http://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;<a class='enum' href='../pcap/enum.Inactive.html' title='pcap::Inactive'>Inactive</a>&gt;</code></h4>
 <div class='docblock'><p>Set the buffer size for incoming packet data.</p>
 
@@ -125,6 +127,8 @@ this is compiled using <code>pcap_compile()</code>.</p>
 </div></div><h3 class='impl'><code>impl <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;<a class='enum' href='../pcap/enum.Active.html' title='pcap::Active'>Active</a>&gt;</code></h3><div class='impl-items'><h4 id='method.sendpacket' class='method'><code>fn <a href='#method.sendpacket' class='fnname'>sendpacket</a>&lt;'a&gt;(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='enum' href='../pcap/enum.Error.html' title='pcap::Error'>Error</a>&gt;</code></h4>
 <div class='docblock'><p>Sends a packet over this capture handle&#39;s interface, returning the number
 of bytes written.</p>
+
+<p><strong>This is not available on Windows.</strong></p>
 </div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#method.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>

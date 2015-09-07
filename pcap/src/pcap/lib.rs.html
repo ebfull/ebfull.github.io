@@ -635,6 +635,12 @@
 <span id="593">593</span>
 <span id="594">594</span>
 <span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! pcap is a packet capture library available on Linux, Windows and Mac. This</span>
 <span class='doccomment'>//! crate supports creating and configuring capture contexts, sniffing packets,</span>
@@ -1027,6 +1033,9 @@
     }
 
     <span class='doccomment'>/// Set rfmon mode on or off. The default is maintained by pcap.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// **This is not available on Windows.**</span>
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;windows&quot;</span>))]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>rfmon</span>(<span class='self'>self</span>, <span class='ident'>to</span>: <span class='ident'>bool</span>) <span class='op'>-&gt;</span> <span class='ident'>Capture</span><span class='op'>&lt;</span><span class='ident'>Inactive</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
             <span class='ident'>raw</span>::<span class='ident'>pcap_set_rfmon</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span>, <span class='kw'>if</span> <span class='ident'>to</span> {<span class='number'>1</span>} <span class='kw'>else</span> {<span class='number'>0</span>});
@@ -1178,6 +1187,9 @@
 <span class='kw'>impl</span> <span class='ident'>Capture</span><span class='op'>&lt;</span><span class='ident'>Active</span><span class='op'>&gt;</span> {
     <span class='doccomment'>/// Sends a packet over this capture handle&#39;s interface, returning the number</span>
     <span class='doccomment'>/// of bytes written.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// **This is not available on Windows.**</span>
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;windows&quot;</span>))]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sendpacket</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>buf</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> [<span class='ident'>u8</span>]) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>usize</span>, <span class='ident'>Error</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
             <span class='kw'>let</span> <span class='ident'>written</span> <span class='op'>=</span> <span class='ident'>raw</span>::<span class='ident'>pcap_inject</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span>, <span class='ident'>buf</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='op'>*</span><span class='kw'>const</span> <span class='ident'>libc</span>::<span class='ident'>types</span>::<span class='ident'>common</span>::<span class='ident'>c95</span>::<span class='ident'>c_void</span>, <span class='ident'>buf</span>.<span class='ident'>len</span>() <span class='kw'>as</span> <span class='ident'>libc</span>::<span class='ident'>types</span>::<span class='ident'>os</span>::<span class='ident'>arch</span>::<span class='ident'>c95</span>::<span class='ident'>size_t</span>);
