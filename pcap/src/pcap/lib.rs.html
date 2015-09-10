@@ -632,15 +632,6 @@
 <span id="590">590</span>
 <span id="591">591</span>
 <span id="592">592</span>
-<span id="593">593</span>
-<span id="594">594</span>
-<span id="595">595</span>
-<span id="596">596</span>
-<span id="597">597</span>
-<span id="598">598</span>
-<span id="599">599</span>
-<span id="600">600</span>
-<span id="601">601</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! pcap is a packet capture library available on Linux, Windows and Mac. This</span>
 <span class='doccomment'>//! crate supports creating and configuring capture contexts, sniffing packets,</span>
@@ -885,6 +876,7 @@
 }
 
 <span class='doccomment'>/// Represents a packet returned from pcap.</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='kw'>pub</span> <span class='ident'>header</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>PacketHeader</span>,
     <span class='kw'>pub</span> <span class='ident'>data</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> [<span class='ident'>u8</span>]
@@ -895,12 +887,6 @@
 
     <span class='kw'>fn</span> <span class='ident'>deref</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>] {
         <span class='self'>self</span>.<span class='ident'>data</span>
-    }
-}
-
-<span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>fmt</span>::<span class='ident'>Debug</span> <span class='kw'>for</span> <span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
-    <span class='kw'>fn</span> <span class='ident'>fmt</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>f</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>fmt</span>::<span class='ident'>Formatter</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>fmt</span>::<span class='ident'>Error</span><span class='op'>&gt;</span> {
-        <span class='self'>self</span>.<span class='ident'>data</span>.<span class='ident'>fmt</span>(<span class='ident'>f</span>)
     }
 }
 
@@ -1185,21 +1171,17 @@
 }
 
 <span class='kw'>impl</span> <span class='ident'>Capture</span><span class='op'>&lt;</span><span class='ident'>Active</span><span class='op'>&gt;</span> {
-    <span class='doccomment'>/// Sends a packet over this capture handle&#39;s interface, returning the number</span>
-    <span class='doccomment'>/// of bytes written.</span>
-    <span class='doccomment'>///</span>
-    <span class='doccomment'>/// **This is not available on Windows.**</span>
-    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;windows&quot;</span>))]</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sendpacket</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>buf</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> [<span class='ident'>u8</span>]) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>usize</span>, <span class='ident'>Error</span><span class='op'>&gt;</span> {
+    <span class='doccomment'>/// Sends a packet over this capture handle&#39;s interface.</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sendpacket</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>buf</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> [<span class='ident'>u8</span>]) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>Error</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
-            <span class='kw'>let</span> <span class='ident'>written</span> <span class='op'>=</span> <span class='ident'>raw</span>::<span class='ident'>pcap_inject</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span>, <span class='ident'>buf</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='op'>*</span><span class='kw'>const</span> <span class='ident'>libc</span>::<span class='ident'>types</span>::<span class='ident'>common</span>::<span class='ident'>c95</span>::<span class='ident'>c_void</span>, <span class='ident'>buf</span>.<span class='ident'>len</span>() <span class='kw'>as</span> <span class='ident'>libc</span>::<span class='ident'>types</span>::<span class='ident'>os</span>::<span class='ident'>arch</span>::<span class='ident'>c95</span>::<span class='ident'>size_t</span>);
+            <span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='ident'>raw</span>::<span class='ident'>pcap_sendpacket</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span>, <span class='ident'>buf</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='op'>*</span><span class='kw'>const</span> _, <span class='ident'>buf</span>.<span class='ident'>len</span>() <span class='kw'>as</span> <span class='ident'>i32</span>);
 
-            <span class='kw'>match</span> <span class='ident'>written</span> {
+            <span class='kw'>match</span> <span class='ident'>result</span> {
                 <span class='op'>-</span><span class='number'>1</span> <span class='op'>=&gt;</span> {
                     <span class='kw'>return</span> <span class='ident'>Error</span>::<span class='ident'>new</span>(<span class='ident'>raw</span>::<span class='ident'>pcap_geterr</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span>));
                 },
                 _ <span class='op'>=&gt;</span> {
-                    <span class='prelude-val'>Ok</span>(<span class='ident'>written</span> <span class='kw'>as</span> <span class='ident'>usize</span>)
+                    <span class='prelude-val'>Ok</span>(())
                 }
             }
         }
