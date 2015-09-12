@@ -46,7 +46,7 @@
                 [<span class='inner'>&#x2212;</span>]
             </a>
         </span><a id='src-4697' class='srclink' href='../src/pcap/lib.rs.html#309-312' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct Capture&lt;T: <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a>&gt; {
+<pre class='rust struct'>pub struct Capture&lt;T: <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a> + ?<a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt; {
     // some fields omitted
 }</pre><div class='docblock'><p>This is a pcap capture handle which is an abstraction over the <code>pcap_t</code> provided by pcap.
 There are many ways to instantiate and interact with a pcap handle, so phantom types are
@@ -65,7 +65,7 @@ pcap format dump file as if you were opening an interface -- very useful for tes
 analysis.</p>
 
 <h1 id="example:" class='section-header'><a
-                           href="#example:">Example:</a></h1><pre id='rust-example-rendered' class='rust '>
+                           href="#example:">Example:</a></h1><pre class='rust rust-example-rendered'>
 <span class='kw'>let</span> <span class='ident'>cap</span> <span class='op'>=</span> <span class='ident'>Capture</span>::<span class='ident'>from_device</span>(<span class='ident'>Device</span>::<span class='ident'>lookup</span>().<span class='ident'>unwrap</span>()) <span class='comment'>// open the &quot;default&quot; interface</span>
               .<span class='ident'>unwrap</span>() <span class='comment'>// assume the device exists and we are authorized to open it</span>
               .<span class='ident'>open</span>() <span class='comment'>// activate the handle</span>
@@ -126,7 +126,8 @@ this is compiled using <code>pcap_compile()</code>.</p>
 <p>See <a href="http://biot.com/capstats/bpf.html">http://biot.com/capstats/bpf.html</a> for more information about this syntax.</p>
 </div></div><h3 class='impl'><code>impl <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;<a class='enum' href='../pcap/enum.Active.html' title='pcap::Active'>Active</a>&gt;</code></h3><div class='impl-items'><h4 id='method.sendpacket' class='method'><code>fn <a href='#method.sendpacket' class='fnname'>sendpacket</a>&lt;'a&gt;(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../pcap/enum.Error.html' title='pcap::Error'>Error</a>&gt;</code></h4>
 <div class='docblock'><p>Sends a packet over this capture handle&#39;s interface.</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#method.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a> + ?<a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#method.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+</div><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../pcap/trait.Activated.html' title='pcap::Activated'>Activated</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;T&gt;&gt; for <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;<a class='trait' href='../pcap/trait.Activated.html' title='pcap::Activated'>Activated</a>&gt;</code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(cap: <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;T&gt;) -&gt; <a class='struct' href='../pcap/struct.Capture.html' title='pcap::Capture'>Capture</a>&lt;<a class='trait' href='../pcap/trait.Activated.html' title='pcap::Activated'>Activated</a>&gt;</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
