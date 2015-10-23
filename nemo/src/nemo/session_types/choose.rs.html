@@ -131,6 +131,8 @@
 <span id="89">89</span>
 <span id="90">90</span>
 <span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>mem</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>marker</span>::<span class='ident'>PhantomData</span>;
@@ -142,10 +144,10 @@
 <span class='doccomment'>/// protocol must handle `P` *and* be an `Acceptor` of `Q`. If `T` is </span>
 <span class='doccomment'>/// a `Finally&lt;P&gt;` it must handle `P`.</span>
 <span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>Acceptor</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>T</span><span class='op'>&gt;</span>: <span class='ident'>Protocol</span> <span class='op'>+</span> <span class='ident'>Sized</span> {
-	<span class='kw'>fn</span> <span class='ident'>defer</span>(<span class='ident'>u8</span>) <span class='op'>-&gt;</span> <span class='ident'>Defer</span><span class='op'>&lt;</span><span class='kw'>Self</span>, <span class='ident'>I</span><span class='op'>&gt;</span>;
+	<span class='kw'>fn</span> <span class='ident'>defer</span>(<span class='ident'>usize</span>) <span class='op'>-&gt;</span> <span class='ident'>Defer</span><span class='op'>&lt;</span><span class='kw'>Self</span>, <span class='ident'>I</span><span class='op'>&gt;</span>;
 }
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>: <span class='ident'>SessionType</span>, <span class='ident'>H</span>: <span class='ident'>Protocol</span> <span class='op'>+</span> <span class='ident'>Handler</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>P</span><span class='op'>&gt;</span> <span class='op'>+</span> <span class='ident'>Acceptor</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>Q</span><span class='op'>&gt;</span>, <span class='ident'>P</span>: <span class='ident'>SessionType</span>, <span class='ident'>Q</span>: <span class='ident'>SessionType</span><span class='op'>&gt;</span> <span class='ident'>Acceptor</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>Accept</span><span class='op'>&lt;</span><span class='ident'>P</span>, <span class='ident'>Q</span><span class='op'>&gt;&gt;</span> <span class='kw'>for</span> <span class='ident'>H</span> {
-	<span class='kw'>fn</span> <span class='ident'>defer</span>(<span class='ident'>num</span>: <span class='ident'>u8</span>) <span class='op'>-&gt;</span> <span class='ident'>Defer</span><span class='op'>&lt;</span><span class='ident'>H</span>, <span class='ident'>I</span><span class='op'>&gt;</span> {
+	<span class='kw'>fn</span> <span class='ident'>defer</span>(<span class='ident'>num</span>: <span class='ident'>usize</span>) <span class='op'>-&gt;</span> <span class='ident'>Defer</span><span class='op'>&lt;</span><span class='ident'>H</span>, <span class='ident'>I</span><span class='op'>&gt;</span> {
 		<span class='kw'>if</span> <span class='ident'>num</span> <span class='op'>==</span> <span class='number'>0</span> {
 			<span class='kw'>let</span> <span class='ident'>next_func</span>: <span class='ident'>DeferFunc</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='kw'>Self</span>, <span class='ident'>E</span>, <span class='ident'>P</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='op'>&lt;</span><span class='kw'>Self</span> <span class='kw'>as</span> <span class='ident'>Handler</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>P</span><span class='op'>&gt;&gt;</span>::<span class='ident'>with</span>;
 
@@ -156,7 +158,7 @@
 	}
 }
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>: <span class='ident'>SessionType</span>, <span class='ident'>H</span>: <span class='ident'>Protocol</span> <span class='op'>+</span> <span class='ident'>Handler</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>P</span><span class='op'>&gt;</span>,                     <span class='ident'>P</span>: <span class='ident'>SessionType</span><span class='op'>&gt;</span>                 <span class='ident'>Acceptor</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>Finally</span><span class='op'>&lt;</span><span class='ident'>P</span><span class='op'>&gt;&gt;</span>   <span class='kw'>for</span> <span class='ident'>H</span> {
-	<span class='kw'>fn</span> <span class='ident'>defer</span>(_: <span class='ident'>u8</span>) <span class='op'>-&gt;</span> <span class='ident'>Defer</span><span class='op'>&lt;</span><span class='ident'>H</span>, <span class='ident'>I</span><span class='op'>&gt;</span> {
+	<span class='kw'>fn</span> <span class='ident'>defer</span>(_: <span class='ident'>usize</span>) <span class='op'>-&gt;</span> <span class='ident'>Defer</span><span class='op'>&lt;</span><span class='ident'>H</span>, <span class='ident'>I</span><span class='op'>&gt;</span> {
 		<span class='comment'>// regardless of num we cannot proceed further than Finally</span>
 		<span class='kw'>let</span> <span class='ident'>next_func</span>: <span class='ident'>DeferFunc</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='kw'>Self</span>, <span class='ident'>E</span>, <span class='ident'>P</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='op'>&lt;</span><span class='kw'>Self</span> <span class='kw'>as</span> <span class='ident'>Handler</span><span class='op'>&lt;</span><span class='ident'>I</span>, <span class='ident'>E</span>, <span class='ident'>P</span><span class='op'>&gt;&gt;</span>::<span class='ident'>with</span>;
 
@@ -175,22 +177,24 @@
 <span class='kw'>impl</span> <span class='ident'>NotSame</span> <span class='kw'>for</span> .. { }
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>A</span><span class='op'>&gt;</span> <span class='op'>!</span><span class='ident'>NotSame</span> <span class='kw'>for</span> (<span class='ident'>A</span>, <span class='ident'>A</span>) { }
 
+<span class='doccomment'>/// This trait selects for the de-Bruijn index of a protocol embedded within</span>
+<span class='doccomment'>/// a `Choose` decision tree.</span>
 <span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>Chooser</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
-	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>u8</span>;
+	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>usize</span>;
 }
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>P</span>: <span class='ident'>SessionType</span>, <span class='ident'>Q</span>: <span class='ident'>SessionType</span><span class='op'>&gt;</span> <span class='ident'>Chooser</span><span class='op'>&lt;</span><span class='ident'>P</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>Choose</span><span class='op'>&lt;</span><span class='ident'>P</span>, <span class='ident'>Q</span><span class='op'>&gt;</span> {
-	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>u8</span> { <span class='number'>0</span> }
+	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>usize</span> { <span class='number'>0</span> }
 }
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>P</span>: <span class='ident'>SessionType</span><span class='op'>&gt;</span> <span class='ident'>Chooser</span><span class='op'>&lt;</span><span class='ident'>P</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>Finally</span><span class='op'>&lt;</span><span class='ident'>P</span><span class='op'>&gt;</span> {
-	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>u8</span> { <span class='number'>0</span> }
+	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>usize</span> { <span class='number'>0</span> }
 }
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>P</span>: <span class='ident'>SessionType</span>, <span class='ident'>S</span>: <span class='ident'>SessionType</span>, <span class='ident'>Q</span>: <span class='ident'>SessionType</span> <span class='op'>+</span> <span class='ident'>Chooser</span><span class='op'>&lt;</span><span class='ident'>S</span><span class='op'>&gt;&gt;</span> <span class='ident'>Chooser</span><span class='op'>&lt;</span><span class='ident'>S</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>Choose</span><span class='op'>&lt;</span><span class='ident'>P</span>, <span class='ident'>Q</span><span class='op'>&gt;</span>
 	<span class='kw'>where</span> (<span class='ident'>S</span>, <span class='ident'>P</span>): <span class='ident'>NotSame</span>
 {
-	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>u8</span> { <span class='number'>1</span> <span class='op'>+</span> <span class='ident'>Q</span>::<span class='ident'>num</span>() }
+	<span class='kw'>fn</span> <span class='ident'>num</span>() <span class='op'>-&gt;</span> <span class='ident'>usize</span> { <span class='ident'>Q</span>::<span class='ident'>num</span>().<span class='ident'>checked_add</span>(<span class='number'>1</span>).<span class='ident'>unwrap</span>() }
 }
 
 <span class='doccomment'>/// Accept either `P` or something in `Q`.</span>
@@ -209,12 +213,12 @@
 
 <span class='attribute'>#[<span class='ident'>test</span>]</span>
 <span class='kw'>fn</span> <span class='ident'>check_choose_works</span>() {
-	<span class='kw'>use</span> <span class='ident'>super</span>::{<span class='ident'>Recv</span>, <span class='ident'>Eps</span>};
+	<span class='kw'>use</span> <span class='ident'>super</span>::{<span class='ident'>Recv</span>, <span class='ident'>End</span>};
 
-	<span class='kw'>type</span> <span class='ident'>GetUsize</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>usize</span>, <span class='ident'>Eps</span><span class='op'>&gt;</span>;
-	<span class='kw'>type</span> <span class='ident'>GetU8</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>u8</span>, <span class='ident'>Eps</span><span class='op'>&gt;</span>;
-	<span class='kw'>type</span> <span class='ident'>GetString</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>Eps</span><span class='op'>&gt;</span>;
-	<span class='kw'>type</span> <span class='ident'>Getisize</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>isize</span>, <span class='ident'>Eps</span><span class='op'>&gt;</span>;
+	<span class='kw'>type</span> <span class='ident'>GetUsize</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>usize</span>, <span class='ident'>End</span><span class='op'>&gt;</span>;
+	<span class='kw'>type</span> <span class='ident'>GetU8</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>u8</span>, <span class='ident'>End</span><span class='op'>&gt;</span>;
+	<span class='kw'>type</span> <span class='ident'>GetString</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>End</span><span class='op'>&gt;</span>;
+	<span class='kw'>type</span> <span class='ident'>Getisize</span> <span class='op'>=</span> <span class='ident'>Recv</span><span class='op'>&lt;</span><span class='ident'>isize</span>, <span class='ident'>End</span><span class='op'>&gt;</span>;
 
 	<span class='kw'>type</span> <span class='ident'>Proto</span> <span class='op'>=</span> <span class='ident'>Choose</span><span class='op'>&lt;</span><span class='ident'>Getisize</span>, <span class='ident'>Choose</span><span class='op'>&lt;</span><span class='ident'>GetString</span>, <span class='ident'>Choose</span><span class='op'>&lt;</span><span class='ident'>GetU8</span>, <span class='ident'>Finally</span><span class='op'>&lt;</span><span class='ident'>GetUsize</span><span class='op'>&gt;&gt;</span><span class='op'>&gt;&gt;</span>;
 

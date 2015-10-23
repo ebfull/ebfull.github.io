@@ -63,7 +63,9 @@ otherwise.</p>
                         <td><a class='mod' href='channels/index.html'
                                title='nemo::channels'>channels</a></td>
                         <td class='docblock short'>
-                             
+                             <p>Channels are implementations of <code>IO</code> which can be used when building
+<code>Session</code> and designing protocols.</p>
+
                         </td>
                     </tr>
                 
@@ -105,7 +107,7 @@ and a guard for the IO backend.</p>
                         <td class='docblock short'>
                              <p>Handlers must return <code>Defer</code> to indicate to the <code>Session</code> how to proceed in
 the future. <code>Defer</code> can be obtained by calling <code>.defer()</code> on the channel, or
-by calling <code>.close()</code> when the session is <code>Eps</code>.</p>
+by calling <code>.close()</code> when the session is <code>End</code>.</p>
 
                         </td>
                     </tr>

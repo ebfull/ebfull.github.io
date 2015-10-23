@@ -49,9 +49,9 @@
 <div class='docblock'><p>Session types encode the current state of a communication channel. It is
 not possible to change to another state without following the protocol.</p>
 
-<p>As an example, if a client is in state <code>Recv&lt;usize, Eps&gt;</code>, it cannot
+<p>As an example, if a client is in state <code>Recv&lt;usize, End&gt;</code>, it cannot
 do anything except receive a <code>usize</code>. And when it is finished, it will
-be in state <code>Eps</code>, which means it can do nothing except close the channel.</p>
+be in state <code>End</code>, which means it can do nothing except close the channel.</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr class=' module-item'>
@@ -73,8 +73,8 @@ be in state <code>Eps</code>, which means it can do nothing except close the cha
                     </tr>
                 
                     <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Eps.html'
-                               title='nemo::session_types::Eps'>Eps</a></td>
+                        <td><a class='struct' href='struct.End.html'
+                               title='nemo::session_types::End'>End</a></td>
                         <td class='docblock short'>
                              <p>The session is at the end of communication.
 The channel can now be gracefully closed.</p>
@@ -150,7 +150,9 @@ a <code>Finally&lt;P&gt;</code> it must handle <code>P</code>.</p>
                         <td><a class='trait' href='trait.Chooser.html'
                                title='nemo::session_types::Chooser'>Chooser</a></td>
                         <td class='docblock short'>
-                             
+                             <p>This trait selects for the de-Bruijn index of a protocol embedded within
+a <code>Choose</code> decision tree.</p>
+
                         </td>
                     </tr>
                 

@@ -117,9 +117,9 @@
 <span class='doccomment'>//! Session types encode the current state of a communication channel. It is</span>
 <span class='doccomment'>//! not possible to change to another state without following the protocol.</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//! As an example, if a client is in state `Recv&lt;usize, Eps&gt;`, it cannot</span>
+<span class='doccomment'>//! As an example, if a client is in state `Recv&lt;usize, End&gt;`, it cannot</span>
 <span class='doccomment'>//! do anything except receive a `usize`. And when it is finished, it will</span>
-<span class='doccomment'>//! be in state `Eps`, which means it can do nothing except close the channel.</span>
+<span class='doccomment'>//! be in state `End`, which means it can do nothing except close the channel.</span>
 
 <span class='kw'>mod</span> <span class='ident'>choose</span>;
 
@@ -139,10 +139,10 @@
 
 <span class='doccomment'>/// The session is at the end of communication.</span>
 <span class='doccomment'>/// The channel can now be gracefully closed.</span>
-<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Eps</span>;
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>End</span>;
 
-<span class='kw'>unsafe</span> <span class='kw'>impl</span> <span class='ident'>SessionType</span> <span class='kw'>for</span> <span class='ident'>Eps</span> {
-    <span class='kw'>type</span> <span class='ident'>Dual</span> <span class='op'>=</span> <span class='ident'>Eps</span>;
+<span class='kw'>unsafe</span> <span class='kw'>impl</span> <span class='ident'>SessionType</span> <span class='kw'>for</span> <span class='ident'>End</span> {
+    <span class='kw'>type</span> <span class='ident'>Dual</span> <span class='op'>=</span> <span class='ident'>End</span>;
 }
 
 <span class='doccomment'>/// The session expects to send `T` and proceed to session `S`.</span>
