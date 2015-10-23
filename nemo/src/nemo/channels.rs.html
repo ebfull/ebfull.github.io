@@ -94,44 +94,44 @@
 <span class='doccomment'>/// This is an implementation of a blocking channel IO backend. Internally</span>
 <span class='doccomment'>/// it uses MPSC queues.</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Blocking</span> {
-	<span class='ident'>tx</span>: <span class='ident'>Sender</span><span class='op'>&lt;</span><span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;&gt;</span>,
-	<span class='ident'>rx</span>: <span class='ident'>Receiver</span><span class='op'>&lt;</span><span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;&gt;</span>
+    <span class='ident'>tx</span>: <span class='ident'>Sender</span><span class='op'>&lt;</span><span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;&gt;</span>,
+    <span class='ident'>rx</span>: <span class='ident'>Receiver</span><span class='op'>&lt;</span><span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;&gt;</span>
 }
 
 <span class='kw'>impl</span> <span class='ident'>Blocking</span> {
-	<span class='doccomment'>/// Create a new bi-directional channel for protocols.</span>
-	<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>() <span class='op'>-&gt;</span> (<span class='ident'>Blocking</span>, <span class='ident'>Blocking</span>) {
-		<span class='kw'>let</span> (<span class='ident'>tx1</span>, <span class='ident'>rx1</span>) <span class='op'>=</span> <span class='ident'>channel</span>();
-		<span class='kw'>let</span> (<span class='ident'>tx2</span>, <span class='ident'>rx2</span>) <span class='op'>=</span> <span class='ident'>channel</span>();
+    <span class='doccomment'>/// Create a new bi-directional channel for protocols.</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>() <span class='op'>-&gt;</span> (<span class='ident'>Blocking</span>, <span class='ident'>Blocking</span>) {
+        <span class='kw'>let</span> (<span class='ident'>tx1</span>, <span class='ident'>rx1</span>) <span class='op'>=</span> <span class='ident'>channel</span>();
+        <span class='kw'>let</span> (<span class='ident'>tx2</span>, <span class='ident'>rx2</span>) <span class='op'>=</span> <span class='ident'>channel</span>();
 
-		(
-			<span class='ident'>Blocking</span> {
-				<span class='ident'>tx</span>: <span class='ident'>tx1</span>,
-				<span class='ident'>rx</span>: <span class='ident'>rx2</span>
-			},
-			<span class='ident'>Blocking</span> {
-				<span class='ident'>tx</span>: <span class='ident'>tx2</span>,
-				<span class='ident'>rx</span>: <span class='ident'>rx1</span>
-			}
-		)
-	}
+        (
+            <span class='ident'>Blocking</span> {
+                <span class='ident'>tx</span>: <span class='ident'>tx1</span>,
+                <span class='ident'>rx</span>: <span class='ident'>rx2</span>
+            },
+            <span class='ident'>Blocking</span> {
+                <span class='ident'>tx</span>: <span class='ident'>tx2</span>,
+                <span class='ident'>rx</span>: <span class='ident'>rx1</span>
+            }
+        )
+    }
 }
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>T</span>: <span class='ident'>Send</span> <span class='op'>+</span> <span class='lifetime'>&#39;static</span><span class='op'>&gt;</span> <span class='ident'>IO</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>Blocking</span> {
-	<span class='kw'>fn</span> <span class='ident'>send</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>obj</span>: <span class='ident'>T</span>) {
-		<span class='self'>self</span>.<span class='ident'>tx</span>.<span class='ident'>send</span>(<span class='kw'>unsafe</span> { <span class='ident'>mem</span>::<span class='ident'>transmute</span>(<span class='ident'>Box</span>::<span class='ident'>new</span>(<span class='ident'>obj</span>)) }).<span class='ident'>unwrap</span>();
-	}
+    <span class='kw'>fn</span> <span class='ident'>send</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>obj</span>: <span class='ident'>T</span>) {
+        <span class='self'>self</span>.<span class='ident'>tx</span>.<span class='ident'>send</span>(<span class='kw'>unsafe</span> { <span class='ident'>mem</span>::<span class='ident'>transmute</span>(<span class='ident'>Box</span>::<span class='ident'>new</span>(<span class='ident'>obj</span>)) }).<span class='ident'>unwrap</span>();
+    }
 
-	<span class='kw'>fn</span> <span class='ident'>recv</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
-		<span class='kw'>let</span> <span class='ident'>tmp</span>: <span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>rx</span>.<span class='ident'>recv</span>().<span class='ident'>unwrap</span>();
-		<span class='kw'>let</span> <span class='ident'>tmp</span>: <span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>mem</span>::<span class='ident'>transmute</span>(<span class='ident'>tmp</span>) };
+    <span class='kw'>fn</span> <span class='ident'>recv</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+        <span class='kw'>let</span> <span class='ident'>tmp</span>: <span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>rx</span>.<span class='ident'>recv</span>().<span class='ident'>unwrap</span>();
+        <span class='kw'>let</span> <span class='ident'>tmp</span>: <span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>mem</span>::<span class='ident'>transmute</span>(<span class='ident'>tmp</span>) };
 
-		<span class='prelude-val'>Some</span>(<span class='op'>*</span><span class='ident'>tmp</span>)
-	}
+        <span class='prelude-val'>Some</span>(<span class='op'>*</span><span class='ident'>tmp</span>)
+    }
 
-	<span class='kw'>fn</span> <span class='ident'>close</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
-		<span class='comment'>// we can close the channel now</span>
-	}
+    <span class='kw'>fn</span> <span class='ident'>close</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
+        <span class='comment'>// we can close the channel now</span>
+    }
 }
 </pre>
 </section>

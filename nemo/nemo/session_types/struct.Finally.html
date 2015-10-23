@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `Send` struct in crate `nemo`.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, Send">
+    <meta name="description" content="API documentation for the Rust `Finally` struct in crate `nemo`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Finally">
 
-    <title>nemo::session_types::Send - Rust</title>
+    <title>nemo::session_types::Finally - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../../main.css">
 
@@ -26,7 +26,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'><a href='../index.html'>nemo</a>::<wbr><a href='index.html'>session_types</a></p><script>window.sidebarCurrent = {name: 'Send', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='../index.html'>nemo</a>::<wbr><a href='index.html'>session_types</a></p><script>window.sidebarCurrent = {name: 'Finally', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -41,13 +41,14 @@
     </nav>
 
     <section id='main' class="content struct">
-<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>nemo</a>::<wbr><a href='index.html'>session_types</a>::<wbr><a class='struct' href=''>Send</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>nemo</a>::<wbr><a href='index.html'>session_types</a>::<wbr><a class='struct' href=''>Finally</a></span><span class='out-of-band'><span id='render-detail'>
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-116' class='srclink' href='../../src/nemo/session_types/mod.rs.html#33' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct Send&lt;T, S: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>&gt;(_);</pre><div class='docblock'><p>The session expects to send <code>T</code> and proceed to session <code>S</code>.</p>
-</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl&lt;T, S: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>&gt; <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a> for <a class='struct' href='../../nemo/session_types/struct.Send.html' title='nemo::session_types::Send'>Send</a>&lt;T, S&gt;</code></h3><div class='impl-items'><h4 id='assoc_type.Dual' class='type'><code>type Dual = <a class='struct' href='../../nemo/session_types/struct.Recv.html' title='nemo::session_types::Recv'>Recv</a>&lt;T, S::Dual&gt;</code></h4>
+        </span><a id='src-100' class='srclink' href='../../src/nemo/session_types/choose.rs.html#70' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Finally&lt;P: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>&gt;(_);</pre><div class='docblock'><p>Finally choose <code>P</code>.</p>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl&lt;P: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>&gt; <a class='trait' href='../../nemo/session_types/trait.Chooser.html' title='nemo::session_types::Chooser'>Chooser</a>&lt;P&gt; for <a class='struct' href='../../nemo/session_types/struct.Finally.html' title='nemo::session_types::Finally'>Finally</a>&lt;P&gt;</code></h3><div class='impl-items'><h4 id='method.num' class='method'><code>fn <a href='../../nemo/session_types/trait.Chooser.html#method.num' class='fnname'>num</a>() -&gt; <a href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a></code></h4>
+</div><h3 class='impl'><code>impl&lt;P: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>&gt; <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a> for <a class='struct' href='../../nemo/session_types/struct.Finally.html' title='nemo::session_types::Finally'>Finally</a>&lt;P&gt;</code></h3><div class='impl-items'><h4 id='assoc_type.Dual' class='type'><code>type Dual = <a class='struct' href='../../nemo/session_types/struct.Finally.html' title='nemo::session_types::Finally'>Finally</a>&lt;P::Dual&gt;</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
