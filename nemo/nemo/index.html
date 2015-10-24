@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/nemo/lib.rs.html#1-35' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-0' class='srclink' href='../src/nemo/lib.rs.html#1-79' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Nemo provides session type abstractions for asynchronous networking
 protocols. It can be used to build high performance, memory safe
 and type-safe protocol implementations.</p>
@@ -89,11 +89,28 @@ not possible to change to another state without following the protocol.</p>
 
                         </td>
                     </tr>
+                </table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='macro' href='macro.peano!.html'
+                               title='nemo::peano!'>peano!</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='macro' href='macro.proto!.html'
+                               title='nemo::proto!'>proto!</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
                 </table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Chan.html'
-                               title='nemo::Chan'>Chan</a></td>
+                        <td><a class='struct' href='struct.Channel.html'
+                               title='nemo::Channel'>Channel</a></td>
                         <td class='docblock short'>
                              <p>Channels are provided to handlers to act as a &quot;courier&quot; for the session type
 and a guard for the IO backend.</p>
@@ -108,16 +125,6 @@ and a guard for the IO backend.</p>
                              <p>Handlers must return <code>Defer</code> to indicate to the <code>Session</code> how to proceed in
 the future. <code>Defer</code> can be obtained by calling <code>.defer()</code> on the channel, or
 by calling <code>.close()</code> when the session is <code>End</code>.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Session.html'
-                               title='nemo::Session'>Session</a></td>
-                        <td class='docblock short'>
-                             <p><code>Session</code>s are containers of channels which store the current session type
-internally through a function pointer to a concrete handler.</p>
 
                         </td>
                     </tr>
@@ -137,9 +144,7 @@ including the initial state.</p>
                         <td><a class='trait' href='trait.IO.html'
                                title='nemo::IO'>IO</a></td>
                         <td class='docblock short'>
-                             <p>This trait describes a backend for a channel to expose a message
-passing interface.</p>
-
+                             
                         </td>
                     </tr>
                 
@@ -151,6 +156,35 @@ passing interface.</p>
 type. <code>Handler</code>s are defined over concrete <code>Protocol</code>s to implement the behavior
 of a protocol in a given <code>SessionType</code>.</p>
 
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.Transfers.html'
+                               title='nemo::Transfers'>Transfers</a></td>
+                        <td class='docblock short'>
+                             <p>This trait describes a backend for a channel to expose a message
+passing interface. The trait is unsafe because it will be asked to supply
+arbitrary types, and so must preserve the invariant that it will never allow
+the backing channel to be modified outside of this trait.</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.channel.html'
+                               title='nemo::channel'>channel</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.channel_dual.html'
+                               title='nemo::channel_dual'>channel_dual</a></td>
+                        <td class='docblock short'>
+                             
                         </td>
                     </tr>
                 </table></section>

@@ -75,6 +75,50 @@
 <span id="33">33</span>
 <span id="34">34</span>
 <span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Nemo provides session type abstractions for asynchronous networking</span>
 <span class='doccomment'>//! protocols. It can be used to build high performance, memory safe</span>
@@ -91,25 +135,69 @@
 
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>feature</span>(<span class='ident'>optin_builtin_traits</span>)]</span>
 
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rand</span>;
+
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>peano</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>session_types</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>channels</span>;
 <span class='kw'>mod</span> <span class='ident'>protocol</span>;
 
-<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>protocol</span>::{<span class='ident'>Chan</span>, <span class='ident'>Defer</span>, <span class='ident'>Session</span>, <span class='ident'>Protocol</span>, <span class='ident'>Handler</span>};
+<span class='attribute'>#[<span class='ident'>macro_export</span>]</span>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>peano</span> {
+	() <span class='op'>=&gt;</span> (<span class='ident'>Z</span>);
+	(<span class='number'>0</span>) <span class='op'>=&gt;</span> (<span class='ident'>Z</span>);
+	(<span class='number'>1</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>0</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>2</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>1</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>3</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>2</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>4</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>3</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>5</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>4</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>6</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>5</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>7</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>6</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>8</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>7</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>9</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>8</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>10</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>9</span>)<span class='op'>&gt;</span>);
+	(<span class='number'>11</span>) <span class='op'>=&gt;</span> (<span class='ident'>S</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='number'>10</span>)<span class='op'>&gt;</span>);
+}
+
+<span class='attribute'>#[<span class='ident'>macro_export</span>]</span>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>proto</span> {
+	(<span class='ident'>Recv</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>) <span class='op'>=&gt;</span> (<span class='ident'>Recv</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>, <span class='macro'>proto</span><span class='macro'>!</span>($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>)<span class='op'>*</span>)<span class='op'>&gt;</span>);
+	(<span class='ident'>Send</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>) <span class='op'>=&gt;</span> (<span class='ident'>Send</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>, <span class='macro'>proto</span><span class='macro'>!</span>($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>)<span class='op'>*</span>)<span class='op'>&gt;</span>);
+	(<span class='kw'>loop</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span> }) <span class='op'>=&gt;</span> (<span class='ident'>Nest</span><span class='op'>&lt;</span><span class='macro'>proto</span><span class='macro'>!</span>($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>)<span class='op'>*</span>)<span class='op'>&gt;</span>);
+	(<span class='kw'>continue</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>tt</span>) <span class='op'>=&gt;</span> (<span class='ident'>Escape</span><span class='op'>&lt;</span><span class='macro'>peano</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>)<span class='op'>&gt;</span>);
+	(<span class='ident'>goto</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>ty</span>) <span class='op'>=&gt;</span> (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>);
+	(<span class='ident'>End</span>) <span class='op'>=&gt;</span> (<span class='ident'>End</span>);
+	({$(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>}) <span class='op'>=&gt;</span> (<span class='macro'>proto</span><span class='macro'>!</span>($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>)<span class='op'>*</span>));
+	(<span class='ident'>Choose</span> { <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>tt</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>}) <span class='op'>=&gt;</span> (<span class='ident'>Choose</span><span class='op'>&lt;</span><span class='macro'>proto</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>), <span class='macro'>proto</span><span class='macro'>!</span>(<span class='ident'>Choose</span> {$(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>)<span class='op'>*</span>})<span class='op'>&gt;</span>);
+	(<span class='ident'>Choose</span> { <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>tt</span> }) <span class='op'>=&gt;</span> (<span class='ident'>Finally</span><span class='op'>&lt;</span><span class='macro'>proto</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>)<span class='op'>&gt;</span>);
+	(<span class='ident'>Accept</span> { <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>tt</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>}) <span class='op'>=&gt;</span> (<span class='ident'>Accept</span><span class='op'>&lt;</span><span class='macro'>proto</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>), <span class='macro'>proto</span><span class='macro'>!</span>(<span class='ident'>Accept</span> {$(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>)<span class='op'>*</span>})<span class='op'>&gt;</span>);
+	(<span class='ident'>Accept</span> { <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>tt</span> }) <span class='op'>=&gt;</span> (<span class='ident'>Finally</span><span class='op'>&lt;</span><span class='macro'>proto</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>)<span class='op'>&gt;</span>);
+}
+
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>protocol</span>::{<span class='ident'>Channel</span>, <span class='ident'>Defer</span>, <span class='ident'>Protocol</span>, <span class='ident'>Handler</span>, <span class='ident'>channel</span>, <span class='ident'>channel_dual</span>};
+
+<span class='kw'>pub</span> <span class='kw'>unsafe</span> <span class='kw'>trait</span> <span class='ident'>IO</span> {
+	<span class='doccomment'>/// Closes the channel.</span>
+    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>close</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>);
+
+    <span class='doccomment'>/// Send a variable length integer over the channel.</span>
+    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>send_varint</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>usize</span>);
+
+    <span class='doccomment'>/// Receive a variable length integer from the channel.</span>
+    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>recv_varint</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span>;
+}
 
 <span class='doccomment'>/// This trait describes a backend for a channel to expose a message</span>
-<span class='doccomment'>/// passing interface.</span>
-<span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>IO</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+<span class='doccomment'>/// passing interface. The trait is unsafe because it will be asked to supply</span>
+<span class='doccomment'>/// arbitrary types, and so must preserve the invariant that it will never allow</span>
+<span class='doccomment'>/// the backing channel to be modified outside of this trait.</span>
+<span class='kw'>pub</span> <span class='kw'>unsafe</span> <span class='kw'>trait</span> <span class='ident'>Transfers</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>: <span class='ident'>IO</span> {
     <span class='doccomment'>/// Sends an object from the handler to the outside channel.</span>
-    <span class='kw'>fn</span> <span class='ident'>send</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>T</span>);
+    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>send</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>T</span>);
 
     <span class='doccomment'>/// Attempts to retrieve an object from the outside channel. This *can* block</span>
     <span class='doccomment'>/// but it also might not, depending on the impl.</span>
-    <span class='kw'>fn</span> <span class='ident'>recv</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>;
-
-    <span class='doccomment'>/// Closes the channel.</span>
-    <span class='kw'>fn</span> <span class='ident'>close</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>);
+    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>recv</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>;
 }</pre>
 </section>
     <section id='search' class="content hidden"></section>

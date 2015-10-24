@@ -45,10 +45,14 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-193' class='srclink' href='../src/nemo/protocol.rs.html#21' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct Defer&lt;P: <a class='trait' href='../nemo/trait.Protocol.html' title='nemo::Protocol'>Protocol</a>, I&gt;(pub DeferFunc&lt;I, P, <a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;, pub <a class='struct' href='https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html' title='core::marker::PhantomData'>PhantomData</a>&lt;P&gt;, pub <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>);</pre><div class='docblock'><p>Handlers must return <code>Defer</code> to indicate to the <code>Session</code> how to proceed in
+        </span><a id='src-200' class='srclink' href='../src/nemo/protocol.rs.html#17-22' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Defer&lt;P: <a class='trait' href='../nemo/trait.Protocol.html' title='nemo::Protocol'>Protocol</a>, I&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Handlers must return <code>Defer</code> to indicate to the <code>Session</code> how to proceed in
 the future. <code>Defer</code> can be obtained by calling <code>.defer()</code> on the channel, or
 by calling <code>.close()</code> when the session is <code>End</code>.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;P: <a class='trait' href='../nemo/trait.Protocol.html' title='nemo::Protocol'>Protocol</a>, I&gt; <a class='struct' href='../nemo/struct.Defer.html' title='nemo::Defer'>Defer</a>&lt;P, I&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(io: I, next: DeferFunc&lt;P, I, <a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;, open: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../nemo/struct.Defer.html' title='nemo::Defer'>Defer</a>&lt;P, I&gt;</code></h4>
+</div><h3 class='impl'><code>impl&lt;P: <a class='trait' href='../nemo/trait.Protocol.html' title='nemo::Protocol'>Protocol</a>, I&gt; <a class='struct' href='../nemo/struct.Defer.html' title='nemo::Defer'>Defer</a>&lt;P, I&gt;</code></h3><div class='impl-items'><h4 id='method.with' class='method'><code>fn <a href='#method.with' class='fnname'>with</a>(&amp;mut self) -&gt; <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 

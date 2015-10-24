@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-33' class='srclink' href='../../src/nemo/session_types/mod.rs.html#1-73' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-34' class='srclink' href='../../src/nemo/session_types/mod.rs.html#1-73' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Session types encode the current state of a communication channel. It is
 not possible to change to another state without following the protocol.</p>
 
@@ -58,7 +58,7 @@ be in state <code>End</code>, which means it can do nothing except close the cha
                         <td><a class='struct' href='struct.Accept.html'
                                title='nemo::session_types::Accept'>Accept</a></td>
                         <td class='docblock short'>
-                             <p>Accept either <code>P</code> or something in <code>Q</code>.</p>
+                             <p>Accept either <code>S</code> or something in <code>Q</code>.</p>
 
                         </td>
                     </tr>
@@ -67,7 +67,7 @@ be in state <code>End</code>, which means it can do nothing except close the cha
                         <td><a class='struct' href='struct.Choose.html'
                                title='nemo::session_types::Choose'>Choose</a></td>
                         <td class='docblock short'>
-                             <p>Choose from <code>P</code> or something in <code>Q</code>.</p>
+                             <p>Choose from <code>S</code> or something in <code>Q</code>.</p>
 
                         </td>
                     </tr>
@@ -96,7 +96,7 @@ peano numbers.</p>
                         <td><a class='struct' href='struct.Finally.html'
                                title='nemo::session_types::Finally'>Finally</a></td>
                         <td class='docblock short'>
-                             <p>Finally choose <code>P</code>.</p>
+                             <p>Finally choose <code>S</code>.</p>
 
                         </td>
                     </tr>
@@ -139,9 +139,9 @@ by an arbitrary number of layers <code>N</code>.</p>
                                title='nemo::session_types::Acceptor'>Acceptor</a></td>
                         <td class='docblock short'>
                              <p>This trait effectively posits that a protocol which handles <code>T</code> must
-additionally handle other types. If <code>T</code> is an <code>Accept&lt;P, Q&gt;</code> the
-protocol must handle <code>P</code> <em>and</em> be an <code>Acceptor</code> of <code>Q</code>. If <code>T</code> is 
-a <code>Finally&lt;P&gt;</code> it must handle <code>P</code>.</p>
+additionally handle other types. If <code>T</code> is an <code>Accept&lt;S, Q&gt;</code> the
+protocol must handle <code>S</code> <em>and</em> be an <code>Acceptor</code> of <code>Q</code>. If <code>T</code> is 
+a <code>Finally&lt;S&gt;</code> it must handle <code>S</code>.</p>
 
                         </td>
                     </tr>
