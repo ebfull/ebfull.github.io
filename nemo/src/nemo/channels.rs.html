@@ -120,7 +120,7 @@
 
 <span class='kw'>impl</span> <span class='ident'>Blocking</span> {
     <span class='doccomment'>/// Create a new bi-directional channel for protocols.</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span><span class='op'>&lt;</span><span class='ident'>P</span>: <span class='ident'>Protocol</span><span class='op'>&gt;</span>() <span class='op'>-&gt;</span> (<span class='ident'>super</span>::<span class='ident'>Channel</span><span class='op'>&lt;</span><span class='ident'>P</span>, <span class='ident'>Blocking</span>, (), <span class='ident'>P</span>::<span class='ident'>Initial</span><span class='op'>&gt;</span>, <span class='ident'>super</span>::<span class='ident'>Channel</span><span class='op'>&lt;</span><span class='ident'>P</span>, <span class='ident'>Blocking</span>, (), <span class='op'>&lt;</span><span class='ident'>P</span>::<span class='ident'>Initial</span> <span class='kw'>as</span> <span class='ident'>SessionType</span><span class='op'>&gt;</span>::<span class='ident'>Dual</span><span class='op'>&gt;</span>) {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span><span class='op'>&lt;</span><span class='ident'>P</span>: <span class='ident'>Protocol</span><span class='op'>&gt;</span>(<span class='ident'>a</span>: <span class='ident'>P</span>, <span class='ident'>b</span>: <span class='ident'>P</span>) <span class='op'>-&gt;</span> (<span class='ident'>super</span>::<span class='ident'>Channel</span><span class='op'>&lt;</span><span class='ident'>P</span>, <span class='ident'>Blocking</span>, (), <span class='ident'>P</span>::<span class='ident'>Initial</span><span class='op'>&gt;</span>, <span class='ident'>super</span>::<span class='ident'>Channel</span><span class='op'>&lt;</span><span class='ident'>P</span>, <span class='ident'>Blocking</span>, (), <span class='op'>&lt;</span><span class='ident'>P</span>::<span class='ident'>Initial</span> <span class='kw'>as</span> <span class='ident'>SessionType</span><span class='op'>&gt;</span>::<span class='ident'>Dual</span><span class='op'>&gt;</span>) {
         <span class='kw'>let</span> (<span class='ident'>tx1</span>, <span class='ident'>rx1</span>) <span class='op'>=</span> <span class='ident'>channel</span>();
         <span class='kw'>let</span> (<span class='ident'>tx2</span>, <span class='ident'>rx2</span>) <span class='op'>=</span> <span class='ident'>channel</span>();
 
@@ -128,11 +128,11 @@
             <span class='ident'>super</span>::<span class='ident'>channel</span>(<span class='ident'>Blocking</span> {
                 <span class='ident'>tx</span>: <span class='ident'>tx1</span>,
                 <span class='ident'>rx</span>: <span class='ident'>rx2</span>
-            }),
+            }, <span class='ident'>a</span>),
             <span class='ident'>super</span>::<span class='ident'>channel_dual</span>(<span class='ident'>Blocking</span> {
                 <span class='ident'>tx</span>: <span class='ident'>tx2</span>,
                 <span class='ident'>rx</span>: <span class='ident'>rx1</span>
-            })
+            }, <span class='ident'>b</span>)
         )
     }
 }
@@ -143,12 +143,12 @@
     }
 
     <span class='doccomment'>/// Send a variable length integer over the channel.</span>
-    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>send_varint</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>num</span>: <span class='ident'>usize</span>) {
+    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>send_discriminant</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>num</span>: <span class='ident'>usize</span>) {
         <span class='self'>self</span>.<span class='ident'>send</span>(<span class='ident'>num</span>)
     }
 
     <span class='doccomment'>/// Receive a variable length integer from the channel.</span>
-    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>recv_varint</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> {
+    <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>recv_discriminant</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> {
         <span class='self'>self</span>.<span class='ident'>recv</span>()
     }
 }

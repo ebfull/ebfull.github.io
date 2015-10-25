@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/nemo/lib.rs.html#1-79' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-0' class='srclink' href='../src/nemo/lib.rs.html#1-133' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Nemo provides session type abstractions for asynchronous networking
 protocols. It can be used to build high performance, memory safe
 and type-safe protocol implementations.</p>
@@ -92,8 +92,8 @@ not possible to change to another state without following the protocol.</p>
                 </table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='macro' href='macro.peano!.html'
-                               title='nemo::peano!'>peano!</a></td>
+                        <td><a class='macro' href='macro.handlers!.html'
+                               title='nemo::handlers!'>handlers!</a></td>
                         <td class='docblock short'>
                              
                         </td>
@@ -144,7 +144,12 @@ including the initial state.</p>
                         <td><a class='trait' href='trait.IO.html'
                                title='nemo::IO'>IO</a></td>
                         <td class='docblock short'>
-                             
+                             <p>This trait is implemented by backing IO structures to offer an
+interface for bi-directional channels. Discriminants are sent
+and received by <code>Channel</code> to indicate protocol changes; they
+tend to be smaller numbers, and so a variable length integer
+could be sent over a network instead of the raw <code>usize</code>.</p>
+
                         </td>
                     </tr>
                 
@@ -163,10 +168,11 @@ of a protocol in a given <code>SessionType</code>.</p>
                         <td><a class='trait' href='trait.Transfers.html'
                                title='nemo::Transfers'>Transfers</a></td>
                         <td class='docblock short'>
-                             <p>This trait describes a backend for a channel to expose a message
-passing interface. The trait is unsafe because it will be asked to supply
-arbitrary types, and so must preserve the invariant that it will never allow
-the backing channel to be modified outside of this trait.</p>
+                             <p>An implementation of this trait provides sending and receiving
+functionality to <code>Channel</code> for an arbitrary <code>T</code>. <code>Channel</code> will
+only ever call these functions if it expects a <code>T</code>, so long as
+outside of this trait and <code>IO</code> the backing channel cannot be
+accessed.</p>
 
                         </td>
                     </tr>

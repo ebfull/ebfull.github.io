@@ -45,14 +45,17 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-338' class='srclink' href='../src/nemo/lib.rs.html#72-79' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-355' class='srclink' href='../src/nemo/lib.rs.html#126-133' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub unsafe trait Transfers&lt;T&gt;: <a class='trait' href='../nemo/trait.IO.html' title='nemo::IO'>IO</a> {
     unsafe fn <a href='#tymethod.send' class='fnname'>send</a>(&amp;mut self, T);
     unsafe fn <a href='#tymethod.recv' class='fnname'>recv</a>(&amp;mut self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;;
-}</pre><div class='docblock'><p>This trait describes a backend for a channel to expose a message
-passing interface. The trait is unsafe because it will be asked to supply
-arbitrary types, and so must preserve the invariant that it will never allow
-the backing channel to be modified outside of this trait.</p>
+}</pre><div class='docblock'><p>An implementation of this trait provides sending and receiving
+functionality to <code>Channel</code> for an arbitrary <code>T</code>. <code>Channel</code> will
+only ever call these functions if it expects a <code>T</code>, so long as
+outside of this trait and <code>IO</code> the backing channel cannot be
+accessed.</p>
+
+<p>See the explanation on <code>IO</code> for more details.</p>
 </div>
             <h2 id='required-methods'>Required Methods</h2>
             <div class='methods'>

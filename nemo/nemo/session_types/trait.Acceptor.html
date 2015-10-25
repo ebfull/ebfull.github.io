@@ -45,9 +45,9 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-42' class='srclink' href='../../src/nemo/session_types/choose.rs.html#10-12' title='goto source code'>[src]</a></span></h1>
-<pre class='rust trait'>pub trait Acceptor&lt;I, E, T&gt;: <a class='trait' href='../../nemo/trait.Protocol.html' title='nemo::Protocol'>Protocol</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> {
-    fn <a href='#tymethod.defer' class='fnname'>defer</a>(I, <a href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='struct' href='../../nemo/struct.Defer.html' title='nemo::Defer'>Defer</a>&lt;Self, I&gt;;
+        </span><a id='src-41' class='srclink' href='../../src/nemo/session_types/choose.rs.html#10-12' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait Acceptor&lt;I, E: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>, T&gt;: <a class='trait' href='../../nemo/trait.Protocol.html' title='nemo::Protocol'>Protocol</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> {
+    fn <a href='#tymethod.defer' class='fnname'>defer</a>&lt;Y: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>&gt;(chan: <a class='struct' href='../../nemo/struct.Channel.html' title='nemo::Channel'>Channel</a>&lt;Self, I, E, Y&gt;, <a href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='struct' href='../../nemo/struct.Defer.html' title='nemo::Defer'>Defer</a>&lt;Self, I&gt;;
 }</pre><div class='docblock'><p>This trait effectively posits that a protocol which handles <code>T</code> must
 additionally handle other types. If <code>T</code> is an <code>Accept&lt;S, Q&gt;</code> the
 protocol must handle <code>S</code> <em>and</em> be an <code>Acceptor</code> of <code>Q</code>. If <code>T</code> is 
@@ -55,7 +55,7 @@ a <code>Finally&lt;S&gt;</code> it must handle <code>S</code>.</p>
 </div>
             <h2 id='required-methods'>Required Methods</h2>
             <div class='methods'>
-        <h3 id='tymethod.defer' class='method stab '><code>fn <a href='#tymethod.defer' class='fnname'>defer</a>(I, <a href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='struct' href='../../nemo/struct.Defer.html' title='nemo::Defer'>Defer</a>&lt;Self, I&gt;</code></h3></div>
+        <h3 id='tymethod.defer' class='method stab '><code>fn <a href='#tymethod.defer' class='fnname'>defer</a>&lt;Y: <a class='trait' href='../../nemo/session_types/trait.SessionType.html' title='nemo::session_types::SessionType'>SessionType</a>&gt;(chan: <a class='struct' href='../../nemo/struct.Channel.html' title='nemo::Channel'>Channel</a>&lt;Self, I, E, Y&gt;, <a href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='struct' href='../../nemo/struct.Defer.html' title='nemo::Defer'>Defer</a>&lt;Self, I&gt;</code></h3></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
     </ul><script type="text/javascript" async
