@@ -34,7 +34,7 @@
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
@@ -638,6 +638,31 @@
 <span id="596">596</span>
 <span id="597">597</span>
 <span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! pcap is a packet capture library available on Linux, Windows and Mac. This</span>
 <span class='doccomment'>//! crate supports creating and configuring capture contexts, sniffing packets,</span>
@@ -651,21 +676,21 @@
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```ignore</span>
 <span class='doccomment'>//! use pcap::Device;</span>
-<span class='doccomment'>//! </span>
+<span class='doccomment'>//!</span>
 <span class='doccomment'>//! fn main() {</span>
 <span class='doccomment'>//!     let mut cap = Device::lookup().unwrap().open().unwrap();</span>
-<span class='doccomment'>//!     </span>
+<span class='doccomment'>//!</span>
 <span class='doccomment'>//!     while let Some(packet) = cap.next() {</span>
 <span class='doccomment'>//!         println!(&quot;received packet! {:?}&quot;, packet);</span>
 <span class='doccomment'>//!     }</span>
 <span class='doccomment'>//! }</span>
 <span class='doccomment'>//! ```</span>
-<span class='doccomment'>//! </span>
+<span class='doccomment'>//!</span>
 <span class='doccomment'>//! `Capture`&#39;s `.next()` will produce a `Packet` which can be dereferenced to access the</span>
 <span class='doccomment'>//! `&amp;[u8]` packet contents.</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! # Custom configuration</span>
-<span class='doccomment'>//! </span>
+<span class='doccomment'>//!</span>
 <span class='doccomment'>//! You may want to configure the `timeout`, `snaplen` or other parameters for the capture</span>
 <span class='doccomment'>//! handle. In this case, use `Capture::from_device()` to obtain a `Capture&lt;Inactive&gt;`, and</span>
 <span class='doccomment'>//! proceed to configure the capture handle. When you&#39;re finished, run `.open()` on it to</span>
@@ -673,14 +698,14 @@
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```ignore</span>
 <span class='doccomment'>//! use pcap::{Device,Capture};</span>
-<span class='doccomment'>//! </span>
+<span class='doccomment'>//!</span>
 <span class='doccomment'>//! fn main() {</span>
 <span class='doccomment'>//!     let main_device = Device::lookup().unwrap();</span>
 <span class='doccomment'>//!     let mut cap = Capture::from_device(main_device).unwrap()</span>
 <span class='doccomment'>//!                       .promisc(true)</span>
 <span class='doccomment'>//!                       .snaplen(5000)</span>
 <span class='doccomment'>//!                       .open().unwrap();</span>
-<span class='doccomment'>//!     </span>
+<span class='doccomment'>//!</span>
 <span class='doccomment'>//!     while let Some(packet) = cap.next() {</span>
 <span class='doccomment'>//!         println!(&quot;received packet! {:?}&quot;, packet);</span>
 <span class='doccomment'>//!     }</span>
@@ -715,7 +740,9 @@
     <span class='ident'>MalformedError</span>(<span class='ident'>str</span>::<span class='ident'>Utf8Error</span>),
     <span class='ident'>InvalidString</span>,
     <span class='ident'>PcapError</span>(<span class='ident'>String</span>),
-    <span class='ident'>InvalidLinktype</span>
+    <span class='ident'>InvalidLinktype</span>,
+    <span class='ident'>TimeoutExpired</span>,
+    <span class='ident'>NoMorePackets</span>,
 }
 
 <span class='kw'>impl</span> <span class='ident'>Error</span> {
@@ -738,7 +765,13 @@
             },
             <span class='ident'>InvalidLinktype</span> <span class='op'>=&gt;</span> {
                 <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;invalid or unknown linktype&quot;</span>)
-            }
+            },
+            <span class='ident'>TimeoutExpired</span> <span class='op'>=&gt;</span> {
+               <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;timeout expired&quot;</span>)
+            },
+            <span class='ident'>NoMorePackets</span> <span class='op'>=&gt;</span> {
+               <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;no more packets to read from the file&quot;</span>)
+            },
         }
     }
 }
@@ -749,7 +782,9 @@
             <span class='ident'>MalformedError</span>(..) <span class='op'>=&gt;</span> <span class='string'>&quot;message from pcap is not encoded properly&quot;</span>,
             <span class='ident'>PcapError</span>(..) <span class='op'>=&gt;</span> <span class='string'>&quot;pcap FFI error&quot;</span>,
             <span class='ident'>InvalidString</span> <span class='op'>=&gt;</span> <span class='string'>&quot;pcap returned an invalid (null) string&quot;</span>,
-            <span class='ident'>InvalidLinktype</span> <span class='op'>=&gt;</span> <span class='string'>&quot;invalid or unknown linktype&quot;</span>
+            <span class='ident'>InvalidLinktype</span> <span class='op'>=&gt;</span> <span class='string'>&quot;invalid or unknown linktype&quot;</span>,
+            <span class='ident'>TimeoutExpired</span> <span class='op'>=&gt;</span> <span class='string'>&quot;pcap was reading from a live capture and the timeout expired&quot;</span>,
+            <span class='ident'>NoMorePackets</span> <span class='op'>=&gt;</span> <span class='string'>&quot;pcap was reading from a file and there were no more packets to read&quot;</span>,
         }
     }
 
@@ -932,7 +967,7 @@
 <span class='doccomment'>/// with `.filter()`.</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// **`Capture&lt;Offline&gt;`** is created via `Capture::from_file()`. This allows you to read a</span>
-<span class='doccomment'>/// pcap format dump file as if you were opening an interface -- very useful for testing or </span>
+<span class='doccomment'>/// pcap format dump file as if you were opening an interface -- very useful for testing or</span>
 <span class='doccomment'>/// analysis.</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// # Example:</span>
@@ -943,7 +978,7 @@
 <span class='doccomment'>///               .open() // activate the handle</span>
 <span class='doccomment'>///               .unwrap(); // assume activation worked</span>
 <span class='doccomment'>///</span>
-<span class='doccomment'>/// while let Some(packet) = cap.next() {</span>
+<span class='doccomment'>/// while let Ok(packet) = cap.next() {</span>
 <span class='doccomment'>///     println!(&quot;received packet! {:?}&quot;, packet);</span>
 <span class='doccomment'>/// }</span>
 <span class='doccomment'>/// ```</span>
@@ -1047,7 +1082,7 @@
 
     <span class='doccomment'>/// Set the snaplen size (the maximum length of a packet captured into the buffer).</span>
     <span class='doccomment'>/// Useful if you only want certain headers, but not the entire packet.</span>
-    <span class='doccomment'>/// </span>
+    <span class='doccomment'>///</span>
     <span class='doccomment'>/// The default is 65535</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>snaplen</span>(<span class='self'>self</span>, <span class='ident'>to</span>: <span class='ident'>i32</span>) <span class='op'>-&gt;</span> <span class='ident'>Capture</span><span class='op'>&lt;</span><span class='ident'>Inactive</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
@@ -1058,7 +1093,7 @@
 }
 
 <span class='doccomment'>///# Activated captures include `Capture&lt;Active&gt;` and `Capture&lt;Offline&gt;`.</span>
-<span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>T</span>: <span class='ident'>Activated</span><span class='op'>&gt;</span> <span class='ident'>Capture</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+<span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>T</span>: <span class='ident'>Activated</span> <span class='op'>+</span> ?<span class='ident'>Sized</span><span class='op'>&gt;</span> <span class='ident'>Capture</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
     <span class='doccomment'>/// List the datalink types that this captured device supports.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>list_datalinks</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>Linktype</span><span class='op'>&gt;</span>, <span class='ident'>Error</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
@@ -1132,20 +1167,35 @@
     <span class='doccomment'>/// from. This buffer has a finite length, so if the buffer fills completely new</span>
     <span class='doccomment'>/// packets will be discarded temporarily. This means that in realtime situations,</span>
     <span class='doccomment'>/// you probably want to minimize the time between calls of this next() method.</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>next</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;&gt;</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>next</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Packet</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>, <span class='ident'>Error</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
             <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>header</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>raw</span>::<span class='ident'>Struct_pcap_pkthdr</span> <span class='op'>=</span> <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>();
             <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>packet</span>: <span class='op'>*</span><span class='kw'>const</span> <span class='ident'>libc</span>::<span class='ident'>c_uchar</span> <span class='op'>=</span> <span class='ident'>ptr</span>::<span class='ident'>null</span>();
             <span class='kw'>match</span> <span class='ident'>raw</span>::<span class='ident'>pcap_next_ex</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span>, <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>header</span>, <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>packet</span>) {
                 <span class='number'>1</span> <span class='op'>=&gt;</span> {
                     <span class='comment'>// packet was read without issue</span>
-                    <span class='prelude-val'>Some</span>(<span class='ident'>Packet</span> {
+                    <span class='prelude-val'>Ok</span>(<span class='ident'>Packet</span> {
                         <span class='ident'>header</span>: <span class='ident'>transmute</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>header</span>),
                         <span class='ident'>data</span>: <span class='ident'>slice</span>::<span class='ident'>from_raw_parts</span>(<span class='ident'>packet</span>, (<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>header</span>).<span class='ident'>caplen</span> <span class='kw'>as</span> <span class='ident'>usize</span>)
                     })
                 },
+                <span class='number'>0</span> <span class='op'>=&gt;</span> {
+                    <span class='comment'>// packets are being read from a live capture and the</span>
+                    <span class='comment'>// timeout expired</span>
+                    <span class='prelude-val'>Err</span>(<span class='ident'>TimeoutExpired</span>)
+                },
+                <span class='op'>-</span><span class='number'>1</span> <span class='op'>=&gt;</span> {
+                    <span class='comment'>// an error occured while reading the packet</span>
+                    <span class='ident'>Error</span>::<span class='ident'>new</span>(<span class='ident'>raw</span>::<span class='ident'>pcap_geterr</span>(<span class='op'>*</span><span class='self'>self</span>.<span class='ident'>handle</span>))
+                },
+                <span class='op'>-</span><span class='number'>2</span> <span class='op'>=&gt;</span> {
+                    <span class='comment'>// packets are being read from a &quot;savefile&quot; and there are no</span>
+                    <span class='comment'>// more packets to read</span>
+                    <span class='prelude-val'>Err</span>(<span class='ident'>NoMorePackets</span>)
+                },
                 _ <span class='op'>=&gt;</span> {
-                    <span class='prelude-val'>None</span>
+                    <span class='comment'>// libpcap only defines codes 1, 0, -1, and -2</span>
+                    <span class='macro'>unreachable</span><span class='macro'>!</span>()
                 }
             }
         }
@@ -1244,37 +1294,44 @@
     <section class="footer"></section>
 
     <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
-        </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
-            <p>
-                Search functions by type signature (e.g.
-                <code>vec -> usize</code>)
-            </p>
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
         </div>
     </div>
 
