@@ -696,7 +696,7 @@
 <span class='doccomment'>//! # Capturing packets</span>
 <span class='doccomment'>//! The easiest way to open an active capture handle and begin sniffing is to</span>
 <span class='doccomment'>//! use `.open()` on a `Device`. You can obtain the &quot;default&quot; device using</span>
-<span class='doccomment'>//! `Device::lookup()`, or you can obtain the device(s) you need via `Device::list_all()`.</span>
+<span class='doccomment'>//! `Device::lookup()`, or you can obtain the device(s) you need via `Device::list()`.</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```ignore</span>
 <span class='doccomment'>//! use pcap::Device;</span>
@@ -704,7 +704,7 @@
 <span class='doccomment'>//! fn main() {</span>
 <span class='doccomment'>//!     let mut cap = Device::lookup().unwrap().open().unwrap();</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//!     while let Some(packet) = cap.next() {</span>
+<span class='doccomment'>//!     while let Ok(packet) = cap.next() {</span>
 <span class='doccomment'>//!         println!(&quot;received packet! {:?}&quot;, packet);</span>
 <span class='doccomment'>//!     }</span>
 <span class='doccomment'>//! }</span>
@@ -730,7 +730,7 @@
 <span class='doccomment'>//!                       .snaplen(5000)</span>
 <span class='doccomment'>//!                       .open().unwrap();</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//!     while let Some(packet) = cap.next() {</span>
+<span class='doccomment'>//!     while let Ok(packet) = cap.next() {</span>
 <span class='doccomment'>//!         println!(&quot;received packet! {:?}&quot;, packet);</span>
 <span class='doccomment'>//!     }</span>
 <span class='doccomment'>//! }</span>
