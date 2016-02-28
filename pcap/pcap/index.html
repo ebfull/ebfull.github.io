@@ -9,6 +9,7 @@
 
     <title>pcap - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
 
     
@@ -45,14 +46,13 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/pcap/lib.rs.html#1-647' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-0' class='srclink' href='../src/pcap/lib.rs.html#1-665' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>pcap is a packet capture library available on Linux, Windows and Mac. This
 crate supports creating and configuring capture contexts, sniffing packets,
 sending packets to interfaces, listing devices, and recording packet captures
 to pcap-format dump files.</p>
 
-<h1 id="capturing-packets" class='section-header'><a
-                           href="#capturing-packets">Capturing packets</a></h1>
+<h1 id='capturing-packets' class='section-header'><a href='#capturing-packets'>Capturing packets</a></h1>
 <p>The easiest way to open an active capture handle and begin sniffing is to
 use <code>.open()</code> on a <code>Device</code>. You can obtain the &quot;default&quot; device using
 <code>Device::lookup()</code>, or you can obtain the device(s) you need via <code>Device::list()</code>.</p>
@@ -70,8 +70,7 @@ use <code>.open()</code> on a <code>Device</code>. You can obtain the &quot;defa
 <p><code>Capture</code>&#39;s <code>.next()</code> will produce a <code>Packet</code> which can be dereferenced to access the
 <code>&amp;[u8]</code> packet contents.</p>
 
-<h1 id="custom-configuration" class='section-header'><a
-                           href="#custom-configuration">Custom configuration</a></h1>
+<h1 id='custom-configuration' class='section-header'><a href='#custom-configuration'>Custom configuration</a></h1>
 <p>You may want to configure the <code>timeout</code>, <code>snaplen</code> or other parameters for the capture
 handle. In this case, use <code>Capture::from_device()</code> to obtain a <code>Capture&lt;Inactive&gt;</code>, and
 proceed to configure the capture handle. When you&#39;re finished, run <code>.open()</code> on it to
@@ -273,6 +272,6 @@ errors.</p>
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
     
-    <script async src="../search-index.js"></script>
+    <script defer src="../search-index.js"></script>
 </body>
 </html>

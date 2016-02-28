@@ -9,6 +9,7 @@
 
     <title>pcap::PacketHeader - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
 
     
@@ -45,11 +46,11 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-2886' class='srclink' href='../src/pcap/raw.rs.html#586-590' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-659' class='srclink' href='../src/pcap/raw.rs.html#585-589' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct PacketHeader {
-    pub ts: <a class='struct' href='../libc/types/os/common/posix01/struct.timeval.html' title='libc::types::os::common::posix01::timeval'>timeval</a>,
-    pub caplen: <a href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>,
-    pub len: <a href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>,
+    pub ts: <a class='struct' href='../libc/unix/struct.timeval.html' title='libc::unix::timeval'>timeval</a>,
+    pub caplen: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>,
+    pub len: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>,
 }</pre><div class='docblock'><p>Represents a packet header provided by pcap, including the timeval, caplen and len.</p>
 </div><h2 class='fields'>Fields</h2>
 <table><tr class='stab '>
@@ -117,6 +118,6 @@
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
     
-    <script async src="../search-index.js"></script>
+    <script defer src="../search-index.js"></script>
 </body>
 </html>
