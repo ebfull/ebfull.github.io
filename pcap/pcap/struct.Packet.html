@@ -46,7 +46,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-991' class='srclink' href='../src/pcap/lib.rs.html#256-259' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1016' class='srclink' href='../src/pcap/lib.rs.html#262-265' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Packet&lt;'a&gt; {
     pub header: &amp;'a <a class='struct' href='../pcap/struct.PacketHeader.html' title='pcap::PacketHeader'>PacketHeader</a>,
     pub data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>,
@@ -391,7 +391,7 @@ found; the fourth could match any position in <code>[1,4]</code>.</p>
 
 <span class='ident'>v</span>.<span class='ident'>sort</span>();
 <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>v</span> <span class='op'>==</span> [<span class='op'>-</span><span class='number'>5</span>, <span class='op'>-</span><span class='number'>3</span>, <span class='number'>1</span>, <span class='number'>2</span>, <span class='number'>4</span>]);</pre>
-</div><h4 id='method.sort_by_key' class='method'><code>fn <a href='#method.sort_by_key' class='fnname'>sort_by_key</a>&lt;B, F&gt;(&amp;mut self, f: F) <span class='where'>where B: <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a>, F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(&amp;T) -&gt; B</span></code></h4>
+</div><h4 id='method.sort_by_key' class='method'><code>fn <a href='#method.sort_by_key' class='fnname'>sort_by_key</a>&lt;B, F&gt;(&amp;mut self, f: F) <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(&amp;T) -&gt; B, B: <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a></span></code></h4>
 <div class='stability'><em class='stab unstable'>Unstable (<code>slice_sort_by_key</code>)<p>: recently added</p>
 </em></div><div class='docblock'><p>Sorts the slice, in place, using <code>key</code> to extract a key by which to
 order the sort by.</p>

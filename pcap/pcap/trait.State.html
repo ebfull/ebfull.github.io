@@ -46,7 +46,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-1033' class='srclink' href='../src/pcap/lib.rs.html#293' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1063' class='srclink' href='../src/pcap/lib.rs.html#309' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub unsafe trait State { }</pre><div class='docblock'><p><code>Capture</code>s can be in different states at different times, and in these states they
 may or may not have particular capabilities. This trait is implemented by phantom
 types which allows us to punt these invariants to the type system to avoid runtime
@@ -57,6 +57,7 @@ errors.</p>
     <li><code>impl <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a> for <a class='enum' href='../pcap/enum.Inactive.html' title='pcap::Inactive'>Inactive</a></code></li>
 <li><code>impl <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a> for <a class='enum' href='../pcap/enum.Active.html' title='pcap::Active'>Active</a></code></li>
 <li><code>impl <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a> for <a class='enum' href='../pcap/enum.Offline.html' title='pcap::Offline'>Offline</a></code></li>
+<li><code>impl <a class='trait' href='../pcap/trait.State.html' title='pcap::State'>State</a> for <a class='enum' href='../pcap/enum.Dead.html' title='pcap::Dead'>Dead</a></code></li>
 </ul><script type="text/javascript" async
                               src="../implementors/pcap/trait.State.js">
                       </script></section>
