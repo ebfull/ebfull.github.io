@@ -1,0 +1,270 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Introduction · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-katex/katex.min.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+        <link rel="stylesheet" href="styles/website.css">
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="zerocash/" />
+    
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter active" data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="zerocash/">
+            
+                <a href="zerocash/">
+            
+                    
+                    Zerocash
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="zerocash/something.html">
+            
+                <a href="zerocash/something.html">
+            
+                    
+                    sdfgsdfgsdfg
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >Introduction</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p>This document is intended to be a technical overview of <a href="https://z.cash/upgrade/sapling.html" target="_blank">Sapling</a>, a major network upgrade for Zcash which is <a href="https://z.cash/support/schedule.html" target="_blank">slated to activate</a> in November 2018.</p>
+<ul>
+<li><strong>This is not a user guide.</strong> If you&apos;re a user or business, please refer to the <a href="https://z.cash/upgrade/sapling.html" target="_blank">Sapling Upgrade</a> documentation instead.</li>
+<li><strong>This is not a specification.</strong> Please refer to the <a href="https://github.com/zcash/zips/blob/master/protocol/sapling.pdf" target="_blank">Zcash Protocol Specification</a> and <a href="https://github.com/zcash/zips/blob/master/zip-0243.rst" target="_blank">ZIP243</a> for a more thorough description of the changes involved in the Sapling upgrade.</li>
+</ul>
+<hr>
+<h1 id="introduction">Introduction</h1>
+<p>Zcash is a cryptocurrency which uses cutting-edge cryptography to provide users with strong privacy guarantees. Over time, the Zcash network will undergo <strong>network upgrades</strong> in order to add features and improve the network. We like to use codenames to describe our major releases and network upgrades:</p>
+<h3 id="sprout">Sprout</h3>
+<p><strong>Sprout</strong> was the initial release of Zcash in 2016. Zcash&apos;s protocol is built on top of a fork of Bitcoin&apos;s code. Just as in Bitcoin, users typically send and receive money with <strong>payment addresses</strong>. The original release of Zcash included two kinds of payment addresses:</p>
+<ul>
+<li><strong>Transparent addresses</strong> are identical to the traditional Bitcoin-style addresses. Payments to and from transparent addresses publicly reveal the contents of your transaction, such as the value, origin and destination of funds.</li>
+<li><strong>Shielded addresses</strong> are payment addresses which use a variant of the <a href="http://zerocash-project.org/" target="_blank">Zerocash protocol</a> to allow users to keep the value, origin and destination of funds completely private.</li>
+</ul>
+<h3 id="overwinter">Overwinter</h3>
+<p><strong>Overwinter</strong> is Zcash&apos;s first network upgrade. It makes some changes to the protocol which make future network upgrades simpler. It is slated to activate in June 2018.</p>
+<h3 id="sapling">Sapling</h3>
+<p><strong>Sapling</strong> is a major network upgrade that is expected to activate in November 2018. The primary goal of this upgrade is to improve the performance of shielded addresses so that they can become ubiquitous in the ecosystem. In order to do this, we need to make payments involving these addresses much more efficient. This requires using some improved cryptographic tools and a new kind of shielded address.</p>
+<p>Sapling is one step toward removing transparent addresses from the protocol entirely, although that will not take place in the Sapling upgrade.</p>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                
+                <a href="zerocash/" class="navigation navigation-next navigation-unique" aria-label="Next page: Zerocash">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"Zerocash","level":"1.2","depth":1,"path":"zerocash/README.md","ref":"zerocash/README.md","articles":[{"title":"sdfgsdfgsdfg","level":"1.2.1","depth":2,"path":"zerocash/something.md","ref":"zerocash/something.md","articles":[]}]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"README.md","mtime":"2018-06-18T01:06:50.696Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-18T21:24:43.250Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+
