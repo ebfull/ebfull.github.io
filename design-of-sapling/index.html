@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Introduction · GitBook</title>
+        <title>Background · GitBook</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -53,7 +53,7 @@
     <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="zerocash/" />
+    <link rel="next" href="background/network_upgrades.html" />
     
     
 
@@ -88,20 +88,7 @@
                 <a href="./">
             
                     
-                    Introduction
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.2" data-path="zerocash/">
-            
-                <a href="zerocash/">
-            
-                    
-                    Zerocash
+                    Background
             
                 </a>
             
@@ -110,12 +97,25 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="1.2.1" data-path="zerocash/something.html">
+        <li class="chapter " data-level="1.1.1" data-path="background/network_upgrades.html">
             
-                <a href="zerocash/something.html">
+                <a href="background/network_upgrades.html">
             
                     
-                    sdfgsdfgsdfg
+                    Network Upgrades
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.1.2" data-path="background/zerocash.html">
+            
+                <a href="background/zerocash.html">
+            
+                    
+                    Zerocash
             
                 </a>
             
@@ -125,6 +125,97 @@
     
 
             </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="http">
+            
+                <span>
+            
+                    
+                    Transaction Design
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="http">
+            
+                <span>
+            
+                    
+                    Payment Addresses
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="http">
+            
+                <span>
+            
+                    
+                    Notes
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="http">
+            
+                <span>
+            
+                    
+                    Nullifiers
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="http">
+            
+                <span>
+            
+                    
+                    Jubjub
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="http">
+            
+                <span>
+            
+                    
+                    Groth16
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="http">
+            
+                <span>
+            
+                    
+                    BLS12-381
+            
+                </a>
+            
+
             
         </li>
     
@@ -158,7 +249,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href="." >Introduction</a>
+        <a href="." >Background</a>
     </h1>
 </div>
 
@@ -179,19 +270,14 @@
 <li><strong>This is not a specification.</strong> Please refer to the <a href="https://github.com/zcash/zips/blob/master/protocol/sapling.pdf" target="_blank">Zcash Protocol Specification</a> and <a href="https://github.com/zcash/zips/blob/master/zip-0243.rst" target="_blank">ZIP243</a> for a more thorough description of the changes involved in the Sapling upgrade.</li>
 </ul>
 <hr>
-<h1 id="introduction">Introduction</h1>
-<p>Zcash is a cryptocurrency which uses cutting-edge cryptography to provide users with strong privacy guarantees. Over time, the Zcash network will undergo <strong>network upgrades</strong> in order to add features and improve the network. We like to use codenames to describe our major releases and network upgrades:</p>
-<h3 id="sprout">Sprout</h3>
-<p><strong>Sprout</strong> was the initial release of Zcash in 2016. Zcash&apos;s protocol is built on top of a fork of Bitcoin&apos;s code. Just as in Bitcoin, users typically send and receive money with <strong>payment addresses</strong>. The original release of Zcash included two kinds of payment addresses:</p>
+<h1 id="background">Background</h1>
+<p>Zcash is a cryptocurrency which uses cutting-edge cryptography to provide users with strong financial privacy. Zcash users send money to and from <strong>payment addresses</strong>. Zcash includes two kinds of payment addresses:</p>
 <ul>
-<li><strong>Transparent addresses</strong> are identical to the traditional Bitcoin-style addresses. Payments to and from transparent addresses publicly reveal the contents of your transaction, such as the value, origin and destination of funds.</li>
-<li><strong>Shielded addresses</strong> are payment addresses which use a variant of the <a href="http://zerocash-project.org/" target="_blank">Zerocash protocol</a> to allow users to keep the value, origin and destination of funds completely private.</li>
+<li><strong>Transparent addresses</strong> are similar to the traditional Bitcoin-style addresses. Payments to and from transparent addresses publicly reveal the contents of your transaction, such as the value, origin and destination of funds. There is a <code>t</code> at the beginning of all transparent addresses, so we sometimes call them &quot;t-addresses.&quot;</li>
+<li><strong>Shielded addresses</strong> are payment addresses which use a variant of the <a href="http://zerocash-project.org/" target="_blank">Zerocash protocol</a> to allow users to keep the value, origin and destination of funds completely private. There is a <code>z</code> at the beginning of all shielded addresses, so we sometimes call them &quot;z-addresses.&quot;</li>
 </ul>
-<h3 id="overwinter">Overwinter</h3>
-<p><strong>Overwinter</strong> is Zcash&apos;s first network upgrade. It makes some changes to the protocol which make future network upgrades simpler. It is slated to activate in June 2018.</p>
-<h3 id="sapling">Sapling</h3>
-<p><strong>Sapling</strong> is a major network upgrade that is expected to activate in November 2018. The primary goal of this upgrade is to improve the performance of shielded addresses so that they can become ubiquitous in the ecosystem. In order to do this, we need to make payments involving these addresses much more efficient. This requires using some improved cryptographic tools and a new kind of shielded address.</p>
-<p>Sapling is one step toward removing transparent addresses from the protocol entirely, although that will not take place in the Sapling upgrade.</p>
+<p><strong>Sapling</strong> is a <a href="background/network_upgrades.html">network upgrade</a> which introduces a new z-address which is faster to send and receive shielded payments with. It is the first step toward (eventually) removing transparent addresses from Zcash completely.</p>
+<p>The Sapling network upgrade has required more than a year of careful design and optimization. This document is intended to give a technical and cryptographic overview of the Sapling upgrade so that it can be more broadly analyzed by the community.</p>
 
                                 
                                 </section>
@@ -220,7 +306,7 @@
             
                 
                 
-                <a href="zerocash/" class="navigation navigation-next navigation-unique" aria-label="Next page: Zerocash">
+                <a href="background/network_upgrades.html" class="navigation navigation-next navigation-unique" aria-label="Next page: Network Upgrades">
                     <i class="fa fa-angle-right"></i>
                 </a>
                 
@@ -231,7 +317,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"Zerocash","level":"1.2","depth":1,"path":"zerocash/README.md","ref":"zerocash/README.md","articles":[{"title":"sdfgsdfgsdfg","level":"1.2.1","depth":2,"path":"zerocash/something.md","ref":"zerocash/something.md","articles":[]}]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"README.md","mtime":"2018-06-18T01:06:50.696Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-18T21:24:43.250Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Background","level":"1.1","depth":1,"next":{"title":"Network Upgrades","level":"1.1.1","depth":2,"path":"background/network_upgrades.md","ref":"background/network_upgrades.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"README.md","mtime":"2018-06-19T22:12:06.522Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-20T04:17:19.414Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

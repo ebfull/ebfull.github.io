@@ -1,0 +1,373 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Network Upgrades · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-katex/katex.min.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+        <link rel="stylesheet" href="../styles/website.css">
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="zerocash.html" />
+    
+    
+    <link rel="prev" href="../" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    Background
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter active" data-level="1.1.1" data-path="network_upgrades.html">
+            
+                <a href="network_upgrades.html">
+            
+                    
+                    Network Upgrades
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.1.2" data-path="zerocash.html">
+            
+                <a href="zerocash.html">
+            
+                    
+                    Zerocash
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../http">
+            
+                <span>
+            
+                    
+                    Transaction Design
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../http">
+            
+                <span>
+            
+                    
+                    Payment Addresses
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../http">
+            
+                <span>
+            
+                    
+                    Notes
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../http">
+            
+                <span>
+            
+                    
+                    Nullifiers
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../http">
+            
+                <span>
+            
+                    
+                    Jubjub
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../http">
+            
+                <span>
+            
+                    
+                    Groth16
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="../http">
+            
+                <span>
+            
+                    
+                    BLS12-381
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href=".." >Network Upgrades</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p>Over time, the Zcash network will undergo <strong>network upgrades</strong> in order to add features and improve the network. We like to use codenames to describe our major releases and network upgrades:</p>
+<h3 id="sprout">Sprout</h3>
+<p><strong>Sprout</strong> was the initial release of Zcash in 2016. Zcash&apos;s protocol is built on top of a fork of Bitcoin&apos;s code, with an integration of the Zerocash protocol and some other adjustments:</p>
+<ul>
+<li>The maximum block size was increased to 2MB.</li>
+<li>The interval between blocks targets 2.5 minutes. (Corresponding changes to the block reward ensure that the supply schedule approximates Bitcoin&apos;s.)</li>
+<li>The proof-of-work algorithm was changed to Equihash.</li>
+<li>The difficulty adjustment algorithm was modified to react more quickly to changes in hashrate.</li>
+<li>A 32-byte <code>reserved</code> field was added to the block header.</li>
+</ul>
+<h3 id="overwinter">Overwinter</h3>
+<p><strong>Overwinter</strong> is Zcash&apos;s first network upgrade. Overwinter&apos;s main goal is to introduce changes which make future network upgrades simpler. The most important is the introduction of bilateral replay protection: transactions on a different chain that did not follow the network upgrade should not be valid on the new chain, and vice-versa.</p>
+<p>Overwinter also had some other changes to consensus rules:</p>
+<ul>
+<li>The quadratic cost of validating (transparent payment) signatures was fixed.</li>
+<li>Transactions now have an expiry height which allows transactions to expire from being mined.</li>
+</ul>
+<h3 id="sapling">Sapling</h3>
+<p><strong>Sapling</strong> is a major network upgrade that is expected to activate in November 2018. The primary goal of this upgrade is to improve the performance of shielded addresses so that they can become ubiquitous in the ecosystem.</p>
+<p>The Sapling upgrade includes:</p>
+<ul>
+<li>A new z-address that is significantly faster to send and receive payments with, with less memory consumption.</li>
+<li>Old z-addresses are still valid, but transactions involving them are doubled in performance.</li>
+<li>Block headers are required to contain (in the previously <code>reserved</code> field) the Merkle tree root of the new z-address accumulator.</li>
+</ul>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="../" class="navigation navigation-prev " aria-label="Previous page: Background">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="zerocash.html" class="navigation navigation-next " aria-label="Next page: Zerocash">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Network Upgrades","level":"1.1.1","depth":2,"next":{"title":"Zerocash","level":"1.1.2","depth":2,"path":"background/zerocash.md","ref":"background/zerocash.md","articles":[]},"previous":{"title":"Background","level":"1.1","depth":1,"path":"README.md","ref":"README.md","articles":[{"title":"Network Upgrades","level":"1.1.1","depth":2,"path":"background/network_upgrades.md","ref":"background/network_upgrades.md","articles":[]},{"title":"Zerocash","level":"1.1.2","depth":2,"path":"background/zerocash.md","ref":"background/zerocash.md","articles":[]}]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"background/network_upgrades.md","mtime":"2018-06-20T03:43:08.435Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-20T04:17:19.414Z"},"basePath":"..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../gitbook/gitbook.js"></script>
+    <script src="../gitbook/theme.js"></script>
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+
