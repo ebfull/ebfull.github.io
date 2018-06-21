@@ -125,7 +125,20 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.2" data-path="qaps.html">
+        <li class="chapter " data-level="1.2.2" data-path="r1cs.html">
+            
+                <a href="r1cs.html">
+            
+                    
+                    Rank-1 Constraint Systems
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="qaps.html">
             
                 <a href="qaps.html">
             
@@ -138,7 +151,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.3" data-path="groth16.html">
+        <li class="chapter " data-level="1.2.4" data-path="groth16.html">
             
                 <a href="groth16.html">
             
@@ -151,7 +164,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.4" data-path="paramgen.html">
+        <li class="chapter " data-level="1.2.5" data-path="paramgen.html">
             
                 <a href="paramgen.html">
             
@@ -164,7 +177,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.5" data-path="simulation_extractability.html">
+        <li class="chapter " data-level="1.2.6" data-path="simulation_extractability.html">
             
                 <a href="simulation_extractability.html">
             
@@ -370,11 +383,11 @@
                                 <section class="normal markdown-section">
                                 
                                 <h1 id="zk-snarks">zk-SNARKs</h1>
-<p><a href="https://en.wikipedia.org/wiki/Zero-knowledge_proof" target="_blank">Zero-knowledge proofs</a> allow you to demonstrate that you performed a computation correctly without revealing all of the inputs to that computation. We can think of the computation as some <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo>(</mo><mi>x</mi><mo separator="true">,</mo><mi>w</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">f(x, w)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1em;vertical-align:-0.25em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathit">x</span><span class="mpunct">,</span><span class="mord mathit" style="margin-right:0.02691em;">w</span><span class="mclose">)</span></span></span></span>, where the <strong>statement</strong> <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.43056em;vertical-align:0em;"></span><span class="base textstyle uncramped"><span class="mord mathit">x</span></span></span></span> is known to both the verifier and the prover, but the <strong>witness</strong> <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.43056em;vertical-align:0em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.02691em;">w</span></span></span></span> is known only to the prover.</p>
-<p>The fundamental tool underlying Zcash is an advanced zero-knowledge proof called a <strong>zk-SNARK</strong>. These proofs are only hundreds of bytes long and are inexpensive to verify, even if the underlying computation <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo>(</mo><mi>x</mi><mo separator="true">,</mo><mi>w</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">f(x, w)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1em;vertical-align:-0.25em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathit">x</span><span class="mpunct">,</span><span class="mord mathit" style="margin-right:0.02691em;">w</span><span class="mclose">)</span></span></span></span> is large in complexity. These proofs are also <strong>non-interactive</strong>, so the prover can publish the proof and anyone can verify it without interacting with the prover, making them very useful for cryptocurrencies.</p>
+<p><a href="https://en.wikipedia.org/wiki/Zero-knowledge_proof" target="_blank">Zero-knowledge proofs</a> allow you to demonstrate that you performed a computation correctly without revealing all of the inputs to that computation. We can think of the computation as some <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo>(</mo><mi>p</mi><mo separator="true">,</mo><mi>w</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">f(p, w)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1em;vertical-align:-0.25em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathit">p</span><span class="mpunct">,</span><span class="mord mathit" style="margin-right:0.02691em;">w</span><span class="mclose">)</span></span></span></span>, where the <strong>statement</strong> <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">p</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="base textstyle uncramped"><span class="mord mathit">p</span></span></span></span> is known to both the verifier and the prover, but the <strong>witness</strong> <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.43056em;vertical-align:0em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.02691em;">w</span></span></span></span> is known only to the prover.</p>
+<p>The fundamental tool underlying Zcash is an advanced zero-knowledge proof called a <strong>zk-SNARK</strong>. These proofs are only hundreds of bytes long and are inexpensive to verify, even if the underlying computation <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo>(</mo><mi>p</mi><mo separator="true">,</mo><mi>w</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">f(p, w)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1em;vertical-align:-0.25em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathit">p</span><span class="mpunct">,</span><span class="mord mathit" style="margin-right:0.02691em;">w</span><span class="mclose">)</span></span></span></span> is large in complexity. These proofs are also <strong>non-interactive</strong>: the prover can publish a proof that anyone can verify without interacting with the prover, making them very useful for cryptocurrencies.</p>
 <p>zk-SNARKs do come with some downsides, which are being addressed by the Sapling upgrade:</p>
 <ul>
-<li>zk-SNARKs require a setup phase where, for a given computation <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo>(</mo><mi>x</mi><mo separator="true">,</mo><mi>w</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">f(x, w)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1em;vertical-align:-0.25em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathit">x</span><span class="mpunct">,</span><span class="mord mathit" style="margin-right:0.02691em;">w</span><span class="mclose">)</span></span></span></span>, some <strong>public parameters</strong> are constructed. These parameters are needed to create and verify proofs, but if the creator of the parameters &quot;remembers&quot; how they were constructed, they can create false proofs.<ul>
+<li>zk-SNARKs require a setup phase where, for a given computation <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo>(</mo><mi>p</mi><mo separator="true">,</mo><mi>w</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">f(p, w)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1em;vertical-align:-0.25em;"></span><span class="base textstyle uncramped"><span class="mord mathit" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathit">p</span><span class="mpunct">,</span><span class="mord mathit" style="margin-right:0.02691em;">w</span><span class="mclose">)</span></span></span></span>, some <strong>public parameters</strong> are constructed. These parameters are needed to create and verify proofs, but if the creator of the parameters &quot;remembers&quot; how they were constructed, they can create false proofs.<ul>
 <li>Sapling uses a gigantic and public <a href="https://en.wikipedia.org/wiki/Secure_multi-party_computation" target="_blank">multi-party computation</a> (MPC) ceremony to construct the parameters. In order to corrupt the parameters, a large number of reputable individuals must <em>all</em> be colluding in secret or compromised.</li>
 </ul>
 </li>
@@ -430,7 +443,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"zk-SNARKs","level":"1.2","depth":1,"next":{"title":"BLS12-381","level":"1.2.1","depth":2,"path":"zksnarks/bls12_381.md","ref":"zksnarks/bls12_381.md","articles":[]},"previous":{"title":"Introduction","level":"1.1","depth":1,"path":"README.md","ref":"README.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"zksnarks/README.md","mtime":"2018-06-21T10:36:44.498Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-21T11:28:39.440Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"zk-SNARKs","level":"1.2","depth":1,"next":{"title":"BLS12-381","level":"1.2.1","depth":2,"path":"zksnarks/bls12_381.md","ref":"zksnarks/bls12_381.md","articles":[]},"previous":{"title":"Introduction","level":"1.1","depth":1,"path":"README.md","ref":"README.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"zksnarks/README.md","mtime":"2018-06-21T19:09:28.617Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-21T23:45:52.026Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

@@ -125,7 +125,20 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.2" data-path="qaps.html">
+        <li class="chapter " data-level="1.2.2" data-path="r1cs.html">
+            
+                <a href="r1cs.html">
+            
+                    
+                    Rank-1 Constraint Systems
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="qaps.html">
             
                 <a href="qaps.html">
             
@@ -138,7 +151,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="1.2.3" data-path="groth16.html">
+        <li class="chapter active" data-level="1.2.4" data-path="groth16.html">
             
                 <a href="groth16.html">
             
@@ -151,7 +164,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.4" data-path="paramgen.html">
+        <li class="chapter " data-level="1.2.5" data-path="paramgen.html">
             
                 <a href="paramgen.html">
             
@@ -164,7 +177,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.5" data-path="simulation_extractability.html">
+        <li class="chapter " data-level="1.2.6" data-path="simulation_extractability.html">
             
                 <a href="simulation_extractability.html">
             
@@ -369,7 +382,13 @@
     
                                 <section class="normal markdown-section">
                                 
-                                
+                                <h1 id="groth16">Groth16</h1>
+<p>QAPs allow us to demonstrate that a statement is true with a single identity test:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo>&#x27E8;</mo><mtext><mi mathvariant="normal">u</mi><mi mathvariant="normal">(</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">)</mi></mtext><mo separator="true">,</mo><mtext><mi mathvariant="normal">z</mi></mtext><mo>&#x27E9;</mo><mo>&#x22C5;</mo><mo>&#x27E8;</mo><mtext><mi mathvariant="normal">v</mi><mi mathvariant="normal">(</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">)</mi></mtext><mo separator="true">,</mo><mtext><mi mathvariant="normal">z</mi></mtext><mo>&#x27E9;</mo><mo>&#x2212;</mo><mo>&#x27E8;</mo><mtext><mi mathvariant="normal">w</mi><mi mathvariant="normal">(</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">)</mi></mtext><mo separator="true">,</mo><mtext><mi mathvariant="normal">z</mi></mtext><mo>&#x27E9;</mo><mo>=</mo><mo>&#x27E8;</mo><msup><mtext><mi mathvariant="normal">x</mi></mtext><mrow><mi>k</mi><mo>&#x2212;</mo><mn>1</mn></mrow></msup><mo separator="true">,</mo><mtext><mi mathvariant="normal">h</mi></mtext><mo>&#x27E9;</mo><mo>&#x22C5;</mo><mi>t</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">
+\langle \textbf{u(x)}, \textbf{z} \rangle \cdot \langle \textbf{v(x)}, \textbf{z} \rangle - \langle \textbf{w(x)}, \textbf{z} \rangle = \langle \textbf{x}^{k-1}, \textbf{h} \rangle \cdot t(x)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.899108em;"></span><span class="strut bottom" style="height:1.149108em;vertical-align:-0.25em;"></span><span class="base displaystyle textstyle uncramped"><span class="mopen">&#x27E8;</span><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">u(x)</span></span><span class="mpunct">,</span><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">z</span></span><span class="mclose">&#x27E9;</span><span class="mbin">&#x22C5;</span><span class="mopen">&#x27E8;</span><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">v(x)</span></span><span class="mpunct">,</span><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">z</span></span><span class="mclose">&#x27E9;</span><span class="mbin">&#x2212;</span><span class="mopen">&#x27E8;</span><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">w(x)</span></span><span class="mpunct">,</span><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">z</span></span><span class="mclose">&#x27E9;</span><span class="mrel">=</span><span class="mopen">&#x27E8;</span><span class="mord"><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">x</span></span><span class="msupsub"><span class="vlist"><span style="top:-0.41300000000000003em;margin-right:0.05em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">&#x200B;</span></span><span class="reset-textstyle scriptstyle uncramped mtight"><span class="mord scriptstyle uncramped mtight"><span class="mord mathit mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">&#x2212;</span><span class="mord mathrm mtight">1</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">&#x200B;</span></span>&#x200B;</span></span></span></span><span class="mpunct">,</span><span class="mord text displaystyle textstyle uncramped"><span class="mord mathbf">h</span></span><span class="mclose">&#x27E9;</span><span class="mbin">&#x22C5;</span><span class="mord mathit">t</span><span class="mopen">(</span><span class="mord mathit">x</span><span class="mclose">)</span></span></span></span></span></p>
+<p>In order to achieve zero-knowledge and short proofs, we need the prover to calculate the inner products and send the results to the verifier. However, the prover cannot know the point <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.43056em;vertical-align:0em;"></span><span class="base textstyle uncramped"><span class="mord mathit">x</span></span></span></span> at which the QAP will be evaluated, or they will be able to find <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>h</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">h(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1em;vertical-align:-0.25em;"></span><span class="base textstyle uncramped"><span class="mord mathit">h</span><span class="mopen">(</span><span class="mord mathit">x</span><span class="mclose">)</span></span></span></span> for which the identity holds for any statement.</p>
+
                                 
                                 </section>
                             
@@ -412,7 +431,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Groth16","level":"1.2.3","depth":2,"next":{"title":"Parameter Generation","level":"1.2.4","depth":2,"path":"zksnarks/paramgen.md","ref":"zksnarks/paramgen.md","articles":[]},"previous":{"title":"Quadratic Arithmetic Programs","level":"1.2.2","depth":2,"path":"zksnarks/qaps.md","ref":"zksnarks/qaps.md","articles":[]},"dir":"neutral"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"zksnarks/groth16.md","mtime":"2018-06-21T07:57:00.541Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-21T11:28:39.440Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Groth16","level":"1.2.4","depth":2,"next":{"title":"Parameter Generation","level":"1.2.5","depth":2,"path":"zksnarks/paramgen.md","ref":"zksnarks/paramgen.md","articles":[]},"previous":{"title":"Quadratic Arithmetic Programs","level":"1.2.3","depth":2,"path":"zksnarks/qaps.md","ref":"zksnarks/qaps.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["katex"],"pluginsConfig":{"katex":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css"}},"file":{"path":"zksnarks/groth16.md","mtime":"2018-06-21T19:12:30.379Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-06-21T23:45:52.026Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
