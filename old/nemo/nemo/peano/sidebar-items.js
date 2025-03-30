@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["S","Peano numbers: Increment"],["Z","Peano numbers: Zero"]],"trait":[["Peano","Represents a peano number."],["Pop","This represents the types obtained by popping N layers from a stack."]]});
