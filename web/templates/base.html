@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>about me - sean bowe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --highlight-color: #007BFF;
+    }
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --text-color: #ffffff;
+      --highlight-color: #1E90FF;
+    }
+    [data-theme="dark"] .social-links img {
+      filter: invert(1);
+    }
+    [data-theme="dark"] .logo {
+      filter: invert(1);
+    }
+    body {
+      font-family: 'Noto Sans', Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .logo {
+      width: 64px;
+      height: 64px;
+      background: url('/sb-64x64.png') no-repeat center center;
+      background-size: contain;
+    }
+    .container {
+      width: 90%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 15px;
+      box-sizing: border-box;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--text-color);
+      background-color: var(--bg-color);
+      width: 100%;
+    }
+    nav {
+      display: flex;
+      gap: 15px;
+    }
+    .nav-button {
+      text-decoration: none;
+      color: var(--text-color);
+      padding: 5px 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .nav-button:hover {
+      background-color: var(--highlight-color);
+      color: var(--bg-color);
+    }
+    .nav-button.active {
+      position: relative;
+      color: var(--text-color);
+      text-decoration: none;
+    }
+    .nav-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: orange;
+    }
+    .dark-mode-toggle {
+      cursor: pointer;
+      padding: 5px 10px;
+      border: 1px solid var(--text-color);
+      border-radius: 5px;
+      background: none;
+      color: var(--text-color);
+    }
+    main {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px 0;
+      width: 100%;
+      justify-content: space-between;
+      padding-bottom: 60px;
+    }
+    .section-frame {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1 1 calc(50% - 20px);
+      overflow-wrap: break-word;
+      padding-bottom: 30px;
+    }
+    @media (max-width: 768px) {
+      .section-frame {
+        flex: 1 1 100%;
+      }
+    }
+    .section-frame h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      padding-bottom: 5px;
+    }
+    .social-links {
+      display: grid;
+      grid-template-columns: auto auto; /* Ensure columns only take as much space as needed */
+      gap: 20px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-width: 100%; /* Prevent the list from exceeding the container width */
+    }
+    .social-links li {
+      display: flex;
+      align-items: center;
+      border-radius: 10px;
+      padding: 10px;
+      transition: background-color 0.3s, transform 0.3s, outline 0.3s;
+      white-space: nowrap; /* Prevent text wrapping */
+    }
+    .social-links li:hover {
+      outline: 2px solid var(--highlight-color);
+      transform: scale(1.05);
+      background-color: var(--highlight-color);
+    }
+    .social-links a {
+      text-decoration: none;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .social-links img {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+    }
+    .papers-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .papers-list li {
+      margin-bottom: 10px;
+      font-size: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .papers-list a {
+      font-weight: bold;
+      text-decoration: underline;
+      color: var(--text-color);
+    }
+    .papers-list span {
+      font-style: italic;
+      color: gray;
+      margin-left: 0;
+    }
+    a {
+      font-weight: bold;
+      text-decoration: underline;
+      color: inherit;
+    }
+    a:visited {
+      color: inherit;
+    }
+    .footer-wrapper {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: var(--bg-color);
+      border-top: 1px solid var(--text-color);
+      z-index: 999;
+      height: 60px;
+    }
+    .footer-container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 15px 15px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/">
+        <div class="logo"></div>
+      </a>
+      <nav>
+        <a href="/" class="nav-button active">about</a>
+      </nav>
+    </header>
+  </div>
+  <div class="container">
+    <main>
+        {% block content %} {% endblock %}
+    </main>
+  </div>
+  <div class="footer-wrapper">
+    <div class="footer-container">
+      <footer>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()"></button>
+      </footer>
+    </div>
+  </div>
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+    }
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function applyPreferredTheme() {
+      const userPreference = getCookie('theme');
+      if (userPreference) {
+        setTheme(userPreference);
+      } else {
+        const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(systemPreference);
+      }
+    }
+    function toggleDarkMode() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+      updateDarkModeToggleText(newTheme);
+    }
+    function updateDarkModeToggleText(theme) {
+      const toggleButton = document.querySelector('.dark-mode-toggle');
+      toggleButton.textContent = theme === 'dark' ? 'too dark' : 'too bright';
+    }
+    function toggleExtraPapers() {
+      const extraPapers = document.getElementById('extra-papers');
+      const expandButton = document.getElementById('expand-papers');
+      if (extraPapers.style.display === 'none') {
+        extraPapers.style.display = 'block';
+        expandButton.style.display = 'none';
+      }
+    }
+    applyPreferredTheme();
+    updateDarkModeToggleText(document.body.getAttribute('data-theme'));
+  </script>
+</body>
+</html>
