@@ -1,0 +1,227 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --highlight-color: #007BFF;
+}
+
+[data-theme="dark"] {
+  --bg-color: #121212;
+  --text-color: #ffffff;
+  --highlight-color: #1E90FF;
+
+  .social-links img,
+  .logo {
+    filter: invert(1);
+  }
+}
+
+body {
+  font-family: 'Noto Sans', Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  .logo {
+    width: 64px;
+    height: 64px;
+    background: url('/sb-64x64.png') no-repeat center center;
+    background-size: contain;
+  }
+}
+
+.container {
+  width: 90%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--text-color);
+  background-color: var(--bg-color);
+
+  nav {
+    display: flex;
+    gap: 15px;
+
+    .nav-button {
+      text-decoration: none;
+      color: var(--text-color);
+      padding: 5px 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s, color 0.3s;
+
+      &:hover {
+        background-color: var(--highlight-color);
+        color: var(--bg-color);
+      }
+
+      &.active {
+        position: relative;
+        color: var(--text-color);
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 100%;
+          height: 3px;
+          background-color: orange;
+        }
+      }
+    }
+  }
+}
+
+main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px 0;
+  width: 100%;
+  justify-content: space-between;
+  padding-bottom: 60px;
+
+  section {
+    padding-bottom: 20px;
+  }
+
+  .section-frame {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 calc(50% - 20px);
+    overflow-wrap: break-word;
+    margin-top: 20px;
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      padding-bottom: 5px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .section-frame {
+      flex: 1 1 100%;
+    }
+  }
+}
+
+.social-links {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+  max-width: 100%;
+
+  li {
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    padding: 5px;
+    transition: background-color 0.3s, transform 0.3s, outline 0.3s;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      outline: 2px solid var(--highlight-color);
+      transform: scale(1.05);
+      background-color: var(--highlight-color);
+    }
+
+    a {
+      text-decoration: none;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+  }
+}
+
+.papers-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    margin-bottom: 10px;
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+
+    a {
+      font-weight: bold;
+      text-decoration: underline;
+      color: var(--text-color);
+    }
+
+    span {
+      font-style: italic;
+      color: gray;
+      margin-left: 0;
+    }
+  }
+}
+
+a {
+  font-weight: bold;
+  text-decoration: underline;
+  color: inherit;
+
+  &:visited {
+    color: inherit;
+  }
+}
+
+.footer-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--text-color);
+  z-index: 999;
+  height: 60px;
+
+  .footer-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 15px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .dark-mode-toggle {
+    cursor: pointer;
+    padding: 5px 10px;
+    border: 1px solid var(--text-color);
+    border-radius: 5px;
+    background: none;
+    color: var(--text-color);
+  }
+}

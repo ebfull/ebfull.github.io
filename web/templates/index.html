@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 
+{% block subtitle %}about me{% endblock substitle %}
+
 {% block content %}
 <section>
     <p>
         <strong>Hi, I'm Sean Bowe.</strong> I'm a cryptographic engineer and researcher who focuses on zk-SNARKs, recursive proofs, privacy-preserving protocols and implementing efficient and safe cryptography in Rust.
     </p>
-    <div style="margin-top: 20px;">
-        <div class="section-frame">
+    <div class="section-frame">
         <h2>socials</h2>
         <ul class="social-links">
             <li>
@@ -30,8 +31,8 @@
             </a>
             </li>
         </ul>
-        </div>
-        <div class="section-frame">
+    </div>
+    <div class="section-frame">
         <h2>papers</h2>
         <ul class="papers-list">
             <li>
@@ -62,7 +63,6 @@
             </div>
         </ul>
         <button id="expand-papers" onclick="toggleExtraPapers()" style="width: fit-content; text-align: left; padding: 3px 10px 3px 10px">+ a few more</button>
-        </div>
     </div>
 </section>
 {% endblock content %}
