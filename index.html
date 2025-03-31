@@ -47,7 +47,9 @@
         main {
             flex: 1;
             display: flex;
+            flex-wrap: wrap;
             gap: 20px;
+            padding-bottom: 20px;
         }
 
         .container {
@@ -63,6 +65,12 @@
             padding: 10px 20px;
             background-color: var(--bg-color);
             border-bottom: 1px solid var(--text-color);
+            position: relative;
+            left: 0;
+            width: 100%;
+            box-sizing: border-box;
+            max-width: 65%;
+            margin: 0 auto;
         }
 
         nav {
@@ -112,6 +120,10 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            max-width: 100%;
+            box-sizing: border-box;
+            width: 100%;
+            overflow-wrap: break-word;
         }
 
         .section-frame:first-child {
@@ -119,7 +131,13 @@
         }
 
         .section-frame:last-child {
-            flex: 0 0 60%;
+            flex: 0 0 55%;
+        }
+
+        @media (max-width: 768px) {
+            .section-frame {
+                flex: 0 0 100%;
+            }
         }
 
         .section-frame h2 {
@@ -205,28 +223,31 @@
         footer {
             position: sticky;
             bottom: 0;
+            left: 0;
             width: 100%;
             text-align: right;
-            height: 50px; /* Set a fixed height */
+            height: 50px;
             padding: 10px 20px;
             background-color: var(--bg-color);
             border-top: 1px solid var(--text-color);
             box-sizing: border-box;
             z-index: 10;
+            max-width: 65%;
+            margin: 0 auto;
         }
     </style>
 </head>
 <body>
+    <header>
+        <a href="/">
+            <div class="logo"></div>
+        </a>
+        <nav>
+            <a href="/" class="nav-button active">about</a>
+            <!-- <a href="#blog" class="nav-button">blog</a> -->
+        </nav>
+    </header>
     <div class="container">
-        <header>
-            <a href="/">
-                <div class="logo"></div>
-            </a>
-            <nav>
-                <a href="/" class="nav-button active">about</a>
-                <!-- <a href="#blog" class="nav-button">blog</a> -->
-            </nav>
-        </header>
         <main>
             <section>
                 <p>
