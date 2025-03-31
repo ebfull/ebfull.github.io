@@ -122,24 +122,26 @@
       padding-bottom: 5px;
     }
     .social-links {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: auto auto; /* Ensure columns only take as much space as needed */
+      gap: 20px;
       list-style: none;
       padding: 0;
       margin: 0;
+      max-width: 100%; /* Prevent the list from exceeding the container width */
     }
     .social-links li {
       display: flex;
       align-items: center;
-      border: none;
       border-radius: 10px;
       padding: 10px;
-      transition: background-color 0.3s, transform 0.3s;
+      transition: background-color 0.3s, transform 0.3s, outline 0.3s;
+      white-space: nowrap; /* Prevent text wrapping */
     }
     .social-links li:hover {
-      background-color: var(--highlight-color);
+      outline: 2px solid var(--highlight-color);
       transform: scale(1.05);
+      background-color: var(--highlight-color);
     }
     .social-links a {
       text-decoration: none;
@@ -147,8 +149,10 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      width: 100%;
       font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .social-links img {
       flex-shrink: 0;
@@ -221,9 +225,9 @@
     <main>
       <section>
         <p>
-          <strong>Hi, I'm Sean Bowe.</strong> I work as a cryptographic engineer and researcher with a focus on zk-SNARKs, recursive proofs, privacy-preserving protocols and implementing efficient and safe cryptography in Rust.
+          <strong>Hi, I'm Sean Bowe.</strong> I'm a cryptographic engineer and researcher who focuses on zk-SNARKs, recursive proofs, privacy-preserving protocols and implementing efficient and safe cryptography in Rust.
         </p>
-        <div style="display: flex; gap: 20px; margin-top: 20px;">
+        <div style="margin-top: 20px;">
           <div class="section-frame">
             <h2>socials</h2>
             <ul class="social-links">
@@ -279,7 +283,7 @@
                 </li>
               </div>
             </ul>
-            <button id="expand-papers" onclick="toggleExtraPapers()">+ a few more works</button>
+            <button id="expand-papers" onclick="toggleExtraPapers()" style="width: fit-content; text-align: left; padding: 3px 10px 3px 10px">+ a few more</button>
           </div>
         </div>
       </section>
