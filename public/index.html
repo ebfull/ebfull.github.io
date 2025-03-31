@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>about me - sean bowe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/">
+        <div class="logo"></div>
+      </a>
+      <nav>
+        <a href="/" class="nav-button active">about</a>
+      </nav>
+    </header>
+  </div>
+  <div class="container">
+    <main>
+        
+<section>
+    <p>
+        <strong>Hi, I'm Sean Bowe.</strong> I'm a cryptographic engineer and researcher who focuses on zk-SNARKs, recursive proofs, privacy-preserving protocols and implementing efficient and safe cryptography in Rust.
+    </p>
+    <div class="section-frame">
+        <h2>socials</h2>
+        <ul class="social-links">
+            <li>
+            <a href="https://x.com/ebfull" target="_blank" rel="noopener noreferrer">
+                <img src="/x-32x32.png" alt="X/Twitter Logo"> @ebfull
+            </a>
+            </li>
+            <li>
+            <a href="https://bsky.app/profile/seanbowe.com" target="_blank" rel="noopener noreferrer">
+                <img src="/bluesky-32x32.png" alt="Bluesky Logo"> @seanbowe.com
+            </a>
+            </li>
+            <li>
+            <a href="https://github.com/ebfull" target="_blank" rel="noopener noreferrer">
+                <img src="/github-32x32.png" alt="GitHub Logo"> @ebfull
+            </a>
+            </li>
+            <li>
+            <a href="mailto:ewillbefull@gmail.com" target="_blank" rel="noopener noreferrer">
+                <img src="/email-32x32.png" alt="Email Icon"> ewillbefull@gmail.com
+            </a>
+            </li>
+        </ul>
+    </div>
+    <div class="section-frame">
+        <h2>papers</h2>
+        <ul class="papers-list">
+            <li>
+            <a href="https://eprint.iacr.org/2019/1021" target="_blank" rel="noopener noreferrer">Recursive Proof Composition without a Trusted Setup</a>
+            <span>Sean Bowe, Jack Grigg, Daira Hopwood</span>
+            </li>
+            <li>
+            <a href="https://eprint.iacr.org/2019/099" target="_blank" rel="noopener noreferrer">Zero-Knowledge SNARKs from Linear-Size Universal and Updateable Structured Reference Strings</a>
+            <span>Mary Maller, Sean Bowe, Markulf Kohlweiss, Sarah Meiklejohn</span>
+            </li>
+            <li>
+            <a href="https://eprint.iacr.org/2017/1050" target="_blank" rel="noopener noreferrer">Scalable Multi-party Computation for zk-SNARK Parameters in the Random Beacon Model</a>
+            <span>Sean Bowe, Ariel Gabizon, Ian Miers</span>
+            </li>
+            <div id="extra-papers" style="display: none;">
+            <li>
+                <a href="https://eprint.iacr.org/2018/962" target="_blank" rel="noopener noreferrer">Zexe: Enabling Decentralized Private Computation</a>
+                <span>Sean Bowe, Alessandro Chiesa, Matthew Green, Ian Miers, Pratyush Mishra, and Howard Wu</span>
+            </li>
+            <li>
+                <a href="https://eprint.iacr.org/2018/187" target="_blank" rel="noopener noreferrer">Making Groth’s zk-SNARK Simulation Extractable in the Random Oracle Model</a>
+                <span>Sean Bowe, Ariel Gabizon</span>
+            </li>
+            <li>
+                <a href="https://eprint.iacr.org/2017/602" target="_blank" rel="noopener noreferrer">A multi-party protocol for constructing the public parameters of the Pinocchio zk-SNARK</a>
+                <span> Sean Bowe, Ariel Gabizon, Matthew D. Green </span>
+            </li>
+            </div>
+        </ul>
+        <button id="expand-papers" onclick="toggleExtraPapers()" style="width: fit-content; text-align: left; padding: 3px 10px 3px 10px">+ a few more</button>
+    </div>
+</section>
+
+    </main>
+  </div>
+  <div class="footer-wrapper">
+    <div class="footer-container">
+      <footer>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">(test)</button>
+      </footer>
+    </div>
+  </div>
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+    }
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function applyPreferredTheme() {
+      const userPreference = getCookie('theme');
+      if (userPreference) {
+        setTheme(userPreference);
+      } else {
+        const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(systemPreference);
+      }
+    }
+    function toggleDarkMode() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+      updateDarkModeToggleText(newTheme);
+    }
+    function updateDarkModeToggleText(theme) {
+      const toggleButton = document.querySelector('.dark-mode-toggle');
+      toggleButton.textContent = theme === 'dark' ? 'too dark' : 'too bright';
+    }
+    function toggleExtraPapers() {
+      const extraPapers = document.getElementById('extra-papers');
+      const expandButton = document.getElementById('expand-papers');
+      if (extraPapers.style.display === 'none') {
+        extraPapers.style.display = 'block';
+        expandButton.style.display = 'none';
+      }
+    }
+    applyPreferredTheme();
+    updateDarkModeToggleText(document.body.getAttribute('data-theme'));
+  </script>
+</body>
+</html>
