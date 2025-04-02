@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block subtitle %}posts{% endblock substitle %}
+{% block nav_blog %}active{% endblock %}
+
+{% block content %}
+<section>
+    <h1 class="title">posts</h1>
+    <div class="post-list">
+        {% for year, posts in section.pages | group_by(attribute="year") %}
+            <!-- <h4>{{ year }}</h4> -->
+
+            <ul>
+            {% for post in posts %}
+                <li><a href="{{ post.path }}">{{ post.title }}</a><span>{{ post.date }}</span></li>
+            {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+</section>
+{% endblock content %}
