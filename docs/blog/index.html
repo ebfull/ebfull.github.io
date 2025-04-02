@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>posts - sean bowe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/">
+        <div class="logo"></div>
+      </a>
+      <nav>
+        <!-- <a href="/" class="nav-button ">about</a>
+        <a href="/blog/" class="nav-button active">blog</a> -->
+      </nav>
+    </header>
+  </div>
+  <div class="container">
+    <main>
+        
+<section>
+    <h1 class="title">posts</h1>
+    <div class="post-list">
+        
+    </div>
+</section>
+
+    </main>
+  </div>
+  <div class="footer-wrapper">
+    <div class="footer-container">
+      <div class="footer-text">© 2025 Sean Bowe</div>
+      <footer>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">(test)</button>
+      </footer>
+    </div>
+  </div>
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+    }
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function applyPreferredTheme() {
+      const userPreference = getCookie('theme');
+      if (userPreference) {
+        setTheme(userPreference);
+      } else {
+        const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(systemPreference);
+      }
+    }
+    function toggleDarkMode() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+      updateDarkModeToggleText(newTheme);
+    }
+    function updateDarkModeToggleText(theme) {
+      const toggleButton = document.querySelector('.dark-mode-toggle');
+      toggleButton.textContent = theme === 'dark' ? 'too dark' : 'too bright';
+    }
+    function toggleExtraPapers() {
+      const extraPapers = document.getElementById('extra-papers');
+      const expandButton = document.getElementById('expand-papers');
+      if (extraPapers.style.display === 'none') {
+        extraPapers.style.display = 'block';
+        expandButton.style.display = 'none';
+      }
+    }
+    applyPreferredTheme();
+    updateDarkModeToggleText(document.body.getAttribute('data-theme'));
+  </script>
+</body>
+</html>
