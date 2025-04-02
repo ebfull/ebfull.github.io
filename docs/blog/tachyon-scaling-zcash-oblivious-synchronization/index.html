@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tachyon: Scaling Zcash with Oblivious Synchronization - sean bowe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/">
+        <div class="logo"></div>
+      </a>
+      <nav>
+        <a href="/" class="nav-button ">about</a>
+        <a href="/blog/" class="nav-button active">blog</a>
+      </nav>
+    </header>
+  </div>
+  <div class="container">
+    <main>
+        
+<section>
+  <h1 class="title">
+    Tachyon: Scaling Zcash with Oblivious Synchronization
+  </h1>
+  <p class="subtitle"><strong>2025-04-02</strong> by Sean Bowe</p>
+  <div class="section-frame">
+    <p>Zcash’s shielded transactions offer the strongest privacy guarantees of any distributed financial network today. They provide a cryptographic property we call “ledger indistinguishability,” which delivers strong on-chain confidentiality — far beyond what’s achievable with decoys or cover traffic that only partially masks transaction details. In short, <strong>shielded transactions resemble random gibberish paired with a proof that it actually represents a valid payment.</strong></p>
+<p>To enable this, Zcash pioneered the use of <a href="https://en.wikipedia.org/wiki/Zero-knowledge_proof">zero-knowledge proofs</a> — a technique that allows the network to verify transactions without revealing their private contents. These proofs are called “zero-knowledge” because they reveal <em>nothing</em> about the transaction’s internals. But the cryptographic techniques behind this — particularly the proofs we use called <a href="https://z.cash/learn/what-are-zk-snarks/">zk-SNARKs</a> — are also powerful tools for building scalable decentralized systems. Their power lies not just in the zero-knowledge property itself (which is often unused in practice), but in their ability to succinctly prove the correctness of large computations.</p>
+<p>Today, many projects use zero-knowledge (“ZK”) as a marketing term, with little to no regard for actual user privacy. <strong>We can have the best of both worlds — a private digital payment network that scales to billions of users — by fully leveraging both zero-knowledge and verifiable computation.</strong> We've invested heavily in making this happen, first through the <a href="https://electriccoin.co/blog/halo-recursive-proof-composition-without-a-trusted-setup/">discovery of Halo</a> — which led to a revolution in efficient, scalable verifiable computation — and then through the <a href="https://zcash.github.io/orchard/">Orchard payment protocol</a>, which laid the groundwork for the next generation of upgrades.<sup class="footnote-reference"><a href="#orchard">1</a></sup></p>
+<p><strong>Now it’s time to cross the finish line.</strong> I am proposing several protocol changes in Zcash that allow us to increasingly scale the protocol while providing a smooth transition path for existing users and wallets. The crucial component that makes this possible is a new model for how wallets interact with the blockchain that I refer to as <strong>oblivious synchronization</strong>. This new approach improves the user experience for wallets <em>and</em> permits an architectural change to the protocol that maintains ledger indistinguishability without incurring heavy state contention, storage and bandwidth costs for validators.</p>
+<p><strong>Crucially, it is an actionable plan that does not require speculative research to see to fruition.</strong> In the short term it can be deployed using the cryptography we're already experts at deploying in Zcash, leaving some remaining challenges for more longer-term research in the future. In order to make this happen we must pursue an engineering effort much like the “Sapling” upgrade from earlier in Zcash's history. Back then, we set out to make zk-SNARKs practical enough to run on mobile devices — a capability that’s now taken for granted. The sophistication of the Sapling upgrade (and the coordination required to pull it off) remain nearly unmatched across the entire blockchain space.<sup class="footnote-reference"><a href="#apollo">2</a></sup></p>
+<p>Here's what it will take to raise the bar again.</p>
+<h2 id="proof-carrying-data"><a class="zola-anchor" href="#proof-carrying-data" aria-label="Anchor link for: proof-carrying-data">🔗</a>Proof-carrying Data</h2>
+<p>Early in the history of Zcash our shielded transactions earned a reputation for being expensive due to the use of zk-SNARKs. As mentioned, the <a href="https://z.cash/upgrade/sapling/">Sapling network upgrade</a> incorporated a slate of cryptographic improvements from our team<sup class="footnote-reference"><a href="#newcurves">3</a></sup> and from the academic world<sup class="footnote-reference"><a href="#groth16">4</a></sup> which made our proofs extremely efficient to generate. However, zk-SNARKs are also known for being slow to verify when compared to bog standard digital signature schemes. This has led to a misconception that zk-SNARKs are the cause of performance and scalability bottlenecks in Zcash.</p>
+<p>In reality, we've never actually considered zk-SNARK verification a barrier to scaling Zcash. I once co-authored a paper<sup class="footnote-reference"><a href="#sonic">5</a></sup> where we devised a method to batch verify proofs as efficiently as checking a single proof, with the help of an untrusted third party's computational resources. Later results in proof aggregation—analogous to <a href="https://crypto.stanford.edu/~dabo/papers/aggsurvey.pdf">digital signature aggregation</a> in other protocols—allowed multiple proofs to be <em>combined</em> and efficiently verified as a single unit, a notable example being SnarkPack<sup class="footnote-reference"><a href="#snarkpack">6</a></sup> which has been deployed in some blockchains.</p>
+<p>The ultimate tool for scaling zk-SNARK verification and a wide variety of other computationally intensive tasks in protocols like Zcash is a more general technique called <strong>proof-carrying data (PCD)</strong> that was originally <a href="https://ic-people.epfl.ch/~achiesa/docs/CT10.pdf">devised</a> and even <a href="https://eprint.iacr.org/2014/595">realized</a> by the scientists behind Zcash. Crudely speaking, PCD allows data to live alongside proofs of its own correctness so that when it is combined with other (proof-carrying) data the mixture inherits and extends the original proofs of correctness. This can be used to “compress” a huge amount of verifiable computational effort, since the resulting data does not need to grow in size and there is no <em>practical</em> bound in the complexity of the inductive claims.<sup class="footnote-reference"><a href="#knowledge_extractors">7</a></sup></p>
+<p>PCD languished for years as a theoretical tool due to performance limitations. This changed when our team at the Electric Coin Company discovered <a href="https://eprint.iacr.org/2019/1021">Halo</a>, which was a brand new approach to achieving PCD with significantly better performance while also avoiding trusted setups and strong cryptographic assumptions. As mentioned before, this led to a Cambrian explosion of new results<sup class="footnote-reference"><a href="#halo">8</a></sup> that has made PCD table stakes for new scalable protocols. PCD can be leveraged to make Zcash's blocks small and fast to verify no matter how many shielded transactions they contain, and it can even be applied to the chain itself to build fully succinct blockchains.<sup class="footnote-reference"><a href="#mina">9</a></sup> As we'll be discussing, they can be used in other ways to improve our network's transaction throughput.</p>
+<h2 id="communicating-state-changes"><a class="zola-anchor" href="#communicating-state-changes" aria-label="Anchor link for: communicating-state-changes">🔗</a>Communicating State Changes</h2>
+<p>zk-SNARKs and PCD are indispensable tools for maintaining privacy while enforcing correctness in contexts that do not involve high state contention—such as within a single transaction or across a long-term history of transactions.  However, privacy-preserving protocols like Zcash involve communicating and coordinating <em>global</em> state changes because shielded transactions must be made indistinguishable from one another to reach our lofty privacy goals.</p>
+<p>There are three major areas where this becomes a concern in our existing protocol:</p>
+<ul>
+<li>How do users learn about the payments they receive and the information they need to spend those funds?</li>
+<li>How do users later demonstrate that the funds they are spending actually exist?</li>
+<li>How are users prevented from spending funds that have already been spent?</li>
+</ul>
+<p>Zcash's current protocol solves these problems in a way that is maximally convenient for the zk-SNARKs (due to legacy concerns about their performance) but otherwise very inconvenient or even impossible to scale to large numbers of users and payments. By being open to some common sense changes to the underlying cryptography and payment protocol we can take full advantage of the modern performance of zk-SNARKs and PCD.</p>
+<h3 id="shielded-notes-and-commitments"><a class="zola-anchor" href="#shielded-notes-and-commitments" aria-label="Anchor link for: shielded-notes-and-commitments">🔗</a>Shielded Notes and Commitments</h3>
+<p>Shielded transactions involve spending and creating “notes,” which represent an amount of funds and the key authorized to spend them — not unlike <a href="https://developer.bitcoin.org/devguide/transactions.html">UTXOs</a> in Bitcoin. We aim to leak as little information as possible about the notes being spent or created in a transaction, instead allowing the zk-SNARK to prove that various rules are being followed. In order to keep newly created notes private they are encapsulated in a <a href="https://en.wikipedia.org/wiki/Commitment_scheme">cryptographic commitment</a> that is exposed publicly in the transaction.<sup class="footnote-reference"><a href="#commitments">10</a></sup></p>
+<p>The commitment hides the note, but the zk-SNARK can still reason about the note because the transaction creator can open the commitment using a random, secret key. This allows the zk-SNARK proof to enforce <em>local</em> rules for things like “balance integrity” (the sum of the funds in new shielded notes does not exceed the sum of the funds being spent) and “spend authorization” (that we know the secret key associated with the notes being spent). In order for the recipient to later spend the funds they must also learn this random key and other payment information, necessitating a <strong>secret distribution system</strong>.</p>
+<p>Secret distribution systems are not ordinarily needed in blockchain protocols. The standard payment flow in most cryptocurrencies works like this:</p>
+<ol>
+<li>The user asks their wallet for a payment address.</li>
+<li>The user gives this payment address to one or more other people.</li>
+<li>Other people use this address to make a payment.</li>
+<li>The user scans the blockchain to find all the new payments to their address.</li>
+</ol>
+<p>This is how Bitcoin and most other cryptocurrencies work, and it's possible because addresses and payments are not private. The user can ask a third party (like a light wallet server or block explorer) for all the payments made to an address and those services can index the blockchain and answer these queries in a way that quickly enables the user to spend those funds. In private cryptocurrencies like Zcash we cannot ask a third party to identify payments sent to our payment address. In order to see incoming payments  we must allow the sender to encrypt the relevant information and send it to us.</p>
+<p>Zcash lets senders place ciphertexts inside of shielded transactions that contain note information. Recipients identify incoming payments by trial decrypting <em>every transaction</em> until they identify payments sent to them. This simply does not scale.<sup class="footnote-reference"><a href="#detection_keys">11</a></sup> <strong>As a start, we'll be assuming that Zcash's future payment flows involve out-of-band payments where the sender and recipient use a separate channel for secret distribution.</strong> The on-chain ciphertexts can then be removed from the protocol entirely.<sup class="footnote-reference"><a href="#postquantum">12</a></sup></p>
+<p>Fortunately, it is common for a pre-existing channel to already exist between the sender and recipient: a user paying a merchant through a web interface, someone buying coffee within physical proximity to a payment terminal, or friends resolving dinner debts over Signal chats. In these cases the <a href="https://zips.z.cash/zip-0321">payment request</a> model that is supported by most Zcash wallets (and commonly found in most cryptocurrencies) accomodates out-of-band payments. It is even possible for payments to be sent to recipients out-of-band without a payment request through the use of “liberated” or <a href="https://zips.z.cash/zip-0324">URI-encapsulated payments</a>.<sup class="footnote-reference"><a href="#liberated">13</a></sup></p>
+<p>There are some drawbacks that have to be addressed separately. By moving secret distribution out-of-band the user cannot rely on the blockchain as a storage mechanism for recovering their funds from a seed phrase or sharing transaction histories with view keys. Also, the ability to give a payment address away publicly (like posting on a billboard to solicit anonymous donations) does not inherently work.<sup class="footnote-reference"><a href="#billboards">14</a></sup> In order to support these use cases we will need additional infrastructure for our wallets to store and distribute payment information privately. This at least makes sense from an economic perspective, since the blockchain currently provides for these use cases for free at great systemic cost.</p>
+<h3 id="accumulators-and-nullifiers"><a class="zola-anchor" href="#accumulators-and-nullifiers" aria-label="Anchor link for: accumulators-and-nullifiers">🔗</a>Accumulators and Nullifiers</h3>
+<p>In order to spend a shielded note that has been previously created, validators continually append the new note commitments that appear in shielded transactions to a <a href="https://en.wikipedia.org/wiki/Accumulator_(cryptography)">cryptographic accumulator</a>. Currently, at block boundaries, the accumulator is checkpointed and a succinct (hash) representation of that checkpoint is stored by validators. We call this checkpoint an “anchor.” In order to spend a note later, shielded transactions demonstrate that the note they are spending exists at some (usually recent) anchor that validators accept as valid.</p>
+<p>In order to maintain privacy, while shielded transactions must publicly identify the anchor (for validators to check) they do <em>not</em> need to identify the actual note commitment they are spending. This works because a <strong>set inclusion witness</strong> that demonstrates a commitment exists within an accumulator can be short and easy to verify, and so the zk-SNARK proof in a transaction can be used to demonstrate <em>knowledge</em> of such a witness without revealing it publicly.</p>
+<p>If we do not identify the note being spent, how do we demonstrate that it has not been spent by another transaction? <strong>The zk-SNARK helps us verifiably compute a value called a nullifier that is deterministically derived in some way from the note we are spending.</strong> The nullifier itself does not reveal anything about the note, but because it is forcibly disclosed within the transaction it serves as an indelible mark on the chain state that prohibits double-spends. Validators currently remember all of the nullifiers seen before and reject payments as invalid if they reveal a previously-seen nullifier.</p>
+<p><strong>The scalability bottlenecks that remain in Zcash center around how wallets synchronize with these particular blockchain state changes.</strong> Currently, even with out-of-band payments, <em>every</em> time <em>any</em> user creates a shielded transaction in Zcash:</p>
+<ul>
+<li>the network must ensure that the revealed nullifier has never been seen before;</li>
+<li>the network must record the nullifier so that it cannot be repeated again; and,</li>
+<li>all other users must account for the newly created note commitments by updating their set inclusion witnesses for all of their unspent shielded notes, to reflect a more recent anchor.</li>
+</ul>
+<h2 id="oblivious-synchronization"><a class="zola-anchor" href="#oblivious-synchronization" aria-label="Anchor link for: oblivious-synchronization">🔗</a>Oblivious Synchronization</h2>
+<p>It'll be helpful to recast what a Zcash wallet does through the lens of an abstract machine, focusing (without loss of generality) on the case that the wallet only receives and later spends a single shielded note.</p>
+<p>The wallet starts in some <em>initial</em> state (at some point in the blockchain) and processes blocks one at a time. In each block, it attempts to find a new note commitment that it expects to find based on the out-of-band process mentioned previously. Once found, the wallet enters a <em>synchronizing</em> state. In all of the blocks that follow, the wallet checks to make sure the block does not contain the nullifier for the note to ensure it has not been spent already. As long as it hasn't the wallet remains in this synchronizing state.</p>
+<p>Finally, when the user is ready to make a transaction, they use the wallet's state to create a zk-SNARK proof and spend the funds. (The wallet's state contains, for instance, the set inclusion witness needed to spend the note with a recent anchor.) This is more or less how our wallets currently work.</p>
+<p>My vision for scaling Zcash is to fully embrace a new model for how Zcash wallets should synchronize with blockchain state changes. Rather than using the wallet's state to merely inform the process of creating a zk-SNARK proof when it comes time to spend, <strong>we will <em>also</em> represent our wallet's state as proof-carrying data.</strong> This means that as the wallet state updates to reflect new blocks it will continually maintain a proof of its own correctness. Then, when it's time to spend our funds we will extend our transaction with this proof-carrying data. This effectively attaches evidence that the transaction is valid up until a certain recent point in the history of the blockchain — the position of the anchor.</p>
+<p>The result is that validators are now only responsible for ensuring that the transaction is correct in the presence of the additional transactions that appeared in the intervening time, which just involves checking that the most recent block(s) do not contain the revealed nullifier.<sup class="footnote-reference"><a href="#nullifier_after_commitment">15</a></sup> As a result, almost everything in a block can be permanently pruned by validators and ultimately all users of the system as well. <strong>Despite transactions sharing a common state by being indistinguishable from each other, nearly all state contention problems vanish in this new approach.</strong></p>
+<p>It would seem for this model to work that the user's wallet will have to follow a much more expensive synchronization process to create and maintain PCD of the wallet state. This expense is not just due to the cost of creating PCD proofs but also the bandwidth needed to apply every block to the wallet state.</p>
+<p>However, we can arrange things so that the user's wallet can outsource the process of synchronizing the wallet (and creating the PCD proofs) to a third party that I call an <strong>oblivious syncing service</strong>. This service isn't trusted with private information or secrets and learns nothing about the notes in the user's wallet, yet it can still make progress synchronizing its state even when the user's wallet software is offline.</p>
+<p>We already know that this kind of approach is possible with expensive cryptography like <a href="https://en.wikipedia.org/wiki/Homomorphic_encryption">fully-homomorphic encryption</a> (FHE). <strong>But by adjusting the protocol slightly we can simply use PCD.</strong> The remote server only needs to learn the nullifier of the note to make synchronization progress without the assistance of the user's wallet, since the wallet can blind or encrypt the rest of the wallet state and only permit the oblivious syncing service to make state transitions involving the nullifier. One would expect this to reveal some information to the service about the note's possible location in the accumulator, but by adjusting how the nullifier is derived in the protocol<sup class="footnote-reference"><a href="#nullifier_derivation">16</a></sup> we can eliminate this information leakage entirely, depriving the service of <em>any</em> information about the note being spent.</p>
+<p>In practice the wallet will be handling multiple notes and thus multiple nullifiers, and so an oblivious syncing service might learn more information if it can correlate requests as originating from the same wallet. But this same kind of leakage occurs already anyway when the transactions themselves are published, and so we must tackle the problem at least partially with network privacy countermeasures like mixnets. Fortunately, as I'll explain in a future blog post, even if the oblivious syncing service can correlate nullifiers we can <em>completely</em> sever the link using nifty cryptographic techniques and protocol adjustments—it's just a matter of finding the most efficient point in the trade-off space.</p>
+<h2 id="project-tachyon"><a class="zola-anchor" href="#project-tachyon" aria-label="Anchor link for: project-tachyon">🔗</a>Project Tachyon</h2>
+<p>This new model of wallet synchronization and validator state pruning can be enabled with several compartmentalized changes to the existing protocol that can happen in independent tracks, providing an immediate capacity increase in the Zcash shielded payment protocol at each step. The main changes involved include:</p>
+<ul>
+<li><strong>Wallets need to adopt out-of-band payments.</strong> ECC has already begun exploring the incoporation of URI-encapsulated payments into its Zashi mobile wallet. Different kinds of out-of-band payment flows will require changes to the way existing wallets use payment requests. Fortunately, almost all of this is reverse-compatible and can be deployed without any changes to the Zcash protocol. It also leads to immediate usability wins for shielded wallets even without capacity improvements.</li>
+<li><strong>Blocks need to incorporate shielded transaction aggregation.</strong> This involves implementing and deploying a PCD-based proof aggregation protocol for Orchard payments, which we've already been considering for years<sup class="footnote-reference"><a href="#shielded_aggregates">17</a></sup> and ensured the Orchard payment protocol could later accomodate. This can land in a network upgrade without any other changes to wallets or the underlying payment protocol and leads to an immediate capacity increase.</li>
+<li><strong>Nullifiers should be derived differently to prevent oblivious syncing services from learning sensitive information about wallets.</strong> This can be achieved with a backwards-compatible network upgrade, though it will require a circuit change.</li>
+<li><strong>Nullifiers</strong> (and potentially also note commitments) <strong>must be batch inserted into a new accumulator that supports efficient set (non-)membership testing in PCD.</strong> I've already sketched a very simple and efficient accumulation scheme for this. This will allow the development of oblivious syncing services without any immediate changes to the payment protocol that would risk user funds, and can be done in a network upgrade with high assurance.</li>
+<li><strong>In-band secret distribution must be removed in Zcash.</strong> This can be achieved once wallets have migrated away from the legacy payment protocol(s). Efforts in this direction can happen independent of any protocol changes.</li>
+<li><strong>The payment protocol should allow wallet PCD state to augment the zk-SNARK in transactions.</strong> This final major improvement allows validators to begin pruning all old blockchain state and reduces state contention considerably. This can be paired with a corresponding increase to block sizes and/or frequency.</li>
+</ul>
+<p><strong>I call this the Tachyon project for Zcash.</strong> I'm excited that all of these steps are possible, can be done using cryptography we are already experts in deploying, can be developed in parallel tracks, and involve few changes to the actual payment protocol. My goal is to faciliate these efforts on an ambitious timeline: many of the major scalability improvements should be able to hit mainnet within a year, while the more involved changes will depend on how quickly wallets can migrate from legacy payment protocols. As with all of our previous network upgrades I'm committed to shipping high quality code that protects our users' privacy.</p>
+<p>Crucially, I don't plan to stand in the way of any other Zcash protocol improvements while I see Tachyon to fruition. I'm not asking the community for grants or financial assistance at this time, and I'm not asking any organizations to redirect resources to Tachyon that they think are better spent elsewhere. I also have no reason to believe that Tachyon will conflict with any of the active areas of development such as Crosslink and ZSAs; in fact, I have more reason to believe these protocol enhancements will be mutually beneficial for Tachyon.</p>
+<p>There are many things I'll be sharing over the coming weeks. I'm most excited to publish benchmarks of a proof-carrying data toolkit that I've developed to be compatible with the Orchard payment protocol, with the goal being to set a floor on the performance of shielded transaction aggregation and oblivious syncing services. This should begin to reveal the magnitude of the scalability improvements we can expect and the complexity of the path forward.</p>
+<p>Stay tuned, and please get in touch if you'd like to help!</p>
+<hr />
+<div class="footnote-definition" id="orchard"><sup class="footnote-definition-label">1</sup>
+<p><a href="https://zcash.github.io/orchard/">Orchard</a> is a new shielded payment protocol that supplants the Sapling protocol. It is based on a <a href="https://electriccoin.co/blog/the-pasta-curves-for-halo-2-and-beyond/">new set of elliptic curves</a> designed specifically so that they can be efficiently used in modern PCD constructions based on Halo.</p>
+</div>
+<div class="footnote-definition" id="apollo"><sup class="footnote-definition-label">2</sup>
+<p>Henry de Valence from <a href="https://penumbra.zone">Penumbra</a> has fondly refered to Sapling as the <a href="https://x.com/hdevalence/status/1814140592487649532">“apollo project of cryptography”</a>.</p>
+</div>
+<div class="footnote-definition" id="newcurves"><sup class="footnote-definition-label">3</sup>
+<p>We developed the <a href="https://github.com/zkcrypto/jubjub?tab=readme-ov-file#jubjub-">Jubjub</a> embedded elliptic curve and <a href="https://electriccoin.co/blog/new-snark-curve/">BLS12-381</a> pairing-friendly elliptic curve and used these to build efficient zk-SNARK circuits for commitment schemes and hash functions for Merkle trees.</p>
+</div>
+<div class="footnote-definition" id="groth16"><sup class="footnote-definition-label">4</sup>
+<p><a href="https://eprint.iacr.org/2016/260.pdf">Groth16</a> is one of the most efficient zk-SNARK constructions currently known.</p>
+</div>
+<div class="footnote-definition" id="sonic"><sup class="footnote-definition-label">5</sup>
+<p><a href="https://eprint.iacr.org/2019/099">Sonic</a> was the first practical <em>universal</em> zk-SNARK construction, but in its most efficient setting it leveraged a non-trusted “helper” to assist verifiers in checking large numbers of proofs more efficiently than with traditional batch verification techniques.</p>
+</div>
+<div class="footnote-definition" id="snarkpack"><sup class="footnote-definition-label">6</sup>
+<p><a href="https://eprint.iacr.org/2021/529.pdf">SnarkPack</a> enabled the aggregation of <a href="https://eprint.iacr.org/2016/260.pdf">Groth16</a> proofs.</p>
+</div>
+<div class="footnote-definition" id="knowledge_extractors"><sup class="footnote-definition-label">7</sup>
+<p>There is a theoretical limit to the (recursive) soundness claims of known PCD constructions relative to a fixed security level, but there are no known attacks and this is largely ignored in practice.</p>
+</div>
+<div class="footnote-definition" id="halo"><sup class="footnote-definition-label">8</sup>
+<p>Halo <a href="https://eprint.iacr.org/2019/1021">[BGH19]</a> presented a new technique for achieving recursive SNARK composition that was formalized and generalized into the concept of an accumulation scheme in <a href="https://eprint.iacr.org/2020/499">[BCMS20]</a>. Among the numerous follow-up papers in this area, later results loosened the requirements of these schemes for efficiency (<a href="https://eprint.iacr.org/2020/1618">[BCLMS20]</a>, <a href="https://eprint.iacr.org/2021/370">[KST21]</a>, Nova and folding schemes <a href="https://eprint.iacr.org/2022/1758">[KS22]</a>, <a href="https://eprint.iacr.org/2023/573">[KS23]</a> <a href="https://eprint.iacr.org/2023/620">[BC23]</a>, <a href="https://eprint.iacr.org/2023/1106">[EG23]</a>) or to target post-quantum cryptography (<a href="https://eprint.iacr.org/2020/1536">[BDFG20]</a>, <a href="https://eprint.iacr.org/2024/1731">[BMNW24]</a>, <a href="https://eprint.iacr.org/2024/257">[BC24]</a>, <a href="https://eprint.iacr.org/2025/247">[BC25]</a>, <a href="https://eprint.iacr.org/2025/294">[NS25]</a>).</p>
+</div>
+<div class="footnote-definition" id="mina"><sup class="footnote-definition-label">9</sup>
+<p>Mina, the only succinct blockchain ever launched, uses a variant of Halo and the elliptic curves we designed for Halo and Zcash, though Mina itself does not target private payments.</p>
+</div>
+<div class="footnote-definition" id="commitments"><sup class="footnote-definition-label">10</sup>
+<p>Commitment schemes can be realized using strong hash functions, but the commitments we use in Zcash today have a richer structure that allows them to perform better and offer information theoretical privacy guarantees.</p>
+</div>
+<div class="footnote-definition" id="detection_keys"><sup class="footnote-definition-label">11</sup>
+<p>The possibility of delegating the identification of incoming payments to a third party has been explored through the use of <a href="https://github.com/zcash/zcash/issues/288">detection keys</a>, but even when the privacy trade-off is acceptable this does not actually address the expensive cost of broadcasting, relaying and trial decrypting ciphertexts for every shielded transaction.</p>
+</div>
+<div class="footnote-definition" id="postquantum"><sup class="footnote-definition-label">12</sup>
+<p>This comes with the added advantage of removing all privacy-sensitive components of our on-chain protocol that are not yet using quantum-resistant cryptography.</p>
+</div>
+<div class="footnote-definition" id="liberated"><sup class="footnote-definition-label">13</sup>
+<p>These have a natural “viral” quality because funds can be sent to people who do not yet have Zcash wallets.</p>
+</div>
+<div class="footnote-definition" id="billboards"><sup class="footnote-definition-label">14</sup>
+<p>Payment requests behave like one-time capabilities to send a payment to a recipient. In order to accomodate the traditional "payment address" style of payments for arbitrary numbers of senders the user's wallet will need to negotiate with (an agent of) the recipient's wallet via an active channel, which might require the use of <a href="https://en.wikipedia.org/wiki/Store_and_forward">store-and-forward</a> services and/or <a href="https://en.wikipedia.org/wiki/Mix_network">mixnets</a> for privacy.</p>
+</div>
+<div class="footnote-definition" id="nullifier_after_commitment"><sup class="footnote-definition-label">15</sup>
+<p>Together with the proof of the wallet's validity, this demonstrates that the nullifier did not appear in another transaction that followed the block that created the note commitment being spent. Notably, this loosens the condition that the nullifier has never been seen before in the history of the blockchain but still manages to prevent double-spending.</p>
+</div>
+<div class="footnote-definition" id="nullifier_derivation"><sup class="footnote-definition-label">16</sup>
+<p>In particular, nullifiers need to be changed so that they are not determined by the note commitment but rather the other way around. This can be done by altering the derivation process in ways that would ordinarily allow for certain kinds of attacks in the existing protocol, but these attacks can be mitigated in other ways when payments are made out-of-band instead. <a href="https://www.youtube.com/watch?v=-m3JCgi3kiU">My presentation</a> at Zcon VI briefly sketches what needs to be altered.</p>
+</div>
+<div class="footnote-definition" id="shielded_aggregates"><sup class="footnote-definition-label">17</sup>
+<p>See <a href="https://github.com/zcash/zcash/issues/4946">this github issue</a> where the idea is explored in detail.</p>
+</div>
+
+  </div>
+</section>
+
+    </main>
+  </div>
+  <div class="footer-wrapper">
+    <div class="footer-container">
+      <div class="footer-text">© 2025 Sean Bowe</div>
+      <footer>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">(test)</button>
+      </footer>
+    </div>
+  </div>
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+    }
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function applyPreferredTheme() {
+      const userPreference = getCookie('theme');
+      if (userPreference) {
+        setTheme(userPreference);
+      } else {
+        const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(systemPreference);
+      }
+    }
+    function toggleDarkMode() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+      updateDarkModeToggleText(newTheme);
+    }
+    function updateDarkModeToggleText(theme) {
+      const toggleButton = document.querySelector('.dark-mode-toggle');
+      toggleButton.textContent = theme === 'dark' ? 'too dark' : 'too bright';
+    }
+    function toggleExtraPapers() {
+      const extraPapers = document.getElementById('extra-papers');
+      const expandButton = document.getElementById('expand-papers');
+      if (extraPapers.style.display === 'none') {
+        extraPapers.style.display = 'block';
+        expandButton.style.display = 'none';
+      }
+    }
+    applyPreferredTheme();
+    updateDarkModeToggleText(document.body.getAttribute('data-theme'));
+  </script>
+</body>
+</html>
